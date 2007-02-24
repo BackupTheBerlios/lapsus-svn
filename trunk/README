@@ -1,0 +1,110 @@
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                                                                           *
+*  Lapsus is in a very early development stage, but hopefully it will       *
+*  became mature program one day.                                           *
+*  There may be (well, for sure is) a number of bugs and issues,            *
+*  but it already can be quite usefull.                                     *
+*                                                                           *
+*  It may do strange things and I am not responsible for anything           *
+*  that happens when you use that program. However, I am using it myself    *
+*  and haven't seen any disasters (so far ;)).                              *
+*                                                                           *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+  This program is licensed under the GNU General Public License.
+  See the COPYING file for more information.
+
+Notes
+=====
+
+
+Lapsus is a program created to let ASUS laptops users use all the features
+of their laptops which are supported by asus-laptop module from acpi4asus
+project (http://acpi4asus.sourceforge.net).
+
+It consist of daemon program, which runs with root priviliges and reads
+and writes to files created by asus-laptop in /sys/ directory, monitors ACPI
+events and (in the future) controls cpufreq utils.
+
+The other part is a KDE Panel Applet, which is similar to KMix Applet (even
+the code was stolen ;) ) and lets to change LCD backlight power similar to the
+way KMix Applet lets to change sound volume, and control switch values which
+are supported by lapsusd (LEDs, bluetooth, wifi...).
+
+(lapsusd can also be controlled without lapsus program - see 'LapsusD' below)
+
+Sometime int the future there will be standalone client with the similar
+functions as the applet. As for now, there is only applet with very limited
+functions set - it lets to change LED values, switch on/off wirelles and
+bluetooth and change backlight power of ASUS laptops.
+
+I plan to add more features, like display switching, binding
+hotkeys ("multimedia" keys supported by ACPI) to programs
+and actions, add OSD information when changing volume/backlight/etc
+(similar to OSD provided by ASUS programs in Windows) and possibility
+to control cpufreq utils from the tray. It should also monitor
+battery status and change 'power profiles' (with cpufreq) depending
+on power status. I know there is KDE program which does that,
+but I would like lapsus to be all-in-one ASUS laptop utility.
+
+It should, probably, be possible to add other laptop brands  very easily,
+but unless there is someone with different type of hardware who would like
+to help, it will be ASUS only utility.
+
+It was created as a Qt4 program, and then ported to Qt3 with
+dbus-qt4-qt3backport (included in the source tree od lapsus).
+
+
+
+LapsusD
+-------
+
+It is possible to use lapsusd and control it without lapsus program/applet but
+with dbus-send command.
+
+dbus-send --print-reply --system --dest=de.berlios.Lapsus /LapsusDaemon \
+de.berlios.Lapsus.* arguments
+
+Where * is a command of lapsusd, and arguments are command specific.
+
+For example, to switch Touchpad LED on you can use this command:
+
+dbus-send --print-reply --system --dest=de.berlios.Lapsus /LapsusDaemon \
+de.berlios.Lapsus.setSwitch string:'Touchpad LED' boolean:true
+
+To switch it off use boolean:false.
+
+Possible values for setSwitch depend on the list of devices detected by
+asus-laptop module, but Wireless, Bluetooth, Mail LED and Touchpad LED
+should be available on most machines. You can get the list of available
+switches with:
+
+dbus-send --print-reply --system --dest=de.berlios.Lapsus /LapsusDaemon \
+de.berlios.Lapsus.listSwitches
+
+For each switch you can set the value with setSwitch, but also check the value
+with getSwitch method:
+
+dbus-send --print-reply --system --dest=de.berlios.Lapsus /LapsusDaemon \
+de.berlios.Lapsus.getSwitch string:'Mail LED'
+
+There are also other thins lapsusd can do. List of features can be obtained
+with listFeatures method.
+
+For more methods and their arguments see global/lapsus.xml file.
+
+dbus-send can be used together with one (or even more) lapsus programs
+running at the same time - everything should work just fine :)
+
+
+
+
+For more (hopefully) information please visit http://lapsus.berlios.de
+
+
+
+Jakub Schmidtke
+sjakub@users.berlios.de
+

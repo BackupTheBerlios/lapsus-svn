@@ -1,0 +1,13 @@
+- standalone client
+- support for cpufreq in daemon
+- hotkey bindings in applet/client
+- OSD for actions in applet/client
+- support for 'powerprofiles' in applet/client
+- support for display switching in applet/client
+- about/bugs etc. dialogs ;)
+
+- battery monitor?
+- icons instead of 'X' for switches states (on/off) in the list?
+- simple program to call lapsusd methods easier way than dbus-send ?
+
+- ?

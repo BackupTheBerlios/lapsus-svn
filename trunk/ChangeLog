@@ -1,0 +1,8 @@
+0.0.2
+=====
+ * Daemon rewritten for Qt3 with dbus-qt4-qt3backport
+ * KDE Panel Applet with backlight/switches controls.
+
+0.0.1
+=====
+ * Initial release - "test" release which used Qt4.
