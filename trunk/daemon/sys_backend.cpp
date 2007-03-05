@@ -304,7 +304,7 @@ void SysBackend::detect()
 		dir->setFilter(QDir::Dirs);
 
 		QStringList list = dir->entryList("asus:*");
-		
+
 		for (unsigned int i = 0; i < list.size(); ++i)
 		{
 			QString fName = list[i];
@@ -313,7 +313,7 @@ void SysBackend::detect()
 			{
 				path = QString("/sys/class/leds/%1/brightness").arg(fName);
 
-				if (QFile::exists(path) && fName.startsWith("asus:") && testRW(path))
+				if (QFile::exists(path) && fName.startsWith("asus:") && testR(path))
 				{
 					QString name = QString("%1 LED").arg(fName.mid(5));
 
@@ -329,21 +329,21 @@ void SysBackend::detect()
 	delete dir;
 
 	path = "/sys/devices/platform/asus-laptop/bluetooth";
-	if (QFile::exists(path) && testRW(path))
+	if (QFile::exists(path) && testR(path))
 	{
 		switchPaths.insert("Bluetooth", path);
 		switches = true;
 	}
 
 	path = "/sys/devices/platform/asus-laptop/wlan";
-	if (QFile::exists(path) && testRW(path))
+	if (QFile::exists(path) && testR(path))
 	{
 		switchPaths.insert("Wireless", path);
 		switches = true;
 	}
 
 	path = "/sys/devices/platform/asus-laptop/display";
-	if (QFile::exists(path) && testRW(path))
+	if (QFile::exists(path) && testR(path))
 	{
 		displayBits.insert("LCD", 0);
 		displayBits.insert("CRT", 1);
@@ -373,6 +373,7 @@ void SysBackend::detect()
 			maxBacklight = readUint(&res, path);
 
 			path = "/sys/class/backlight/asus-laptop/brightness";
+
 			if (res && QFile::exists(path))
 			{
 				backlightSetPath = path;
