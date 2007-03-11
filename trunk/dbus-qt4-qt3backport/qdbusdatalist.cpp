@@ -22,6 +22,7 @@
  */
 
 #include "dbus/qdbusdatalist.h"
+#include "dbus/qdbusobjectpath.h"
 #include "dbus/qdbusvariant.h"
 
 #include <qstringlist.h>
@@ -262,6 +263,21 @@ QDBusDataList::QDBusDataList(const QStringList& other) : d(new Private())
     for (; it != endIt; ++it)
     {
         d->list << QDBusData::fromString(*it);
+    }
+}
+
+QDBusDataList::QDBusDataList(const QValueList<QDBusObjectPath>& other)
+    : d(new Private())
+{
+    d->type = QDBusData::ObjectPath;
+
+    if (other.isEmpty()) return;
+
+    QValueList<QDBusObjectPath>::const_iterator it    = other.begin();
+    QValueList<QDBusObjectPath>::const_iterator endIt = other.end();
+    for (; it != endIt; ++it)
+    {
+        d->list << QDBusData::fromObjectPath(*it);
     }
 }
 
@@ -685,6 +701,28 @@ QValueList<double> QDBusDataList::toDoubleList(bool* ok) const
 QValueList<QString> QDBusDataList::toStringList(bool* ok) const
 {
     return toQStringList(ok);
+}
+
+QValueList<QDBusObjectPath> QDBusDataList::toObjectPathList(bool* ok) const
+{
+    if (d->type != QDBusData::ObjectPath)
+    {
+        if (ok != 0) *ok = false;
+        return QValueList<QDBusObjectPath>();
+    }
+
+    QValueList<QDBusObjectPath> result;
+
+    QValueList<QDBusData>::const_iterator it    = d->list.begin();
+    QValueList<QDBusData>::const_iterator endIt = d->list.end();
+    for (; it != endIt; ++it)
+    {
+        result << (*it).toObjectPath();
+    }
+
+    if (ok != 0) *ok = true;
+
+    return result;
 }
 
 QValueList<QDBusVariant> QDBusDataList::toVariantList(bool* ok) const

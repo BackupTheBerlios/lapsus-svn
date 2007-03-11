@@ -27,6 +27,7 @@
 #include "dbus/qdbusdata.h"
 
 template <typename T> class QValueList;
+class QDBusObjectPath;
 class QDBusVariant;
 class QString;
 class QStringList;
@@ -282,6 +283,20 @@ public:
      * @see toQStringList()
      */
     QDBusDataList(const QStringList& other);
+
+    /**
+     * @brief Creates a list from the given QValueList of object path values
+     *
+     * Type information for the list object will be set to QDBusData::ObjectPath
+     * also when the @p other list is empty, i.e. this allows to create an
+     * empty but valid list object, comparable to using
+     * QDBusDataList(QDBusData::Type) with QDBusData::ObjectPath
+     *
+     * @param other the QValueList of object path values to copy from
+     *
+     * @see toObjectPathList()
+     */
+    QDBusDataList(const QValueList<QDBusObjectPath>& other);
 
     /**
      * @brief Destroys the list object
@@ -668,6 +683,21 @@ public:
      * @see QDBusData::toString()
      */
     QValueList<QString> toStringList(bool* ok = 0) const;
+
+    /**
+     * @brief Tries to get the list object's elements as a QValueList of object paths
+     *
+     * @param ok optional pointer to a bool variable to store the
+     *        success information in, i.e. will be set to @c true on success
+     *        and to @c false if the conversion failed (not of type
+     *        QDBusData::ObjectPath)
+     *
+     * @return a QValueList of object paths containing the list object's object path
+     *         elements or an empty list when converting fails
+     *
+     * @see QDBusData::toObjectPath()
+     */
+    QValueList<QDBusObjectPath> toObjectPathList(bool* ok = 0) const;
 
     /**
      * @brief Tries to get the list object's elements as a QValueList of QDBusVariant

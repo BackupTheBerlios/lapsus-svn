@@ -30,6 +30,7 @@
 class QCString;
 class QDBusDataList;
 class QDBusVariant;
+class QDBusObjectPath;
 class QString;
 
 template<typename T> class QValueList;
@@ -153,6 +154,23 @@ public:
         String,
 
         /**
+         * Type when encapsulating a D-Bus object path.
+         *
+         * D-Bus defines a special string variation for transporting the
+         * paths used to address objects within D-Bus services, see
+         * @ref dbusconventions-objectpath for formatting details.
+         *
+         * @note from the point of view of this bindings an object path is
+         *       pretty much a normal string with externally checked restrictions.
+         *       However, method calls or return values can require a signature
+         *       to include an object path and any remote peer might then reject
+         *       the normal string signature.
+         *
+         * @see fromObjectPath(), toObjectPath()
+         */
+        ObjectPath,
+
+        /**
          * Type when encapsulating a list of values.
          *
          * The D-Bus type this maps to is called @c array but since the Qt
@@ -233,6 +251,7 @@ public:
          * - #Int64
          * - #UInt64
          * - #String
+         * - #ObjectPath
          *
          * All values need to be of the same type.
          *
@@ -244,6 +263,7 @@ public:
          * @see fromInt64KeyMap(), toInt64KeyMap()
          * @see fromUInt64KeyMap(), toUInt64KeyMap()
          * @see fromStringKeyMap(), toStringKeyMap()
+         * @see fromObjectPathKeyMap(), toObjectPathKeyMap()
          */
         Map
     };
@@ -633,6 +653,34 @@ public:
      * @see fromString()
      */
     QString toString(bool* ok = 0) const;
+
+    /**
+     * @brief Creates a data object for the given object path @p value
+     *
+     * @param value the value to encapsulate
+     *
+     * @return a data object of type #ObjectPath containing the @p value
+     *
+     * @see toObjectPath()
+     */
+    static QDBusData fromObjectPath(const QDBusObjectPath& value);
+
+    /**
+     * @brief Tries to get the encapsulated object path value
+     *
+     * If the data object is not of type #ObjectPath this will fail, i.e.
+     * the parameter @p ok will be set to @c false if present.
+     *
+     * @param ok optional pointer to a bool variable to store the
+     *        success information in, i.e. will be set to @c true on success
+     *        and to @c false if the conversion failed (not of type #ObjectPath)
+     *
+     * @return the encapsulated object path value or an empty and invalid object
+     *         if it fails
+     *
+     * @see fromObjectPath()
+     */
+    QDBusObjectPath toObjectPath(bool* ok = 0) const;
 
     /**
      * @brief Creates a data object for the given @p list
@@ -1042,6 +1090,41 @@ public:
      * @see fromStringKeyMap()
      */
     QDBusDataMap<QString> toStringKeyMap(bool* ok = 0) const;
+
+    /**
+     * @brief Creates a data object for the given @p map
+     *
+     * \note The map is allowed to be empty but is required to have a valid
+     *       value type
+     *
+     * The resulting data object will have the keyType() set to #ObjectPath.
+     *
+     * @param map the map to encapsulate
+     *
+     * @return a data object of type #Map containing the @p map or
+     *         an #Invalid object if the map's value type is #Invalid
+     *
+     * @see toObjectPathKeyMap()
+     */
+    static QDBusData fromObjectPathKeyMap(const QDBusDataMap<QDBusObjectPath>& map);
+
+    /**
+     * @brief Tries to get the encapsulated map
+     *
+     * If the data object is not of type #Map or if its value type is not
+     * #ObjectPath this will fail, i.e. the parameter @p ok will be set to
+     * @c false if present.
+     *
+     * @param ok optional pointer to a bool variable to store the
+     *        success information in, i.e. will be set to @c true on success
+     *        and to @c false if the conversion failed (not of type #Map or
+     *        value type not #ObjectPath)
+     *
+     * @return the encapsulated map or an empty and #Invalid map if it fails
+     *
+     * @see fromObjectPathKeyMap()
+     */
+    QDBusDataMap<QDBusObjectPath> toObjectPathKeyMap(bool* ok = 0) const;
 
     /**
      * @brief Creates the data objects D-Bus signature

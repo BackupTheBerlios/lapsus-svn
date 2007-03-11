@@ -28,6 +28,7 @@
 #include <qmap.h>
 
 class QDBusData;
+class QDBusObjectPath;
 class QDBusVariant;
 
 /**
@@ -411,6 +412,29 @@ public:
         for (; it != endIt; ++it)
         {
             insert(it.key(), QDBusData::fromString(it.data()));
+        }
+    }
+
+    /**
+     * @brief Creates a map from the given QMap of object path values
+     *
+     * Type information for the map object will be set to QDBusData::ObjectPath
+     * also when the @p other map is empty, i.e. this allows to create an
+     * empty but valid map object, comparable to using
+     * QDBusDataMap<T>(QDBusData::Type) with QDBusData::ObjectPath
+     *
+     * @param other the QMap of object path values to copy from
+     *
+     * @see toObjectPathMap()
+     */
+    QDBusDataMap<T>(const QMap<T, QDBusObjectPath>& other)
+        : QMap<T, QDBusData>(), m_valueType(QDBusData::ObjectPath)
+    {
+        typename QMap<T, QDBusObjectPath>::const_iterator it    = other.begin();
+        typename QMap<T, QDBusObjectPath>::const_iterator endIt = other.end();
+        for (; it != endIt; ++it)
+        {
+            insert(it.key(), QDBusData::fromObjectPath(it.data()));
         }
     }
 
@@ -1108,6 +1132,41 @@ public:
         for (; it != endIt; ++it)
         {
             result.insert(it.key(), (*it).toString());
+        }
+
+        if (ok != 0) *ok = true;
+
+        return result;
+    }
+
+    /**
+     * @brief Tries to get the map object's pairs as a QMap of object paths
+     *
+     * @param ok optional pointer to a bool variable to store the
+     *        success information in, i.e. will be set to @c true on success
+     *        and to @c false if the conversion failed (not of value type
+     *        QDBusData::ObjectPath)
+     *
+     * @return a QMap of object paths containing the map object's object path
+     *         values or an empty map when converting fails
+     *
+     * @see QDBusData::toObjectPath()
+     */
+    QMap<T, QDBusObjectPath> toObjectPathMap(bool* ok = 0) const
+    {
+        if (m_valueType != QDBusData::ObjectPath)
+        {
+            if (ok != 0) *ok = false;
+            return QMap<T, QDBusObjectPath>();
+        }
+
+        QMap<T, QDBusObjectPath> result;
+
+        const_iterator it    = begin();
+        const_iterator endIt = end();
+        for (; it != endIt; ++it)
+        {
+            result.insert(it.key(), (*it).toObjectPath());
         }
 
         if (ok != 0) *ok = true;

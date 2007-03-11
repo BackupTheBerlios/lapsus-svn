@@ -1,6 +1,6 @@
 /* qdbusobject.h DBUS service object interface
  *
- * Copyright (C) 2005 Kevin Krammer <kevin.krammer@gmx.at>
+ * Copyright (C) 2005-2007 Kevin Krammer <kevin.krammer@gmx.at>
  *
  * Licensed under the Academic Free License version 2.1
  *
@@ -96,7 +96,7 @@
  *           {
  *               // method signature not what we expected
  *
- *               QDBusError error("org.freedesktop.DBus.Error.InvalidSignature",
+ *               QDBusError error = QDBusError::stdInvalidArgs(
  *                                "Expected one argument of type array of string");
  *
  *               QDBusMessage reply = QDBusMessage::methodError(message, error);
@@ -146,7 +146,7 @@
  *   {
  *       QApplication app(argc, argv, false);
  *
- *       QDBusConnection connection = QDBusConnection::addConnection(QDBusConnection::SessionBus);
+ *       QDBusConnection connection = QDBusConnection::sessionBus();
  *       if (!connection.isConnected())
  *           qFatal("Cannot connect to session bus");
  *

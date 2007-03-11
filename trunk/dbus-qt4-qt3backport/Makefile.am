@@ -15,7 +15,8 @@ libdbus_1_qt3_la_SOURCES =               \
 	$(srcdir)/qdbusserver.cpp        \
 	$(srcdir)/qdbusproxy.cpp         \
 	$(srcdir)/qdbusdata.cpp          \
-	$(srcdir)/qdbusdatalist.cpp
+	$(srcdir)/qdbusdatalist.cpp      \	 
+	$(srcdir)/qdbusobjectpath.cpp
 
 $(srcdir)/qdbusserver.cpp: qdbusserver.moc
 $(srcdir)/qdbusconnection.cpp: qdbusconnection.moc

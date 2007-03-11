@@ -1,7 +1,7 @@
 /* qdbusmessage.h QDBusMessage object
  *
  * Copyright (C) 2005 Harald Fernengel <harry@kdevelop.org>
- * Copyright (C) 2005 Kevin Krammer <kevin.krammer@gmx.at>
+ * Copyright (C) 2005-2007 Kevin Krammer <kevin.krammer@gmx.at>
  *
  * Licensed under the Academic Free License version 2.1
  *
@@ -66,7 +66,7 @@ struct DBusMessage;
  *
  * Example:
  * @code
- *   QDBusConnection con = QDBusConnection::addConnection(QDBusConnection::SessionBus);
+ *   QDBusConnection con = QDBusConnection::sessionBus();
  *
  *   // receipient service is the bus' main interface
  *

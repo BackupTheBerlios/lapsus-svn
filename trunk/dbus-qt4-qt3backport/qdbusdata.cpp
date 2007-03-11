@@ -26,6 +26,7 @@
 #include "dbus/qdbusdata.h"
 #include "dbus/qdbusdatalist.h"
 #include "dbus/qdbusdatamap.h"
+#include "dbus/qdbusobjectpath.h"
 #include "dbus/qdbusvariant.h"
 
 #include <qshared.h>
@@ -43,6 +44,10 @@ public:
         {
             case QDBusData::String:
                 delete (QString*)value.pointer;
+                break;
+
+            case QDBusData::ObjectPath:
+                delete (QDBusObjectPath*)value.pointer;
                 break;
 
             case QDBusData::List:
@@ -90,6 +95,10 @@ public:
 
                     case QDBusData::String:
                         delete (QDBusDataMap<QString>*)value.pointer;
+                        break;
+
+                    case QDBusData::ObjectPath:
+                        delete (QDBusDataMap<QDBusObjectPath>*)value.pointer;
                         break;
 
                     default:
@@ -196,6 +205,9 @@ bool QDBusData::operator==(const QDBusData& other) const
             case QDBusData::String:
                 return toString() == other.toString();
 
+            case QDBusData::ObjectPath:
+                return toObjectPath() == other.toObjectPath();
+
             case QDBusData::List:
                 return toList() == other.toList();
 
@@ -241,6 +253,10 @@ bool QDBusData::operator==(const QDBusData& other) const
                         toStringKeyMap() == other.toStringKeyMap();
                         break;
 
+                    case QDBusData::ObjectPath:
+                        toObjectPathKeyMap() == other.toObjectPathKeyMap();
+                        break;
+
                     default:
                         qFatal("QDBusData operator== unhandled map key type %d(%s)",
                                d->keyType, QDBusData::typeName(d->keyType));
@@ -275,21 +291,22 @@ const char* QDBusData::typeName(Type type)
 {
     switch (type)
     {
-        case QDBusData::Invalid: return "Invalid";
-        case QDBusData::Bool:    return "Bool";
-        case QDBusData::Byte:    return "Byte";
-        case QDBusData::Int16:   return "Int16";
-        case QDBusData::UInt16:  return "UInt16";
-        case QDBusData::Int32:   return "Int32";
-        case QDBusData::UInt32:  return "UInt32";
-        case QDBusData::Int64:   return "Int64";
-        case QDBusData::UInt64:  return "UInt64";
-        case QDBusData::Double:  return "Double";
-        case QDBusData::String:  return "String";
-        case QDBusData::List:    return "List";
-        case QDBusData::Struct:  return "Struct";
-        case QDBusData::Variant: return "Variant";
-        case QDBusData::Map:     return "Map";
+        case QDBusData::Invalid:    return "Invalid";
+        case QDBusData::Bool:       return "Bool";
+        case QDBusData::Byte:       return "Byte";
+        case QDBusData::Int16:      return "Int16";
+        case QDBusData::UInt16:     return "UInt16";
+        case QDBusData::Int32:      return "Int32";
+        case QDBusData::UInt32:     return "UInt32";
+        case QDBusData::Int64:      return "Int64";
+        case QDBusData::UInt64:     return "UInt64";
+        case QDBusData::Double:     return "Double";
+        case QDBusData::String:     return "String";
+        case QDBusData::ObjectPath: return "ObjectPath";
+        case QDBusData::List:       return "List";
+        case QDBusData::Struct:     return "Struct";
+        case QDBusData::Variant:    return "Variant";
+        case QDBusData::Map:        return "Map";
     }
 
     return 0;
@@ -523,6 +540,32 @@ QString QDBusData::toString(bool* ok) const
     if (ok != 0) *ok = true;
 
     return *((QString*)d->value.pointer);
+}
+
+QDBusData QDBusData::fromObjectPath(const QDBusObjectPath& value)
+{
+    QDBusData data;
+
+    if (value.isValid())
+    {
+        data.d->type = QDBusData::ObjectPath;
+        data.d->value.pointer = new QDBusObjectPath(value);
+    }
+
+    return data;
+}
+
+QDBusObjectPath QDBusData::toObjectPath(bool* ok) const
+{
+    if (d->type != QDBusData::ObjectPath)
+    {
+        if (ok != 0) *ok = false;
+        return QDBusObjectPath();
+    }
+
+    if (ok != 0) *ok = true;
+
+    return *((QDBusObjectPath*)d->value.pointer);
 }
 
 QDBusData QDBusData::fromList(const QDBusDataList& list)
@@ -817,6 +860,31 @@ QDBusDataMap<QString> QDBusData::toStringKeyMap(bool* ok) const
     return *((QDBusDataMap<QString>*)d->value.pointer);
 }
 
+QDBusData QDBusData::fromObjectPathKeyMap(const QDBusDataMap<QDBusObjectPath>& map)
+{
+    QDBusData data;
+
+    data.d->type = QDBusData::Map;
+    data.d->keyType = map.keyType();
+    data.d->value.pointer = new QDBusDataMap<QDBusObjectPath>(map);
+
+    return data;
+}
+
+QDBusDataMap<QDBusObjectPath> QDBusData::toObjectPathKeyMap(bool* ok) const
+{
+    if (d->type != QDBusData::Map &&
+        d->keyType != QDBusDataMap<QDBusObjectPath>::m_keyType)
+    {
+        if (ok != 0) *ok = false;
+        return QDBusDataMap<QDBusObjectPath>();
+    }
+
+    if (ok != 0) *ok = true;
+
+    return *((QDBusDataMap<QDBusObjectPath>*)d->value.pointer);
+}
+
 static const char* qDBusTypeForQDBusType(QDBusData::Type type)
 {
     switch (type)
@@ -843,6 +911,8 @@ static const char* qDBusTypeForQDBusType(QDBusData::Type type)
             return DBUS_TYPE_DOUBLE_AS_STRING;
         case QDBusData::String:
             return DBUS_TYPE_STRING_AS_STRING;
+        case QDBusData::ObjectPath:
+            return DBUS_TYPE_OBJECT_PATH_AS_STRING;
         case QDBusData::Variant:
             return DBUS_TYPE_VARIANT_AS_STRING;
         default:
@@ -934,6 +1004,10 @@ QCString QDBusData::buildDBusSignature() const
                     signature += qDBusSignatureForMapValue<QString>(
                         *((QDBusDataMap<QString>*) d->value.pointer));
                     break;
+                case QDBusData::ObjectPath:
+                    signature += qDBusSignatureForMapValue<QDBusObjectPath>(
+                        *((QDBusDataMap<QDBusObjectPath>*) d->value.pointer));
+                    break;
                 default:
                     break;
             }
@@ -974,3 +1048,7 @@ const QDBusData::Type QDBusDataMap<Q_UINT64>::m_keyType = QDBusData::UInt64;
 
 template <>
 const QDBusData::Type QDBusDataMap<QString>::m_keyType = QDBusData::String;
+
+template <>
+const QDBusData::Type QDBusDataMap<QDBusObjectPath>::m_keyType =
+        QDBusData::ObjectPath;

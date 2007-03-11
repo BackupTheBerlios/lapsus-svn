@@ -1,7 +1,7 @@
 /* qdbusconnection.cpp
  *
  * Copyright (C) 2005 Harald Fernengel <harry@kdevelop.org>
- * Copyright (C) 2005 Kevin Krammer <kevin.krammer@gmx.at>
+ * Copyright (C) 2005-2007 Kevin Krammer <kevin.krammer@gmx.at>
  *
  * Licensed under the Academic Free License version 2.1
  *
@@ -176,6 +176,16 @@ QDBusConnection &QDBusConnection::operator=(const QDBusConnection &other)
         delete old;
 
     return *this;
+}
+
+QDBusConnection QDBusConnection::sessionBus()
+{
+    return addConnection(QDBusConnection::SessionBus);
+}
+
+QDBusConnection QDBusConnection::systemBus()
+{
+    return addConnection(QDBusConnection::SystemBus);
 }
 
 QDBusConnection QDBusConnection::addConnection(BusType type, const QString &name)

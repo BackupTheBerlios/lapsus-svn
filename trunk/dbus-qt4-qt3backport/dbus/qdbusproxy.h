@@ -1,6 +1,6 @@
 /* qdbusproxy.h DBUS Object proxy
  *
- * Copyright (C) 2005 Kevin Krammer <kevin.krammer@gmx.at>
+ * Copyright (C) 2005-2007 Kevin Krammer <kevin.krammer@gmx.at>
  *
  * Licensed under the Academic Free License version 2.1
  *
@@ -65,9 +65,7 @@
  *   {
  *       // establish a connection to the session bus
  *
- *       QDBusConnection connection =
- *           QDBusConnection::addConnection(QDBusConnection::SessionBus);
- *
+ *       QDBusConnection connection = QDBusConnection::sessionBus();
  *       if (!connection.isConnected())
  *           qFatal("Failed to connect to session bus");
  *
@@ -106,7 +104,7 @@
  *
  * @section dbusclient-initialization Program initialization
  *
- * A connection to the bus is acquired using QDBusConnection::addConnection()
+ * A connection to the bus is acquired using QDBusConnection::sessionBus()
  *
  * Next, a proxy is created for the object @c "/org/freedesktop/DBus" with
  * interface @c "org.freedesktop.DBus" on the service @c "org.freedesktop.DBus"
@@ -183,7 +181,7 @@
  * @endcode
  * Then somewhere else in a source file:
  * @code
- *   QDBusConnection connection = QDBusConnection::addConnection(QDBusConnection::SessionBus);
+ *   QDBusConnection connection = QDBusConnection::sessionBus();
  *
  *   MyReceiver* receiver1 = new MyReceiver();
  *

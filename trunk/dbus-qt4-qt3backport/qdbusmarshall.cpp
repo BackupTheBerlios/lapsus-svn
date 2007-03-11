@@ -1,6 +1,7 @@
 /* qdbusmarshall.cpp
  *
  * Copyright (C) 2005 Harald Fernengel <harry@kdevelop.org>
+ * Copyright (C) 2007 Kevin Krammer <kevin.krammer@gmx.at>
  *
  * Licensed under the Academic Free License version 2.1
  *
@@ -25,6 +26,7 @@
 #include "dbus/qdbusdata.h"
 #include "dbus/qdbusdatalist.h"
 #include "dbus/qdbusdatamap.h"
+#include "dbus/qdbusobjectpath.h"
 #include "dbus/qdbusvariant.h"
 
 #include <qvariant.h>
@@ -57,7 +59,7 @@ static QDBusData::Type qSingleTypeForDBusSignature(char signature)
         case 't': return QDBusData::UInt64;
         case 'd': return QDBusData::Double;
         case 's': return QDBusData::String;
-        case 'o': return QDBusData::String;
+        case 'o': return QDBusData::ObjectPath;
         case 'g': return QDBusData::String;
         case 'v': return QDBusData::Variant;
 
@@ -127,6 +129,10 @@ static QValueList<QDBusData> parseSignature(QCString& signature)
                             result << QDBusData::fromStringKeyMap(
                                 QDBusDataMap<QString>(valueType));
                             break;
+                        case QDBusData::ObjectPath:
+                            result << QDBusData::fromObjectPathKeyMap(
+                                QDBusDataMap<QDBusObjectPath>(valueType));
+                            break;
                         default:
                             qWarning("QDBusMarshall: unsupported map key type %s "
                                      "at de-marshalling",
@@ -175,6 +181,10 @@ static QValueList<QDBusData> parseSignature(QCString& signature)
                         case QDBusData::String:
                             result << QDBusData::fromStringKeyMap(
                                 QDBusDataMap<QString>(valueContainer[0]));
+                            break;
+                        case QDBusData::ObjectPath:
+                            result << QDBusData::fromObjectPathKeyMap(
+                                QDBusDataMap<QDBusObjectPath>(valueContainer[0]));
                             break;
                         default:
                             qWarning("QDBusMarshall: unsupported map key type %s "
@@ -553,6 +563,12 @@ static void qAppendToMessage(DBusMessageIter *it, const QString &str)
     dbus_message_iter_append_basic(it, DBUS_TYPE_STRING, &cdata);
 }
 
+static void qAppendToMessage(DBusMessageIter *it, const QDBusObjectPath &path)
+{
+    const char *cdata = path.data();
+    dbus_message_iter_append_basic(it, DBUS_TYPE_OBJECT_PATH, &cdata);
+}
+
 static const char* qDBusTypeForQDBusType(QDBusData::Type type)
 {
     switch (type)
@@ -589,6 +605,9 @@ static const char* qDBusTypeForQDBusType(QDBusData::Type type)
 
         case QDBusData::String:
             return DBUS_TYPE_STRING_AS_STRING;
+
+        case QDBusData::ObjectPath:
+            return DBUS_TYPE_OBJECT_PATH_AS_STRING;
 
         case QDBusData::List:
             return DBUS_TYPE_ARRAY_AS_STRING;
@@ -879,6 +898,41 @@ static void qDBusStringKeyMapToIterator(DBusMessageIter* it, const QDBusData& va
     dbus_message_iter_close_container(it, &sub);
 }
 
+static void qDBusObjectPathKeyMapToIterator(DBusMessageIter* it,
+                                            const QDBusData& var)
+{
+    DBusMessageIter sub;
+    QCString sig;
+
+    QDBusDataMap<QDBusObjectPath> map = var.toObjectPathKeyMap();
+
+    sig += DBUS_DICT_ENTRY_BEGIN_CHAR;
+    sig += qDBusTypeForQDBusType(map.keyType());
+
+    if (map.hasContainerValueType())
+        sig += map.containerValueType().buildDBusSignature();
+    else
+        sig += qDBusTypeForQDBusType(map.valueType());
+    sig += DBUS_DICT_ENTRY_END_CHAR;
+
+    dbus_message_iter_open_container(it, DBUS_TYPE_ARRAY, sig.data(), &sub);
+
+    QDBusDataMap<QDBusObjectPath>::const_iterator mit = map.begin();
+    for (; mit != map.end(); ++mit)
+    {
+        DBusMessageIter itemIterator;
+        dbus_message_iter_open_container(&sub, DBUS_TYPE_DICT_ENTRY,
+                                         0, &itemIterator);
+
+        qAppendToMessage(&itemIterator, mit.key());
+        qDBusDataToIterator(&itemIterator, mit.data());
+
+        dbus_message_iter_close_container(&sub, &itemIterator);
+    }
+
+    dbus_message_iter_close_container(it, &sub);
+}
+
 static void qDBusDataToIterator(DBusMessageIter* it, const QDBusData& var)
 {
     switch (var.type())
@@ -933,6 +987,9 @@ static void qDBusDataToIterator(DBusMessageIter* it, const QDBusData& var)
         case QDBusData::String:
             qAppendToMessage(it, var.toString());
             break;
+        case QDBusData::ObjectPath:
+            qAppendToMessage(it, var.toObjectPath());
+            break;
         case QDBusData::List: {
             QDBusDataList list = var.toList();
 
@@ -981,6 +1038,9 @@ static void qDBusDataToIterator(DBusMessageIter* it, const QDBusData& var)
                     break;
                 case QDBusData::String:
                     qDBusStringKeyMapToIterator(it, var);
+                    break;
+                case QDBusData::ObjectPath:
+                    qDBusObjectPathKeyMapToIterator(it, var);
                     break;
                 default:
                     qWarning("QDBusMarshall: unhandled map key type %s "

@@ -1,7 +1,7 @@
 /* qdbusconnection.h QDBusConnection object
  *
  * Copyright (C) 2005 Harald Fernengel <harry@kdevelop.org>
- * Copyright (C) 2005 Kevin Krammer <kevin.krammer@gmx.at>
+ * Copyright (C) 2005-2007 Kevin Krammer <kevin.krammer@gmx.at>
  *
  * Licensed under the Academic Free License version 2.1
  *
@@ -104,6 +104,8 @@
  * @code
  *   "org.freedesktop.DBus.Error.UnknownMethod"
  * @endcode
+ * QDBusError can create some of the more common errors based on a type value
+ * and decode their names into the type respectively. See QDBusError#ErrorType
  *
  * @section dbusconventions-membername Method and signal names
  *
@@ -550,6 +552,36 @@ public:
     void unregisterObject(const QString &path);
 
     /**
+     * @brief Gets a connection to the session bus
+     *
+     * Convenience overload for creating the default shared connection to the
+     * D-Bus session bus.
+     *
+     * Equivalent to calling addConnection(SessionBus);
+     *
+     * @return a connection handle. Check isConnected() to find out if the
+     *         connection attempt has been successfull
+     *
+     * @see addConnection(BusType,const QString&);
+     */
+    static QDBusConnection sessionBus();
+
+    /**
+     * @brief Gets a connection to the system bus
+     *
+     * Convenience overload for creating the default shared connection to the
+     * D-Bus system bus.
+     *
+     * Equivalent to calling addConnection(SystemBus);
+     *
+     * @return a connection handle. Check isConnected() to find out if the
+     *         connection attempt has been successfull
+     *
+     * @see addConnection(BusType,const QString&);
+     */
+    static QDBusConnection systemBus();
+
+    /**
      * @brief Add a connection to a bus with a specific bus type
      *
      * This is a factory method as it will create a connection for the given
@@ -572,6 +604,7 @@ public:
      *              con.uniqueName().local8Bit().data());
      *   }
      * @endcode
+     * For the common use cases see also sessionBus() and systemBus()
      *
      * @param type the #BusType of the bus to connect to
      * @param name the name to use for QDBusConnection's connection sharing
