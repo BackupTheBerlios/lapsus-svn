@@ -45,7 +45,7 @@ class LapsusPanelMain : public QWidget
 		QSize sizeHint() const;
 		QSize minimumSize() const;
 
-		void preferences();
+		void appletPreferences();
 
 	protected:
 		LapsusDBus *_dbus;

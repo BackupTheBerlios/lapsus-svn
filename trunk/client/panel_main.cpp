@@ -225,6 +225,11 @@ void LapsusPanelMain::mousePressEvent( QMouseEvent *e )
 	}
 }
 
+void LapsusPanelMain::appletPreferences()
+{
+//TODO
+}
+
 /*
 void LapsusPanelMain::preferencesDone()
 {

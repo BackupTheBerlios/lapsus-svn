@@ -37,7 +37,7 @@ extern "C"
 }
 
 LapsusApplet::LapsusApplet( const QString& configFile, Type t, QWidget *parent, const char *name )
-	: KPanelApplet( configFile, t, KPanelApplet::Preferences , parent, name ),
+	: KPanelApplet( configFile, t, 0 , parent, name ),
 	_mainWidget(0), _orientation(orientation())
 {
 	KGlobal::dirs()->addResourceType( "appicon", KStandardDirs::kde_default("data") + "lapsus/pics" );
@@ -100,7 +100,7 @@ int LapsusApplet::heightForWidth(int w) const
 
 void LapsusApplet::preferences()
 {
-	_mainWidget->preferences();
+	_mainWidget->appletPreferences();
 }
 
 void LapsusApplet::resizeEvent( QResizeEvent *e)
