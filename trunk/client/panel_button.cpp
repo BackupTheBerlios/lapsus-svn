@@ -21,16 +21,13 @@
 #include <qwidget.h>
 #include <qlabel.h>
 #include <qtooltip.h>
-#include <qwmatrix.h>
-
-#include <kiconloader.h>
-#include <qpainter.h>
 
 #include "panel_button.h"
 
 LapsusPanelButton::LapsusPanelButton( const QString &id,
 	Qt::Orientation orientation, QWidget *parent, LapsusDBus *dbus, KConfig *cfg) :
 		LapsusPanelWidget(id, orientation, parent, dbus, cfg),
+		_layout(0), _iconLabel(0), _iconOn(-1), _iconOff(-1),
 		_hasDBus(false), _isValid(false)
 {
 	_layout = new QHBoxLayout( this );
@@ -65,65 +62,8 @@ LapsusPanelButton::LapsusPanelButton( const QString &id,
 
 	installEventFilter(this);
 
-	QPixmap letter;
-
-	if (_featureId.find("bluetooth") >= 0)
-	{
-		_iconOn = UserIcon("bluetooth");
-		_iconOff = UserIcon("bluetooth_gray");
-	}
-	else if (_featureId.find("wireless") >= 0)
-	{
-		_iconOn = UserIcon("wifi");
-		_iconOff = UserIcon("wifi_gray");
-	}
-	else if (_featureId.startsWith("asus_led_"))
-	{
-		_iconOn = UserIcon("green");
-		_iconOff = UserIcon("gray");
-
-		if (_featureId.length() > 9)
-		{
-			letter = UserIcon(_featureId.mid(9, 1));
-		}
-	}
-	else
-	{
-		_iconOn = UserIcon("green");
-		_iconOff = UserIcon("gray");
-	}
-
-	if (!_iconOn.isNull())
-	{
-		if (!letter.isNull())
-		{
-			QPainter p;
-
-			p.begin( &_iconOn );
-			p.drawPixmap (0, 0, letter);
-		}
-
-		// scale icon
-		QWMatrix t;
-		t = t.scale( 20.0/_iconOn.width(), 20.0/_iconOn.height() );
-		_iconOn = _iconOn.xForm( t );
-	}
-
-	if (!_iconOff.isNull())
-	{
-		if (!letter.isNull())
-		{
-			QPainter p;
-
-			p.begin( &_iconOff );
-			p.drawPixmap (0, 0, letter);
-		}
-
-		// scale icon
-		QWMatrix t;
-		t = t.scale( 20.0/_iconOff.width(), 20.0/_iconOff.height() );
-		_iconOff = _iconOff.xForm( t );
-	}
+	_iconOn = loadNewAutoIcon("on", 20);
+	_iconOff = loadNewAutoIcon("off", 20);
 
 	_layout->add(_iconLabel);
 	_layout->addStretch();
@@ -174,15 +114,15 @@ void LapsusPanelButton::checkCurVal()
 
 	if (_dbus && _hasDBus && _curVal == "on")
 	{
-		if (!_iconOn.isNull())
-			_iconLabel->setPixmap(_iconOn);
+		if (_iconOn >= 0)
+			_iconLabel->setPixmap(getIcon(_iconOn));
 		else
 			_iconLabel->setText("+");
 	}
 	else
 	{
-		if (!_iconOff.isNull())
-			_iconLabel->setPixmap(_iconOff);
+		if (_iconOff >= 0)
+			_iconLabel->setPixmap(getIcon(_iconOff));
 		else
 			_iconLabel->setText("-");
 	}

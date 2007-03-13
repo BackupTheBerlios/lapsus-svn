@@ -18,18 +18,15 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include <qwmatrix.h>
-#include <qpainter.h>
-#include <kiconloader.h>
-
 #include "action_button.h"
 
 LapsusActionButton::LapsusActionButton(const QString &id, LapsusDBus *dbus, KConfig *cfg,
 			QObject *parent, const KShortcut &cut):
-	KAction(id, cut, 0, 0, parent, id),
-	_dbus(dbus), _cfg(cfg), _id(id), _hasDBus(false), _isValid(false)
+	KAction(id, cut, 0, 0, parent, id), LapsusIcons(id, cfg),
+	_dbus(dbus),_cfg(cfg), _id(id), _iconOn(-1), _iconOff(-1),
+	_hasDBus(false), _isValid(false)
 {
-	_cfg->setGroup(_id.lower());
+	_cfg->setGroup(id);
 
 	if (_cfg->hasKey("feature_id"))
 	{
@@ -38,7 +35,9 @@ LapsusActionButton::LapsusActionButton(const QString &id, LapsusDBus *dbus, KCon
 		_name = _dbus->getFeatureName(_featureId);
 
 		if (_name.length() > 0)
+		{
 			setToolTip(_name);
+		}
 
 		_vals = _dbus->getFeatureArgs(_featureId);
 
@@ -51,65 +50,8 @@ LapsusActionButton::LapsusActionButton(const QString &id, LapsusDBus *dbus, KCon
 		_curVal = _dbus->getFeature(_featureId);
 	}
 
-	QPixmap letter;
-
-	if (_featureId.find("bluetooth") >= 0)
-	{
-		_iconOn = UserIcon("bluetooth");
-		_iconOff = UserIcon("bluetooth_gray");
-	}
-	else if (_featureId.find("wireless") >= 0)
-	{
-		_iconOn = UserIcon("wifi");
-		_iconOff = UserIcon("wifi_gray");
-	}
-	else if (_featureId.startsWith("asus_led_"))
-	{
-		_iconOn = UserIcon("green");
-		_iconOff = UserIcon("gray");
-
-		if (_featureId.length() > 9)
-		{
-			letter = UserIcon(_featureId.mid(9, 1));
-		}
-	}
-	else
-	{
-		_iconOn = UserIcon("green");
-		_iconOff = UserIcon("gray");
-	}
-
-	if (!_iconOn.isNull())
-	{
-		if (!letter.isNull())
-		{
-			QPainter p;
-
-			p.begin( &_iconOn );
-			p.drawPixmap (0, 0, letter);
-		}
-
-		// scale icon
-		QWMatrix t;
-		t = t.scale( 16.0/_iconOn.width(), 16.0/_iconOn.height() );
-		_iconOn = _iconOn.xForm( t );
-	}
-
-	if (!_iconOff.isNull())
-	{
-		if (!letter.isNull())
-		{
-			QPainter p;
-
-			p.begin( &_iconOff );
-			p.drawPixmap (0, 0, letter);
-		}
-
-		// scale icon
-		QWMatrix t;
-		t = t.scale( 16.0/_iconOff.width(), 16.0/_iconOff.height() );
-		_iconOff = _iconOff.xForm( t );
-	}
+	_iconOn = loadNewAutoIcon("on", 16);
+	_iconOff = loadNewAutoIcon("off", 16);
 
 	checkCurVal();
 
@@ -131,9 +73,9 @@ void LapsusActionButton::checkCurVal()
 {
 	if (_dbus && _hasDBus && _curVal == "on")
 	{
-		if (!_iconOn.isNull())
+		if (_iconOn >= 0)
 		{
-			setIconSet(QIconSet(_iconOn));
+			setIconSet(getIcon(_iconOn));
 			setText(_name);
 		}
 		else
@@ -143,9 +85,9 @@ void LapsusActionButton::checkCurVal()
 	}
 	else
 	{
-		if (!_iconOff.isNull())
+		if (_iconOff >= 0)
 		{
-			setIconSet(QIconSet(_iconOff));
+			setIconSet(getIcon(_iconOff));
 			setText(_name);
 		}
 		else

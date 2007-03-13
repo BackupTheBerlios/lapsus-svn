@@ -25,8 +25,8 @@
 LapsusPanelWidget::LapsusPanelWidget( const QString &id,
 			Qt::Orientation orientation, QWidget *parent,
 			LapsusDBus *dbus, KConfig *cfg):
-	QWidget( parent, id ), _dbus(dbus), _cfg(cfg),
-	_panelOrientation( orientation ), _id( id )
+	QWidget( parent, id ), LapsusIcons(id, cfg), _dbus(dbus),
+	_cfg(cfg), _panelOrientation( orientation ), _id( id )
 {
 	setBackgroundMode(X11ParentRelative);
 }

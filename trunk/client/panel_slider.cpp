@@ -21,9 +21,6 @@
 #include <qwidget.h>
 #include <qlabel.h>
 #include <qtooltip.h>
-#include <qwmatrix.h>
-
-#include <kiconloader.h>
 
 #include "panel_slider.h"
 
@@ -72,19 +69,16 @@ LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 		sliderVal = _dbus->getFeature(_featureId).toInt();
 	}
 
-	QPixmap pic = UserIcon("light_bulb");
+	int idx = loadNewIcon("light_bulb", "", 10);
 
 	installEventFilter(this);
 
-	if (!pic.isNull() )
+	if (idx >= 0 )
 	{
 		_iconLabel = new QLabel(this);
 		_iconLabel->setBackgroundMode(X11ParentRelative);
 
-		// scale icon
-		QWMatrix t;
-		t = t.scale( 10.0/pic.width(), 10.0/pic.height() );
-		_iconLabel->setPixmap( pic.xForm( t ) );
+		_iconLabel->setPixmap( getIcon(idx) );
 		_iconLabel->resize( 10, 10 );
 
 		_layout->add(_iconLabel);
@@ -214,14 +208,8 @@ void LapsusPanelSlider::resizeEvent(QResizeEvent *e)
 	{
 		if (_iconLabel)
 		{
-			if (e->size().height()<32)
-			{
-				_iconLabel->hide();
-			}
-			else
-			{
-				_iconLabel->show();
-			}
+			if (e->size().height()<32) _iconLabel->hide();
+			else _iconLabel->show();
 		}
 
 		_slider->resize(_slider->width(), e->size().height());
@@ -231,15 +219,8 @@ void LapsusPanelSlider::resizeEvent(QResizeEvent *e)
 	{
 		if (_iconLabel)
 		{
-			if (e->size().width()<32)
-			{
-				_iconLabel->hide();
-				printf("Small2\n");
-			}
-			else
-			{
-				_iconLabel->show();
-			}
+			if (e->size().width()<32) _iconLabel->hide();
+			else _iconLabel->show();
 		}
 
 		_slider->resize(e->size().width(),_slider->height());

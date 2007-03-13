@@ -18,39 +18,33 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_PANEL_WIDGET_H
-#define LAPSUS_PANEL_WIDGET_H
+
+#ifndef LAPSUS_ICONS_H
+#define LAPSUS_ICONS_H
+
+#include <qvaluevector.h>
+#include <qpixmap.h>
 
 #include <kconfig.h>
 
-#include <qlayout.h>
-#include <qwidget.h>
-
 #include "lapsus_dbus.h"
-#include "lapsus_icons.h"
 
-class LapsusPanelWidget : public QWidget, protected LapsusIcons
+class LapsusIcons
 {
-	Q_OBJECT
-
 	public:
-		LapsusPanelWidget(const QString &id,
-			Qt::Orientation orientation, QWidget *parent,
-			LapsusDBus *dbus, KConfig *cfg);
+		LapsusIcons(const QString &id, KConfig *cfg);
+		~LapsusIcons();
 
-		virtual ~LapsusPanelWidget();
+		int loadNewAutoIcon(int size);
+		int loadNewAutoIcon(const QString &val, int size);
+		int loadNewIcon(const QString &first, int size);
+		int loadNewIcon(const QString &first, const QString &second, int size);
+		QPixmap getIcon(int id) const;
 
-		static LapsusPanelWidget* newAppletwidget(
-			const QString &id, Qt::Orientation orientation,
-			QWidget *parent, LapsusDBus *dbus, KConfig *cfg);
-
-	protected:
-		LapsusDBus *_dbus;
+	private:
 		KConfig *_cfg;
-		Qt::Orientation _panelOrientation;
-		QString _id;
-
-		virtual void resizeEvent( QResizeEvent * );
+		QString _featureId;
+		QValueVector<QPixmap> _cachedIcons;
 };
 
 #endif

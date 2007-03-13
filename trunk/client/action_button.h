@@ -27,8 +27,9 @@
 #include <kconfig.h>
 
 #include "lapsus_dbus.h"
+#include "lapsus_icons.h"
 
-class LapsusActionButton : public KAction
+class LapsusActionButton : public KAction, protected LapsusIcons
 {
 	Q_OBJECT
 
@@ -44,8 +45,8 @@ class LapsusActionButton : public KAction
 		QString _name;
 		QStringList _vals;
 		QString _curVal;
-		QPixmap _iconOn;
-		QPixmap _iconOff;
+		int _iconOn;
+		int _iconOff;
 		QString _featureId;
 		bool _hasDBus;
 		bool _isValid;

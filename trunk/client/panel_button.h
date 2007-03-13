@@ -56,8 +56,8 @@ class LapsusPanelButton : public LapsusPanelWidget
 		QString _curVal;
 		QBoxLayout* _layout;
 		QLabel* _iconLabel;
-		QPixmap _iconOn;
-		QPixmap _iconOff;
+		int _iconOn;
+		int _iconOff;
 		QString _featureId;
 		bool _hasDBus;
 		bool _isValid;

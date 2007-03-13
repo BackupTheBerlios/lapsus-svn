@@ -117,7 +117,7 @@ void LapsusPanelMain::loadConfig()
 
 		for (QStringList::Iterator it = fL.begin(); it != fL.end(); ++it)
 		{
-			QString id = *it;
+			QString id = (*it).lower();
 			QString grp;
 			QStringList args = _dbus->getFeatureArgs(id);
 
