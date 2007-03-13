@@ -21,466 +21,127 @@
 #include "lapsus.h"
 #include "lapsus_daemon.h"
 
-/*
- * Little hack - qt3 backport of dbus bindings doesn't like when the
- * signal is emited before it receives a response to the message it
- * is waiting for. Iw we receive a message from a client, send a response
- * send a signal, and then return from a method serving the original
- * message, the signal is sent _before_ the response. The client will
- * see the signal after some time - this is bad. So we use qtimer to
- * emit the signal "just after" current function call stack ends.
- */
-#include <qtimer.h>
+#include "sys_asus.h"
 
-LapsusDaemon::LapsusDaemon()
+LapsusDaemon::LapsusDaemon(uint acpiFd):
+	_acpiFd(acpiFd), _backend(0), _dbus(0), _acpiParser(0),
+	_isValid(false)
 {
-	myConnection = 0;
+	doInit();
 }
 
 LapsusDaemon::~LapsusDaemon()
 {
-	if (myConnection)
-	{
-		myConnection->unregisterObject(LAPSUS_OBJECT_PATH);
-	}
-}
+	if (_backend) delete _backend;
+	if (_dbus) delete _dbus;
+	if (_acpiParser) delete _acpiParser;
 
-bool LapsusDaemon::registerObject(QDBusConnection *conn)
-{
-	if (conn->registerObject(LAPSUS_OBJECT_PATH, this))
-	{
-		myConnection = conn;
-
-		return true;
-	}
-
-	return false;
-}
-
-void LapsusDaemon::addACPIParser(ACPIEventParser *parser)
-{
-	connect(parser,
-		SIGNAL(acpiEvent(const QString &, const QString &,
-					const QString &, uint, uint)),
-		this,
-		SLOT(ACPIEvent(const QString &, const QString &,
-					const QString &, uint, uint)));
+	_backend = 0;
+	_dbus = 0;
+	_acpiParser = 0;
 }
 
 bool LapsusDaemon::isValid()
 {
-	return sysBack.isValid();
+	return _isValid;
 }
 
-uint LapsusDaemon::getBacklight()
+bool LapsusDaemon::detectHardware()
 {
-	if (!sysBack.backlight) return 0;
+	SysBackend *tmp;
 
-	return sysBack.getBacklight();
-}
+	// Try Asus Backend
+	tmp = new SysAsus();
 
-bool LapsusDaemon::getSwitch(const QString &name)
-{
-	if (!sysBack.switches) return false;
-
-	bool ok;
-	bool val = sysBack.readSwitch(&ok, name);
-
-	return (ok && val);
-}
-
-bool LapsusDaemon::getCpufreqParams(QString &governor, QStringList &freqSteps,
-	QStringList &governors, QString &min, QString &max)
-{
-	if (!sysBack.cpufreq) return false;
-
-	governor = QString();
-	freqSteps = QStringList();
-	governors = QStringList();
-	min = QString();
-	max = QString();
-
-	// TODO
-	return false;
-}
-
-bool LapsusDaemon::getDisplay(const QString &name)
-{
-	if (!sysBack.display) return false;
-
-	return sysBack.getDisplay(name);
-}
-
-uint LapsusDaemon::getMaxBacklight()
-{
-	if (!sysBack.backlight) return 0;
-
-	return sysBack.maxBacklight;
-}
-
-QStringList LapsusDaemon::listSwitches()
-{
-	if (!sysBack.switches) return QStringList();
-
-	return sysBack.switchPaths.keys();
-}
-
-QStringList LapsusDaemon::listDisplayTypes()
-{
-	if (!sysBack.display) return QStringList();
-
-	return sysBack.displayBits.keys();
-}
-
-QStringList LapsusDaemon::listFeatures()
-{
-	QStringList list;
-
-	if (sysBack.backlight)
-		list.append("backlight");
-
-	if (sysBack.switches)
-		list.append("switches");
-
-	if (sysBack.cpufreq)
-		list.append("cpufreq");
-
-	if (sysBack.display)
-		list.append("display");
-
-	return list;
-}
-
-bool LapsusDaemon::setBacklight(uint value)
-{
-	if (!sysBack.backlight) return false;
-
-	uint oVal = 0;
-	uint nVal = 0;
-
-	if (sysBack.changeBacklight(value, &oVal, &nVal))
+	if (tmp->hardwareDetected())
 	{
-		backlightToEmit = nVal;
-		QTimer::singleShot( 10, this, SLOT(emitBacklight()) );
-
+		_backend = tmp;
 		return true;
 	}
+
+	delete tmp;
+
+/*
+	// Try any other backends supported
+
+	tmp = new SysIBM();
+
+	if (tmp->hardwareDetected())
+	{
+		_backend = tmp;
+		return true;
+	}
+
+	delete tmp;
+*/
 
 	return false;
 }
 
-void LapsusDaemon::emitBacklight()
+void LapsusDaemon::doInit()
 {
-	QValueList<QDBusData> params;
-
-	params.append(QDBusData::fromUInt32(backlightToEmit));
-
-	sendSignal("backlightChanged", params);
-}
-
-bool LapsusDaemon::setSwitch(const QString &name, bool value)
-{
-	if (!sysBack.switches) return false;
-
-	bool oldVal = false;
-	bool newVal = value;
-
-	bool ok = sysBack.readWriteSwitch(name, &oldVal, &newVal);
-
-	if (!ok) return false;
-
-	if (oldVal != newVal)
+	if (!detectHardware())
 	{
-		switchesToEmit.push_back(name);
-		QTimer::singleShot( 10, this, SLOT(emitSwitch()) );
-
-		// QT4: emit switchChanged(name, newVal);
+		fprintf(stderr, "No supported hardware found. Is appropriate kernel module loaded?\n");
+		return;
 	}
 
-	return (newVal == value);
-}
+	_dbus = new LapsusDBus(this);
 
-void LapsusDaemon::emitSwitch()
-{
-	while(switchesToEmit.size() > 0)
+	if (!_dbus->isValid())
 	{
-		QValueList<QDBusData> params;
-		QString name = switchesToEmit.first();
-		switchesToEmit.pop_front();
-
-		params.append(QDBusData::fromString(name));
-		params.append(QDBusData::fromBool(getSwitch(name)));
-
-		sendSignal("switchChanged", params);
-	}
-}
-
-bool LapsusDaemon::setCpufreqParams(const QString &governor,
-				const QString &min, const QString &max)
-{
-	if (!sysBack.cpufreq) return false;
-
-	QString a = governor;
-	a = min;
-	a = max;
-
-	// TODO
-	return false;
-}
-
-bool LapsusDaemon::setDisplay(const QString &name, bool value)
-{
-	if (!sysBack.display) return false;
-
-	QMap<QString, bool> disp;
-	QStringList list = sysBack.displayBits.keys();
-
-	for (unsigned int i = 0; i < list.size(); ++i)
-	{
-		QString dN = list[i];
-
-		disp.insert(dN, sysBack.getDisplay(dN));
+		return;
 	}
 
-	bool ret = sysBack.setDisplay(name, value);
+	_acpiParser = new ACPIEventParser(_acpiFd);
 
-	if (ret)
-	{
-		for (unsigned int i = 0; i < list.size(); ++i)
-		{
-			QString dN = list[i];
-			bool nVal = sysBack.getDisplay(dN);
+	connect(_acpiParser,
+		SIGNAL(acpiEvent(const QString &, const QString &,
+					const QString &, uint, uint)),
+		_dbus,
+		SLOT(sendACPIEvent(const QString &, const QString &,
+					const QString &, uint, uint)));
 
-			if (nVal != disp[dN])
-			{
-				displaysToEmit.push_back(dN);
-				QTimer::singleShot( 10, this, SLOT(emitDisplay()) );
-
-				// QT4: emit displayChanged(dN, nVal);
-			}
-		}
-	}
-
-	return ret;
+	_isValid = true;
 }
 
-void LapsusDaemon::emitDisplay()
+QStringList LapsusDaemon::featureList()
 {
-	while(displaysToEmit.size() > 0)
-	{
-		QValueList<QDBusData> params;
-		QString name = displaysToEmit.first();
-		displaysToEmit.pop_front();
+	if (!_isValid) return QStringList();
 
-		params.append(QDBusData::fromString(name));
-		params.append(QDBusData::fromBool(getDisplay(name)));
-
-		sendSignal("displayChanged", params);
-	}
+	// TODO Add generic features - for example cpufreq control
+	return _backend->featureList();
 }
 
-void LapsusDaemon::ACPIEvent(const QString &group, const QString &action,
-				const QString &device, uint id, uint value)
+QString LapsusDaemon::featureName(const QString &id)
 {
-	QValueList<QDBusData> params;
+	if (!_isValid) return QString();
 
-	params.append(QDBusData::fromString(group));
-	params.append(QDBusData::fromString(action));
-	params.append(QDBusData::fromString(device));
-	params.append(QDBusData::fromUInt32(id));
-	params.append(QDBusData::fromUInt32(value));
-
-	sendSignal("ACPIEvent", params);
+	// TODO Check other features - for example cpufreq control
+	return _backend->featureName(id.lower());
 }
 
-bool LapsusDaemon::sendSignal(const QString &sigName,
-				const QValueList<QDBusData>& params)
+QStringList LapsusDaemon::featureArgs(const QString &id)
 {
-	QDBusMessage msg = QDBusMessage::signal(LAPSUS_OBJECT_PATH,
-						LAPSUS_INTERFACE, sigName);
+	if (!_isValid) return QStringList();
 
-	msg += params;
-
-	return myConnection->send(msg);
+	// TODO Add generic features - for example cpufreq control
+	return _backend->featureArgs(id.lower());
 }
 
-bool LapsusDaemon::sendReply(const QDBusMessage& orgMessage,
-				const QValueList<QDBusData>& params)
+QString LapsusDaemon::featureRead(const QString &id)
 {
-	QDBusMessage reply = QDBusMessage::methodReply(orgMessage);
+	if (!_isValid) return QString();
 
-	reply << QDBusData::fromList(QDBusDataList(params));
-
-	return myConnection->send(reply);
+	// TODO Check other features
+	return _backend->featureRead(id.lower());
 }
 
-bool LapsusDaemon::returnDBusError(const QString &str1, const QString &str2,
-					const QDBusMessage& message)
+bool LapsusDaemon::featureWrite(const QString &id, const QString &nVal)
 {
-	QDBusError error(str1, str2);
-	QDBusMessage reply = QDBusMessage::methodError(message, error);
+	if (!_isValid) return false;
 
-	myConnection->send(reply);
-
-	return true;
+	// TODO Check other features
+	return _backend->featureWrite(id.lower(), nVal.lower(), _dbus);
 }
 
-// QT3 DBus message handler:
-bool LapsusDaemon::handleMethodCall(const QDBusMessage& message)
-{
-	if (message.interface() != LAPSUS_INTERFACE) return false;
-
-	if (message.type() != QDBusMessage::MethodCallMessage) return false;
-
-	if (message.member() == "listFeatures"
-		|| message.member() == "listSwitches"
-		|| message.member() == "listDisplayTypes"
-		|| message.member() == "getMaxBacklight"
-		|| message.member() == "getBacklight")
-	{
-		if (message.count() != 0)
-		{
-			return returnDBusError("org.freedesktop.DBus.Error"
-				".InvalidSignature", "Expected no arguments",
-				message);
-		}
-
-		QDBusMessage reply = QDBusMessage::methodReply(message);
-
-		if (message.member() == "listFeatures")
-		{
-			reply << QDBusData::fromList(listFeatures());
-		}
-		else if (message.member() == "listSwitches")
-		{
-			reply << QDBusData::fromList(listSwitches());
-		}
-		else if (message.member() == "listDisplayTypes")
-		{
-			reply << QDBusData::fromList(listDisplayTypes());
-		}
-		else if (message.member() == "getMaxBacklight")
-		{
-			reply << QDBusData::fromUInt32(getMaxBacklight());
-		}
-		else if (message.member() == "getBacklight")
-		{
-			reply << QDBusData::fromUInt32(getBacklight());
-		}
-		else
-		{
-			// Should not happen...
-			// TODO - some kind of error? to syslog? using dbus?
-			reply << QDBusData::fromUInt32(0);
-		}
-
-		myConnection->send(reply);
-
-		return true;
-	}
-	else if (message.member() == "getSwitch"
-		|| message.member() == "getDisplay")
-	{
-		if (message.count() != 1 || message[0].type() != QDBusData::String)
-		{
-			return returnDBusError("org.freedesktop.DBus.Error"
-				".InvalidSignature",
-				"Expected one string argument",
-				message);
-		}
-
-		QDBusMessage reply = QDBusMessage::methodReply(message);
-
-		if (message.member() == "getSwitch")
-		{
-			reply << QDBusData::fromBool(
-					getSwitch(message[0].toString()));
-		}
-		else if (message.member() == "getDisplay")
-		{
-			reply << QDBusData::fromBool(
-					getDisplay(message[0].toString()));
-		}
-		else
-		{
-			// Should not happen...
-			// TODO - some kind of error? to syslog? using dbus?
-			reply << QDBusData::fromBool(false);
-		}
-
-		myConnection->send(reply);
-
-		return true;
-	}
-	else if (message.member() == "setSwitch"
-		|| message.member() == "setDisplay")
-	{
-		if (message.count() != 2
-			|| message[0].type() != QDBusData::String
-			|| message[1].type() != QDBusData::Bool)
-		{
-			return returnDBusError("org.freedesktop.DBus.Error"
-				".InvalidSignature",
-				"Expected two arguments: string and bool",
-				message);
-		}
-
-		QDBusMessage reply = QDBusMessage::methodReply(message);
-
-		if (message.member() == "setSwitch")
-		{
-			reply << QDBusData::fromBool(
-					setSwitch(message[0].toString(),
-						message[1].toBool()));
-		}
-		else if (message.member() == "setDisplay")
-		{
-			reply << QDBusData::fromBool(
-					setDisplay(message[0].toString(),
-						message[1].toBool()));
-		}
-		else
-		{
-			// Should not happen...
-			// TODO - some kind of error? to syslog? using dbus?
-			reply << QDBusData::fromBool(false);
-		}
-
-		myConnection->send(reply);
-
-		return true;
-	}
-	else if (message.member() == "setBacklight")
-	{
-		if (message.count() != 1
-			|| message[0].type() != QDBusData::UInt32)
-		{
-			return returnDBusError("org.freedesktop.DBus.Error"
-				".InvalidSignature",
-				"Expected one uint32 argument",
-				message);
-		}
-
-		QDBusMessage reply = QDBusMessage::methodReply(message);
-
-		if (message.member() == "setBacklight")
-		{
-			reply << QDBusData::fromBool(
-					setBacklight(message[0].toUInt32()));
-		}
-		else
-		{
-			// Should not happen...
-			// TODO - some kind of error? to syslog? using dbus?
-			reply << QDBusData::fromBool(false);
-		}
-
-		myConnection->send(reply);
-
-		return true;
-	}
-
-	// TODO - cpufreq
-
-	return false;
-}

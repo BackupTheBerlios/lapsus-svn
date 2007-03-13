@@ -22,19 +22,12 @@
 #ifndef LAPSUS_APPLET_H
 #define LAPSUS_APPLET_H
 
-// Qt
-#include <qlayout.h>
-#include <qwidget.h>
-
 // KDE
 #include <kpanelapplet.h>
 #include <kactioncollection.h>
 #include <kpopupmenu.h>
 
-#include "ksmallslider.h"
-#include "colorwidget.h"
-#include "applet_conf.h"
-#include "ldbus.h"
+#include "panel_main.h"
 
 class LapsusApplet : public KPanelApplet
 {
@@ -45,50 +38,27 @@ class LapsusApplet : public KPanelApplet
 			QWidget *parent = 0, const char *name = 0 );
 		virtual ~LapsusApplet();
 
-		struct Colors {
-			QColor high, low, back;
-		};
-
 		void about();
 		void help();
 		void preferences();
 		void reportBug();
 
-		QSize sizeHint() const;
-		bool eventFilter( QObject* obj, QEvent* e );
-		QSizePolicy sizePolicy() const;
 		int widthForHeight(int) const;
 		int heightForWidth(int) const;
 
-	protected slots:
-		void applyPreferences();
-		void preferencesDone();
-		void updateGeometrySlot();
-		void toggleSwitch(const QString &name, bool nValue);
-		void sliderValueChanged(int nValue);
-		void dbusSwitchChanged(const QString &name, bool nValue);
-		void dbusBacklightChanged(uint nValue);
-
 	protected:
+		void mousePressEvent( QMouseEvent *e );
 		void resizeEvent( QResizeEvent * );
-		void saveConfig();
-		void loadConfig();
+
+	protected slots:
+		void rightButtonPressed();
 
 	private:
-		void positionChange(Position);
-		void setColors();
-		void setColors( const Colors &color );
-		void showContextMenu();
-
+		LapsusPanelMain *_mainWidget;
 		LapsusDBus _dbus;
-		KPopupMenu* _popMenu;
-		KActionCollection* _actions;
-		LapsusApplet::Colors _colors;
+		Qt::Orientation _orientation;
 
-		AppletConfigDialog* _pref;
-		KSmallSlider* _slider;
-		QBoxLayout* _layout;
-		QLabel* _iconLabel;
+		void changeOrientation(Qt::Orientation orientation);
 };
 
 #endif

@@ -1,2 +1,0 @@
-qdbusxml2cpp -c LapsusAdaptor -a lapsus_adaptor lapsus.xml
-qdbusxml2cpp -c LapsusInterface -p lapsus_interface lapsus.xml

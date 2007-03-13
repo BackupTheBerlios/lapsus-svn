@@ -18,29 +18,38 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
+#ifndef LAPSUS_PANEL_WIDGET_H
+#define LAPSUS_PANEL_WIDGET_H
 
-#ifndef LAPSUS_SWITCH_H
-#define LAPSUS_SWITCH_H
+#include <kconfig.h>
 
-#include <kactioncollection.h>
-#include <kaction.h>
+#include <qlayout.h>
+#include <qwidget.h>
 
-class LapsusSwitch : public KToggleAction
+#include "lapsus_dbus.h"
+
+class LapsusPanelWidget : public QWidget
 {
 	Q_OBJECT
 
 	public:
-		LapsusSwitch(const QString &text, const KShortcut &cut=KShortcut(), QObject *parent=0);
-		virtual ~LapsusSwitch();
+		LapsusPanelWidget(const QString &id,
+			Qt::Orientation orientation, QWidget *parent,
+			LapsusDBus *dbus, KConfig *cfg);
 
-	private:
-		QString _name;
+		virtual ~LapsusPanelWidget();
 
-	protected slots:
-		void toggleLSwitch(bool val);
+		static LapsusPanelWidget* newAppletwidget(
+			const QString &id, Qt::Orientation orientation,
+			QWidget *parent, LapsusDBus *dbus, KConfig *cfg);
 
-	signals:
-		void toggle(const QString &name, bool nValue);
+	protected:
+		LapsusDBus *_dbus;
+		KConfig *_cfg;
+		Qt::Orientation _panelOrientation;
+		QString _id;
+
+		virtual void resizeEvent( QResizeEvent * );
 };
 
 #endif

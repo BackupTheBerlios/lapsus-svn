@@ -38,7 +38,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
 #define ACPI_SOCK		"/var/run/acpid.socket"
 #define ACPI_EVENTS		"/proc/acpi/event"
 
@@ -276,12 +275,13 @@ int main( int argc, char *argv[] )
 	int d_stat;
 	int acpi_fd;
 
-	if (argc > 1)
+	for (int i = 1; i < argc; ++i)
 	{
-		if (!strcmp("--help", argv[1]))
+		if (!strcmp("--help", argv[i]))
 		{
 			printf("\nDaemon for 'Lapsus' utility.\n");
-			printf("\nIt does not take any parameters.\n");
+			printf("\nIt has only one optional parameter:\n");
+			printf(" --no-daemon which makes it run in non-daemon mode.\n");
 			printf("\nVisit http://lapsus.berlios.de for details.\n\n\n");
 			printf("Copyright (c) 2007 Jakub Schmidtke\n\n");
 			printf("This program is distributed under the terms of the GPL v2.\n");
@@ -289,9 +289,15 @@ int main( int argc, char *argv[] )
 
 			return EXIT_SUCCESS;
 		}
-
-		fprintf(stderr, "Error: See lapsusd --help\n");
-		return EXIT_FAILURE;
+		else if (!strcmp("--no-daemon", argv[i]))
+		{
+			doDaemonize = false;
+		}
+		else
+		{
+			fprintf(stderr, "Error: See lapsusd --help\n");
+			return EXIT_FAILURE;
+		}
 	}
 
 	if ( (acpi_fd = get_acpi_fd()) < 0)
@@ -307,7 +313,7 @@ int main( int argc, char *argv[] )
 		close(acpi_fd);
 		unlock();
 		return c_stat;
-		
+
 	}
 	else if (d_stat == DAEMON_START_CHILD)
 	{
@@ -338,37 +344,10 @@ int main( int argc, char *argv[] )
 int run_child(int acpi_fd, int argc, char *argv[])
 {
 	QApplication app(argc, argv, FALSE);
-	LapsusDaemon lapDaemon;
+	LapsusDaemon lapDaemon(acpi_fd);
 
 	if (!lapDaemon.isValid())
 	{
-		fprintf(stderr, "No supported hardware found. Is asus-laptop kernel module loaded?\n");
-		return EXIT_FAILURE;
-	}
-
-	QDBusConnection connection = QDBusConnection::addConnection(QDBusConnection::SystemBus);
-
-	if (!connection.isConnected())
-	{
-		fprintf(stderr, "Cannot connect to the D-BUS system bus!\n");
-		return EXIT_FAILURE;
-	}
-	
-	if (!connection.requestName(LAPSUS_SERVICE_NAME))
-	{
-		fprintf(stderr, "Error registering D-BUS Lapsus Service Name '%s': %s\n",
-			LAPSUS_SERVICE_NAME, qPrintable(connection.lastError().message()));
-		return EXIT_FAILURE;
-	}
-
-	ACPIEventParser acpiEventParser(acpi_fd);
-
-	lapDaemon.addACPIParser(&acpiEventParser);
-
-	if (!lapDaemon.registerObject(&connection))
-	{
-		fprintf(stderr, "Error registering D-BUS Lapsus Object Path '%s': %s\n",
-			LAPSUS_OBJECT_PATH, qPrintable(connection.lastError().message()));
 		return EXIT_FAILURE;
 	}
 
@@ -382,6 +361,6 @@ int run_child(int acpi_fd, int argc, char *argv[])
 		/* Tell parent that everything went fine */
 		kill(my_parent, SIGUSR1);
 	}
-	
+
 	return app.exec();
 }

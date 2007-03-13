@@ -21,7 +21,7 @@
 #ifndef LAPSUS_GLOBAL_H
 #define LAPSUS_GLOBAL_H
 
-#define LAPSUS_VERSION			"0.0.2"
+#define LAPSUS_VERSION			"0.0.3-dev"
 
 // Service name which will be used by server to register to D-BUS system bus.
 #define LAPSUS_SERVICE_NAME		"de.berlios.Lapsus"
@@ -31,4 +31,13 @@
 #define LAPSUS_OBJECT_PATH		"/LapsusDaemon"
 
 #define LAPSUS_INTERFACE		"de.berlios.Lapsus"
+
+#define LAPSUS_DBUS_ACPI_EVENT		"acpiEvent"
+#define LAPSUS_DBUS_FEATURE_CHANGED	"featureChanged"
+
+#define LAPSUS_DBUS_LIST_FEATURES	"listFeatures"
+#define LAPSUS_DBUS_GET_FEATURE_INFO	"getFeatureInfo"
+#define LAPSUS_DBUS_GET_FEATURE		"getFeature"
+#define LAPSUS_DBUS_SET_FEATURE		"setFeature"
+
 #endif

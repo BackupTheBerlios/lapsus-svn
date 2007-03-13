@@ -18,36 +18,55 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-
-#ifndef LAPSUS_APPLET_CONF_H
-#define LAPSUS_APPLET_CONF_H
+#ifndef LAPSUS_PANEL_MAIN_H
+#define LAPSUS_PANEL_MAIN_H
 
 #include <qwidget.h>
-#include <kdialogbase.h>
+#include <kconfig.h>
+#include <kactioncollection.h>
+#include <kpopupmenu.h>
 
-#include "colorwidget.h"
+#include "lapsus_dbus.h"
+#include "flowlayout.h"
 
-class ColorWidget;
-
-class AppletConfigDialog : public KDialogBase
+class LapsusPanelMain : public QWidget
 {
 	Q_OBJECT
+
 	public:
-		AppletConfigDialog( QWidget * parent=0, const char * name=0 );
-		virtual ~AppletConfigDialog() {};
+		LapsusPanelMain(QWidget *parent, LapsusDBus *dbus,
+			Qt::Orientation orientation);
 
-		void setActiveColors(const QColor& high, const QColor& low, const QColor& back);
-		void activeColors(QColor& high, QColor& low, QColor& back) const;
+		virtual ~LapsusPanelMain();
 
-	protected slots:
-		virtual void slotOk();
-		virtual void slotApply();
+		int widthForHeight(int) const;
+		int heightForWidth(int) const;
 
-	signals:
-		void applied();
+		QSize sizeHint() const;
+		QSize minimumSize() const;
+
+		void preferences();
+
+	protected:
+		LapsusDBus *_dbus;
+
+		void resizeEvent( QResizeEvent * );
+		void mousePressEvent( QMouseEvent * );
+
+	public slots:
+		void showContextMenu();
 
 	private:
-		ColorWidget* colorWidget;
+		KConfig _cfg;
+		QStringList _panelEntries;
+		QStringList _menuEntries;
+		FlowLayout* _layout;
+		KPopupMenu* _popMenu;
+		KActionCollection* _actions;
+		Qt::Orientation _orientation;
+
+		void saveConfig();
+		void loadConfig();
 };
 
 #endif

@@ -18,20 +18,36 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "switch.h"
+#ifndef LAPSUS_PANEL_DEFAULT_H
+#define LAPSUS_PANEL_DEFAULT_H
 
-LapsusSwitch::LapsusSwitch(const QString &text, const KShortcut &cut, QObject *parent):
-	KToggleAction( text, cut, parent, text ), _name(text)
+#include <qlabel.h>
+
+#include "panel_widget.h"
+
+class LapsusPanelDefault : public LapsusPanelWidget
 {
-	connect(this, SIGNAL(toggled(bool)), this, SLOT(toggleLSwitch(bool)));
-}
+	Q_OBJECT
 
-LapsusSwitch::~LapsusSwitch()
-{
-}
+	public:
+		LapsusPanelDefault(const QString &id,
+			Qt::Orientation orientation, QWidget *parent,
+			LapsusDBus *dbus, KConfig *cfg);
+		~LapsusPanelDefault();
 
-void LapsusSwitch::toggleLSwitch(bool val)
-{
-	emit toggle(_name, val);
-}
+		QSize sizeHint() const;
+		QSize minimumSizeHint() const;
+		QSizePolicy sizePolicy() const;
 
+	signals:
+		void rightButtonPressed();
+
+	protected:
+		void mousePressEvent( QMouseEvent * );
+
+	private:
+		QBoxLayout* _layout;
+		QLabel* _label;
+};
+
+#endif

@@ -18,64 +18,52 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
+#include "panel_widget.h"
+#include "panel_slider.h"
+#include "panel_button.h"
 
-#ifndef LAPSUS_DBUS_H
-#define LAPSUS_DBUS_H
-
-#include <qobject.h>
-#include <qstring.h>
-#include <qstringlist.h>
-#include <qmap.h>
-
-// Qt DBUS includes
-#include <dbus/qdbusdatalist.h>
-#include <dbus/qdbuserror.h>
-#include <dbus/qdbusmessage.h>
-#include <dbus/qdbusconnection.h>
-#include <dbus/qdbusobject.h>
-#include <dbus/qdbusproxy.h>
-
-class LapsusDBus : public QObject
+LapsusPanelWidget::LapsusPanelWidget( const QString &id,
+			Qt::Orientation orientation, QWidget *parent,
+			LapsusDBus *dbus, KConfig *cfg):
+	QWidget( parent, id ), _dbus(dbus), _cfg(cfg),
+	_panelOrientation( orientation ), _id( id )
 {
-	Q_OBJECT
-	public:
-		LapsusDBus();
-		~LapsusDBus();
+	setBackgroundMode(X11ParentRelative);
+}
 
-		bool isValid();
-		bool hasBacklight();
-		bool hasSwitches();
+LapsusPanelWidget::~LapsusPanelWidget()
+{
+}
 
-		uint maxBacklight();
-		uint getBacklight(bool force = false);
+LapsusPanelWidget* LapsusPanelWidget::newAppletwidget(
+	const QString &id, Qt::Orientation orientation,
+	QWidget *parent, LapsusDBus *dbus, KConfig *cfg)
+{
+	if (id.length() < 1) return 0;
 
-		bool getSwitch(const QString &name, bool force = false);
+	cfg->setGroup(id.lower());
 
-		QStringList listSwitches();
+	if (!cfg->hasKey("widget_type"))
+	{
+		return 0;
+	}
 
-	private:
-		QDBusConnection _conn;
-		QDBusProxy *_proxy;
-		bool _isValid;
-		QStringList _features;
-		QStringList _switches;
-		uint _maxBacklight;
-		uint _curBacklight;
-		bool _hasBacklight;
-		bool _hasSwitches;
-		QMap<QString, bool> _switchVals;
+	QString wType = cfg->readEntry("widget_type");
 
-		void initParams();
+	if (wType == "slider")
+	{
+		return new LapsusPanelSlider(id.lower(), orientation,
+				parent, dbus, cfg);
+	}
+	else if (wType == "button")
+	{
+		return new LapsusPanelButton(id.lower(), orientation,
+				parent, dbus, cfg);
+	}
 
+	return 0;
+}
 
-	public slots:
-		void handleDBusSignal(const QDBusMessage &message);
-		bool setSwitch(const QString &name, bool newVal, bool force = false);
-		bool setBacklight(uint newVal, bool force = false);
-
-	signals:
-		void switchChanged(const QString &name, bool newVal);
-		void backlightChanged(uint newVal);
-};
-
-#endif
+void LapsusPanelWidget::resizeEvent( QResizeEvent * )
+{
+}

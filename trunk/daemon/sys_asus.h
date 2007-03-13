@@ -18,43 +18,42 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_DAEMON_H
-#define LAPSUS_DAEMON_H
+#ifndef SYS_ASUS_H
+#define SYS_ASUS_H
 
-#include <qobject.h>
-#include <qstring.h>
 #include <qstringlist.h>
+#include <qstring.h>
 
-class LapsusDaemon;
-
-#include "acpi_event_parser.h"
-#include "lapsus_dbus.h"
 #include "sys_backend.h"
 
-class LapsusDaemon : public QObject
+/**
+ * Backend, which controls asus-laptop's kernel module /sys interface
+ * files and "knows" what features can be supported.
+ */
+class SysAsus : public SysBackend
 {
-	Q_OBJECT
-
 	public:
-		LapsusDaemon(uint acpiFd);
-		~LapsusDaemon();
-		bool isValid();
+		SysAsus();
+		~SysAsus();
 
 		QStringList featureList();
 		QString featureName(const QString &id);
 		QStringList featureArgs(const QString &id);
 		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
+		bool featureWrite(const QString &id, const QString &nVal, LapsusDBus *dbus);
+
+		bool hardwareDetected();
+		QString featurePrefix();
 
 	private:
-		uint _acpiFd;
-		SysBackend *_backend;
-		LapsusDBus *_dbus;
-		ACPIEventParser *_acpiParser;
-		bool _isValid;
+		bool _hasSwitches;
+		bool _hasBacklight;
+		bool _hasDisplay;
+		uint maxBacklight;
 
-		bool detectHardware();
-		void doInit();
+		void detect();
+		bool displayFeature(const QString &id);
+		bool displayFeature(const QString &id, QString &disp);
 };
 
 #endif

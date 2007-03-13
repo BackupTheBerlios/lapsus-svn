@@ -18,43 +18,51 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_DAEMON_H
-#define LAPSUS_DAEMON_H
+#ifndef LAPSUS_PANEL_BUTTON_H
+#define LAPSUS_PANEL_BUTTON_H
 
-#include <qobject.h>
-#include <qstring.h>
-#include <qstringlist.h>
+#include <qlabel.h>
 
-class LapsusDaemon;
+#include "ksmallslider.h"
+#include "panel_widget.h"
 
-#include "acpi_event_parser.h"
-#include "lapsus_dbus.h"
-#include "sys_backend.h"
-
-class LapsusDaemon : public QObject
+class LapsusPanelButton : public LapsusPanelWidget
 {
 	Q_OBJECT
 
 	public:
-		LapsusDaemon(uint acpiFd);
-		~LapsusDaemon();
-		bool isValid();
+		LapsusPanelButton(const QString &id,
+			Qt::Orientation orientation, QWidget *parent,
+			LapsusDBus *dbus, KConfig *cfg);
+		~LapsusPanelButton();
 
-		QStringList featureList();
-		QString featureName(const QString &id);
-		QStringList featureArgs(const QString &id);
-		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
+		QSize sizeHint() const;
+		QSize minimumSizeHint() const;
+		QSizePolicy sizePolicy() const;
+
+		bool eventFilter( QObject* obj, QEvent* e );
+
+		static bool supportsArgs(const QStringList & args);
+
+	signals:
+		void rightButtonPressed();
+
+	protected slots:
+		void dbusStateChanged(bool state);
+		void featureChanged(const QString &id, const QString &val);
 
 	private:
-		uint _acpiFd;
-		SysBackend *_backend;
-		LapsusDBus *_dbus;
-		ACPIEventParser *_acpiParser;
+		QStringList _vals;
+		QString _curVal;
+		QBoxLayout* _layout;
+		QLabel* _iconLabel;
+		QPixmap _iconOn;
+		QPixmap _iconOff;
+		QString _featureId;
+		bool _hasDBus;
 		bool _isValid;
 
-		bool detectHardware();
-		void doInit();
+		void checkCurVal();
 };
 
 #endif

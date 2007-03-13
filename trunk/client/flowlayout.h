@@ -18,43 +18,45 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_DAEMON_H
-#define LAPSUS_DAEMON_H
+#ifndef FLOW_LAYOUT_H
+#define FLOW_LAYOUT_H
 
-#include <qobject.h>
-#include <qstring.h>
-#include <qstringlist.h>
+#include <qlayout.h>
+#include <qptrlist.h>
 
-class LapsusDaemon;
-
-#include "acpi_event_parser.h"
-#include "lapsus_dbus.h"
-#include "sys_backend.h"
-
-class LapsusDaemon : public QObject
+class FlowLayout : public QLayout
 {
-	Q_OBJECT
-
 	public:
-		LapsusDaemon(uint acpiFd);
-		~LapsusDaemon();
-		bool isValid();
+		FlowLayout( QWidget* parent, Qt::Orientation orientation=Qt::Horizontal,
+				int border=0, int space=-1, const char* name=0 );
+		FlowLayout( QLayout* parent, Qt::Orientation orientation=Qt::Horizontal,
+				int space=-1, const char* name=0 );
+		FlowLayout( Qt::Orientation=Qt::Horizontal, int space=-1, const char* name=0 );
+		~FlowLayout();
 
-		QStringList featureList();
-		QString featureName(const QString &id);
-		QStringList featureArgs(const QString &id);
-		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
+		void addItem( QLayoutItem *item);
+		bool hasHeightForWidth() const;
+		bool hasWidthForHeight() const;
+		int heightForWidth( int ) const;
+		int widthForHeight( int ) const;
+
+		QSize sizeHint() const;
+		QSize minimumSize() const;
+		QLayoutIterator iterator();
+		QSizePolicy::ExpandData expanding() const;
+
+	protected:
+		void setGeometry( const QRect& );
 
 	private:
-		uint _acpiFd;
-		SysBackend *_backend;
-		LapsusDBus *_dbus;
-		ACPIEventParser *_acpiParser;
-		bool _isValid;
+		Qt::Orientation _orientation;
+		QPtrList<QLayoutItem> list;
+		int cachedW;
+		int cachedH;
 
-		bool detectHardware();
-		void doInit();
+		int doLayout( const QRect&, bool testonly = FALSE );
+		int doLayoutHorizontal( const QRect&, bool testonly = FALSE );
+		int doLayoutVertical( const QRect&, bool testonly = FALSE );
 };
 
 #endif

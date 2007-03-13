@@ -1,8 +1,24 @@
+
+0.0.3-dev
+=====
+ * Heavily rewritten to support hardware using backends  (possibly various,
+   so far only Asus backend is present) and per method arguments.
+ * Reduced the number of methods and changed the interface to support any
+   feature values, so both LEDs, switches, backlight, etc. can be used using
+   one method. Each feature can have a list of legal values instead of
+   simple true/false. Will be needed for IBMs with on/off/blinking LEDs ;)
+ * KDE Panel Applet now has feature detection, uses FlowLayout and creates
+   backlight slider, panel icons, as well as context menu switches with LEDs.
+ * Some more artwork. "Art". I am not an artist ;)
+
+
 0.0.2
 =====
  * Daemon rewritten for Qt3 with dbus-qt4-qt3backport
  * KDE Panel Applet with backlight/switches controls.
 
+
 0.0.1
 =====
  * Initial release - "test" release which used Qt4.
+

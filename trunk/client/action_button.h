@@ -18,45 +18,44 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-// QT
-#include <qlayout.h>
-#include <kcolorbutton.h>
 
-#include "applet_conf.h"
+#ifndef LAPSUS_ACTION_BUTTON_H
+#define LAPSUS_ACTION_BUTTON_H
 
-AppletConfigDialog::AppletConfigDialog( QWidget * parent, const char * name )
-	: KDialogBase( KDialogBase::Plain, QString::null,
-		KDialogBase::Ok | KDialogBase::Apply | KDialogBase::Cancel,
-		KDialogBase::Ok, parent, name, false, true)
+#include <kactioncollection.h>
+#include <kaction.h>
+#include <kconfig.h>
+
+#include "lapsus_dbus.h"
+
+class LapsusActionButton : public KAction
 {
-	setPlainCaption(i18n("Configure - Lapsus Applet"));
-	QFrame* page = plainPage();
-	QVBoxLayout *topLayout = new QVBoxLayout(page);
-	colorWidget = new ColorWidget(page);
-	topLayout->addWidget(colorWidget);
-}
+	Q_OBJECT
 
-void AppletConfigDialog::slotOk()
-{
-	slotApply();
-	KDialogBase::slotOk();
-}
+	public:
+		LapsusActionButton(const QString &id, LapsusDBus *dbus, KConfig *cfg,
+			QObject *parent = 0, const KShortcut &cut = KShortcut());
+		virtual ~LapsusActionButton();
 
-void AppletConfigDialog::slotApply()
-{
-	emit applied();
-}
+	private:
+		LapsusDBus *_dbus;
+		KConfig *_cfg;
+		QString _id;
+		QString _name;
+		QStringList _vals;
+		QString _curVal;
+		QPixmap _iconOn;
+		QPixmap _iconOff;
+		QString _featureId;
+		bool _hasDBus;
+		bool _isValid;
 
-void AppletConfigDialog::setActiveColors(const QColor& high, const QColor& low, const QColor& back)
-{
-	colorWidget->activeHigh->setColor(high);
-	colorWidget->activeLow->setColor(low);
-	colorWidget->activeBack->setColor(back);
-}
+		void checkCurVal();
 
-void AppletConfigDialog::activeColors(QColor& high, QColor& low, QColor& back) const
-{
-	high = colorWidget->activeHigh->color();
-	low  = colorWidget->activeLow->color();
-	back = colorWidget->activeBack->color();
-}
+	protected slots:
+		void actionClicked();
+		void featureChanged(const QString &id, const QString &val);
+		void dbusStateChanged(bool state);
+};
+
+#endif

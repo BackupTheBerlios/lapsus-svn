@@ -18,43 +18,62 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_DAEMON_H
-#define LAPSUS_DAEMON_H
+
+#ifndef LAPSUS_DBUS_H
+#define LAPSUS_DBUS_H
 
 #include <qobject.h>
 #include <qstring.h>
 #include <qstringlist.h>
+#include <qmap.h>
 
-class LapsusDaemon;
+// Qt DBUS includes
+#include <dbus/qdbusdatalist.h>
+#include <dbus/qdbuserror.h>
+#include <dbus/qdbusmessage.h>
+#include <dbus/qdbusconnection.h>
+#include <dbus/qdbusobject.h>
+#include <dbus/qdbusproxy.h>
 
-#include "acpi_event_parser.h"
-#include "lapsus_dbus.h"
-#include "sys_backend.h"
-
-class LapsusDaemon : public QObject
+class LapsusDBus : public QObject
 {
 	Q_OBJECT
-
 	public:
-		LapsusDaemon(uint acpiFd);
-		~LapsusDaemon();
+		LapsusDBus();
+		~LapsusDBus();
+
 		bool isValid();
 
-		QStringList featureList();
-		QString featureName(const QString &id);
-		QStringList featureArgs(const QString &id);
-		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
+		QStringList listFeatures();
+		QString getFeatureName(const QString &id);
+		QStringList getFeatureArgs(const QString &id);
+		QString getFeature(const QString &id);
+
+	protected:
+		void timerEvent( QTimerEvent * );
 
 	private:
-		uint _acpiFd;
-		SysBackend *_backend;
-		LapsusDBus *_dbus;
-		ACPIEventParser *_acpiParser;
+		QDBusConnection _conn;
+		QDBusProxy *_proxy;
 		bool _isValid;
+		QStringList _features;
+		QMap<QString, QString> _featureVal;
+		QMap<QString, QString> _featureName;
+		QMap<QString, QStringList> _featureArgs;
+		int _timerId;
 
-		bool detectHardware();
-		void doInit();
+		void connError();
+		bool restartDBus();
+		void initParams();
+		void checkFeature(const QString &id);
+
+	public slots:
+		void handleDBusSignal(const QDBusMessage &message);
+		bool setFeature(const QString &id, const QString &val);
+
+	signals:
+		void featureChanged(const QString &id, const QString &val);
+		void stateChanged(bool state);
 };
 
 #endif

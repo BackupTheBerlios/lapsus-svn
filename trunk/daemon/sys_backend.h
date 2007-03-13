@@ -22,47 +22,56 @@
 #define SYS_BACKEND_H
 
 #include <qstring.h>
+#include <qstringlist.h>
 #include <qmap.h>
 
+class SysBackend;
+
+#include "lapsus_dbus.h"
+
+/**
+ * Generic backend for dealing with /sys interface files.
+ * Provides methods for reading and writing values from/to those
+ * files and dealing with id:path mappings.
+ */
 class SysBackend
 {
 	public:
-		bool switches;
-		bool cpufreq;
-		bool display;
-		bool backlight;
-
-		QMap<QString, QString> switchPaths;
-		QMap<QString, uint> displayBits;
-		QString backlightSetPath;
-		QString backlightGetPath;
-		QString displayPath;
-		uint maxBacklight;
-		uint displayVal;
-		uint displayLastBit;
-
 		SysBackend();
+		virtual ~SysBackend();
 
-		bool isValid();
+		virtual bool hardwareDetected() = 0;
+		virtual QString featurePrefix() = 0;
 
-		bool readSwitch(bool *ok, const QString &name);
-		uint readUint(bool *ok, const QString &path);
-		bool readWriteSwitch(const QString &name, bool *oldVal, bool *newVal);
-		bool readWriteUint(const QString &path, uint *oldVal, uint *newVal);
-		bool writeUint(const QString &path, uint newVal);
+		virtual QStringList featureList() = 0;
+		virtual QString featureName(const QString &id) = 0;
+		virtual QStringList featureArgs(const QString &id) = 0;
+		virtual QString featureRead(const QString &id) = 0;
+		virtual bool featureWrite(const QString &id, const QString &nVal, LapsusDBus *dbus) = 0;
 
-		bool setDisplay(const QString &name, bool value);
-		bool getDisplay(const QString &name);
+	protected:
+		bool hasFeature(const QString &id);
+		QString getFeaturePath(const QString &id);
+		QString getFeatureName(const QString &id);
+		void setFeature(const QString &id, const QString &path, const QString &name);
+		QStringList getFeatures();
 
-		uint getBacklight();
-		bool changeBacklight(uint toVal, uint *oVal, uint *nVal);
+		QString readIdString(const QString &id);
+		bool writeIdString(const QString &id, const QString &val);
+		uint readIdUInt(const QString &id);
+		bool writeIdUInt(const QString &id, uint newVal);
 
-		bool testR(const QString &path);
-		bool testRW(const QString &path);
-		void detect();
+		static QString readPathString(const QString &path);
+		static bool writePathString(const QString &path, const QString &val);
+		static uint readPathUInt(const QString &path);
+		static bool writePathUInt(const QString &path, uint newVal);
+		static bool testR(const QString &path);
 
 	private:
-		int correctBuf(char *buf, int len);
+		QMap<QString, QString> _featurePaths;
+		QMap<QString, QString> _featureNames;
+
+		static uint correctBuf(char *buf, uint len);
 };
 
 #endif

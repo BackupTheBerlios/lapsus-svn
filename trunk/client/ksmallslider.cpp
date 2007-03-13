@@ -362,7 +362,10 @@ void KSmallSlider::moveSlider( int pos )
     if ( newVal != QRangeControl::value() ) {
         //QRangeControl::directSetValue( sliderVal );
 	QRangeControl::setValue( newVal );
-        emit valueChanged( value() ); //  Only for external use
+
+        // commenting out - signal was emited anyway by valueChange(),
+        // which was called by QRangeControl::setValue()
+        // emit valueChanged( value() ); //  Only for external use
     }
     update();
 }
