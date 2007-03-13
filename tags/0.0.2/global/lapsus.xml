@@ -1,0 +1,61 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+	"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+	<interface name="de.berlios.Lapsus">
+		<signal name="ACPIEvent">
+			<arg name="group" type="s" direction="out" />
+			<arg name="action" type="s" direction="out" />
+			<arg name="device" type="s" direction="out" />
+			<arg name="id" type="u" direction="out" />
+			<arg name="value" type="u" direction="out" />
+		</signal>
+		<method name="listFeatures">
+			<arg name="features" type="as" direction="out" />
+		</method>
+		<method name="listSwitches">
+			<arg name="names" type="as" direction="out" />
+		</method>
+		<method name="getSwitch">
+			<arg name="name" type="s" direction="in" />
+			<arg name="value" type="b" direction="out" />
+		</method>
+		<method name="setSwitch">
+			<arg name="name" type="s" direction="in" />
+			<arg name="value" type="b" direction="in" />
+			<arg name="result" type="b" direction="out" />
+		</method>
+		<signal name="switchChanged">
+			<arg name="name" type="s" direction="out" />
+			<arg name="newValue" type="b" direction="out" />
+		</signal>
+		<method name="getMaxBacklight">
+			<arg name="value" type="u" direction="out" />
+		</method>
+		<method name="getBacklight">
+			<arg name="value" type="u" direction="out" />
+		</method>
+		<method name="setBacklight">
+			<arg name="value" type="u" direction="in" />
+			<arg name="result" type="b" direction="out" />
+		</method>
+		<signal name="backlightChanged">
+			<arg name="value" type="u" direction="out" />
+		</signal>
+		<method name="listDisplayTypes">
+			<arg name="types" type="as" direction="out" />
+		</method>
+		<method name="getDisplay">
+			<arg name="name" type="s" direction="in" />
+			<arg name="value" type="b" direction="out" />
+		</method>
+		<method name="setDisplay">
+			<arg name="name" type="s" direction="in" />
+			<arg name="value" type="b" direction="in" />
+			<arg name="result" type="b" direction="out" />
+		</method>
+		<signal name="displayChanged">
+			<arg name="name" type="s" direction="out" />
+			<arg name="value" type="b" direction="out" />
+		</signal>
+	</interface>
+</node>
