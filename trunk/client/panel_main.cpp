@@ -75,11 +75,13 @@ LapsusPanelMain::LapsusPanelMain(QWidget *parent, LapsusDBus *dbus,
 		widget->show();
 	}
 
-	for (uint i = 0; i < _menuEntries.size(); ++i)
+	for ( QStringList::ConstIterator it = _menuEntries.begin(); it != _menuEntries.end(); ++it )
 	{
-		if (!( KToggleAction* )_actions->action( _menuEntries[i] ))
+		QString str = *it;
+
+		if (!( KToggleAction* )_actions->action(str))
 		{
-			new LapsusActionButton(_menuEntries[i], _dbus, &_cfg, _actions);
+			new LapsusActionButton(str, _dbus, &_cfg, _actions);
 		}
 	}
 }
@@ -148,6 +150,11 @@ void LapsusPanelMain::loadConfig()
 					grp = QString("menu_%1").arg(id);
 					mEntries.push_back(grp);
 				}
+				else if (id.endsWith("_light"))
+				{
+					grp = QString("menu_%1").arg(id);
+					mEntries.push_back(grp);
+				}
 				else
 				{
 					continue;
@@ -198,12 +205,13 @@ void LapsusPanelMain::showContextMenu()
 	_popMenu->insertTitle( SmallIcon( "laptop" ), "Switches" );
 
 	KActionPtrList list = _actions->actions();
+	qHeapSort( list );
 
 	if (list.size() > 0)
 	{
 		for(KActionPtrList::iterator it = list.begin(); it != list.end(); ++it)
 		{
-			(*it)->plug( _popMenu);
+			(*it)->plug(_popMenu);
 		}
 	}
 

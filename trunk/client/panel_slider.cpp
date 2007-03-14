@@ -69,7 +69,7 @@ LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 		sliderVal = _dbus->getFeature(_featureId).toInt();
 	}
 
-	int idx = loadNewIcon("light_bulb", "", 10);
+	int idx = loadNewAutoIcon(10);
 
 	installEventFilter(this);
 

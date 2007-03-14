@@ -18,46 +18,50 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
+#ifndef SYS_IBM_H
+#define SYS_IBM_H
 
-#ifndef LAPSUS_ACTION_BUTTON_H
-#define LAPSUS_ACTION_BUTTON_H
+#include <qmap.h>
+#include <qstringlist.h>
+#include <qstring.h>
 
-#include <kactioncollection.h>
-#include <kaction.h>
-#include <kconfig.h>
+#include "sys_backend.h"
 
-#include "lapsus_dbus.h"
-#include "lapsus_icons.h"
-
-class LapsusActionButton : public KAction, protected LapsusIcons
+/**
+ * Backend, which controls asus-laptop's kernel module /sys interface
+ * files and "knows" what features can be supported.
+ */
+class SysIBM : public SysBackend
 {
-	Q_OBJECT
-
 	public:
-		LapsusActionButton(const QString &id, LapsusDBus *dbus, KConfig *cfg,
-			QObject *parent = 0, const KShortcut &cut = KShortcut());
-		virtual ~LapsusActionButton();
+		SysIBM();
+		~SysIBM();
+
+		QStringList featureList();
+		QString featureName(const QString &id);
+		QStringList featureArgs(const QString &id);
+		QString featureRead(const QString &id);
+		bool featureWrite(const QString &id, const QString &nVal, LapsusDBus *dbus);
+
+		bool hardwareDetected();
+		QString featurePrefix();
 
 	private:
-		LapsusDBus *_dbus;
-		KConfig *_cfg;
-		QString _id;
-		QString _name;
-		QStringList _vals;
-		QString _curVal;
-		int _iconOn;
-		int _iconBlink;
-		int _iconOff;
-		QString _featureId;
-		bool _hasDBus;
-		bool _isValid;
+		QMap<QString, QString> _leds;
+		bool _hasLEDs;
+		bool _hasBacklight;
+		bool _hasDisplay;
+		bool _hasBluetooth;
+		bool _hasLight;
+		bool _hasVolume;
 
-		void checkCurVal();
+		void detect();
 
-	protected slots:
-		void actionClicked();
-		void featureChanged(const QString &id, const QString &val);
-		void dbusStateChanged(bool state);
+		QString fieldValue(const QString &fieldName, const QString &path);
+		bool displayFeature(const QString &id);
+		bool displayFeature(const QString &id, QString &disp);
+		bool ledFeature(const QString &id);
+		bool ledFeature(const QString &id, QString &led);
 };
 
 #endif

@@ -23,7 +23,7 @@
 LapsusActionButton::LapsusActionButton(const QString &id, LapsusDBus *dbus, KConfig *cfg,
 			QObject *parent, const KShortcut &cut):
 	KAction(id, cut, 0, 0, parent, id), LapsusIcons(id, cfg),
-	_dbus(dbus),_cfg(cfg), _id(id), _iconOn(-1), _iconOff(-1),
+	_dbus(dbus),_cfg(cfg), _id(id), _iconOn(-1), _iconBlink(-1), _iconOff(-1),
 	_hasDBus(false), _isValid(false)
 {
 	_cfg->setGroup(id);
@@ -53,6 +53,9 @@ LapsusActionButton::LapsusActionButton(const QString &id, LapsusDBus *dbus, KCon
 	_iconOn = loadNewAutoIcon("on", 16);
 	_iconOff = loadNewAutoIcon("off", 16);
 
+	if (_featureId.startsWith("ibm_"))
+		_iconBlink = loadNewAutoIcon("blink", 16);
+
 	checkCurVal();
 
 	connect ( _dbus, SIGNAL(stateChanged(bool)),
@@ -71,29 +74,46 @@ LapsusActionButton::~LapsusActionButton()
 
 void LapsusActionButton::checkCurVal()
 {
-	if (_dbus && _hasDBus && _curVal == "on")
+	if (_dbus && _hasDBus)
 	{
-		if (_iconOn >= 0)
+		if (_curVal == "on")
 		{
-			setIconSet(getIcon(_iconOn));
-			setText(_name);
+			if (_iconOn >= 0)
+			{
+				setIconSet(getIcon(_iconOn));
+				setText(_name);
+			}
+			else
+			{
+				setText(QString("+ %1").arg(_name));
+			}
+
+			return;
 		}
-		else
+		else if (_curVal == "blink")
 		{
-			setText(QString("+ %1").arg(_name));
+			if (_iconBlink >= 0)
+			{
+				setIconSet(getIcon(_iconBlink));
+				setText(_name);
+			}
+			else
+			{
+				setText(QString("* %1").arg(_name));
+			}
+
+			return;
 		}
+	}
+
+	if (_iconOff >= 0)
+	{
+		setIconSet(getIcon(_iconOff));
+		setText(_name);
 	}
 	else
 	{
-		if (_iconOff >= 0)
-		{
-			setIconSet(getIcon(_iconOff));
-			setText(_name);
-		}
-		else
-		{
-			setText(QString("- %1").arg(_name));
-		}
+		setText(QString("- %1").arg(_name));
 	}
 }
 

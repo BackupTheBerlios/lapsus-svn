@@ -41,10 +41,10 @@ LapsusIcons::~LapsusIcons()
 
 int LapsusIcons::loadNewAutoIcon(int size)
 {
-	if (_featureId.find("backlight") >= 0)
-	{
+	if (_featureId.find("_backlight") >= 0)
 		return loadNewIcon("light_bulb", "", size);
-	}
+	else if (_featureId.find("_volume") >= 0)
+		return loadNewIcon("speaker", "", size);
 
 	return -1;
 }

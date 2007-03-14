@@ -22,6 +22,7 @@
 #include "lapsus_daemon.h"
 
 #include "sys_asus.h"
+#include "sys_ibm.h"
 
 LapsusDaemon::LapsusDaemon(uint acpiFd):
 	_acpiFd(acpiFd), _backend(0), _dbus(0), _acpiParser(0),
@@ -61,19 +62,36 @@ bool LapsusDaemon::detectHardware()
 
 	delete tmp;
 
-/*
 	// Try any other backends supported
 
 	tmp = new SysIBM();
 
 	if (tmp->hardwareDetected())
 	{
+		printf("Detected IBM hardware\nDetected features:\n\n");
+
+		QStringList lines = tmp->featureList();
+
+		for ( QStringList::ConstIterator it = lines.begin(); it != lines.end(); ++it )
+		{
+			QString line = (*it);
+
+			printf("Feature ID: %s\n", line.ascii());
+			printf("Feature Name: %s\n", tmp->featureName(line).ascii());
+
+			QStringList args = tmp->featureArgs(line);
+
+			for ( QStringList::ConstIterator iter = args.begin(); iter != args.end(); ++iter )
+				printf("Feature Arg: %s\n", (*iter).ascii());
+
+			printf("Feature Value: %s\n\n", tmp->featureRead(line).ascii());
+		}
+
 		_backend = tmp;
 		return true;
 	}
 
 	delete tmp;
-*/
 
 	return false;
 }

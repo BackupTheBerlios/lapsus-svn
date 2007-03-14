@@ -14,7 +14,8 @@ METASOURCES = AUTO
 sbin_PROGRAMS = lapsusd
 
 # the application source, library search path, and link libraries
-lapsusd_SOURCES = acpi_event_parser.cpp  lapsus_daemon.cpp  lapsus_dbus.cpp  main.cpp  sys_asus.cpp  sys_backend.cpp
+lapsusd_SOURCES = acpi_event_parser.cpp lapsus_daemon.cpp lapsus_dbus.cpp main.cpp \
+sys_backend.cpp sys_asus.cpp sys_ibm.cpp
 
 
 lapsusd_LDFLAGS = $(KDE_RPATH) $(all_libraries)

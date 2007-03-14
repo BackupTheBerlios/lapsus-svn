@@ -78,9 +78,10 @@ QString SysBackend::readPathString(const QString &path)
 {
 	int fd = open(qPrintable(path), O_RDONLY);
 
-	if (fd < 0) return 0;
-
 	QString ret;
+
+	if (fd < 0) return ret;
+
 	char buf[201];
 	int c;
 
