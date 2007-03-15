@@ -22,6 +22,9 @@
 #include <qfile.h>
 #include <qstringlist.h>
 
+// We don't need anything else from klocale.h
+#define I18N_NOOP(x)			x
+
 #include "sys_asus.h"
 
 #define qPrintable(str)			(str.ascii())
@@ -92,6 +95,8 @@ void SysAsus::detect()
 					QString id = QString(ASUS_LED_ID "%1").arg(fName.mid(5).lower());
 					QString name = QString("%1 LED").arg(fName.mid(5));
 
+					name[0] = name[0].upper();
+
 					setFeature(id, path, name);
 
 					_hasSwitches = true;
@@ -106,7 +111,7 @@ void SysAsus::detect()
 
 	if (QFile::exists(path) && testR(path))
 	{
-		setFeature(ASUS_BLUETOOTH_ID, path, "Bluetooth switch");
+		setFeature(ASUS_BLUETOOTH_ID, path, I18N_NOOP("Bluetooth adapter"));
 
 		_hasSwitches = true;
 	}
@@ -115,7 +120,7 @@ void SysAsus::detect()
 
 	if (QFile::exists(path) && testR(path))
 	{
-		setFeature(ASUS_WIRELESS_ID, path, "Wireless switch");
+		setFeature(ASUS_WIRELESS_ID, path, I18N_NOOP("Wireless radio"));
 
 		_hasSwitches = true;
 	}
@@ -204,9 +209,23 @@ bool SysAsus::displayFeature(const QString &id, QString &disp)
 
 QString SysAsus::featureName(const QString &id)
 {
+
+#if 0
+	// Known feature names - only for translation purposes.
+	I18N_NOOP("Mail LED");
+	I18N_NOOP("Touchpad LED");
+	I18N_NOOP("Recording LED");
+	I18N_NOOP("Phone LED");
+	I18N_NOOP("Gaming LED");
+	I18N_NOOP("LCD Display");
+	I18N_NOOP("CRT Display");
+	I18N_NOOP("TV Display");
+	I18N_NOOP("DVI Display");
+#endif
+
 	if (id == ASUS_BACKLIGHT_ID)
 	{
-		return "LCD Backlight control";
+		return I18N_NOOP("LCD Backlight");
 	}
 	else if (hasFeature(id))
 	{
@@ -217,7 +236,7 @@ QString SysAsus::featureName(const QString &id)
 
 	if (displayFeature(id, disp))
 	{
-		return QString("%1 Display switch").arg(disp.upper());
+		return QString("%1 Display").arg(disp.upper());
 	}
 
 	return "";

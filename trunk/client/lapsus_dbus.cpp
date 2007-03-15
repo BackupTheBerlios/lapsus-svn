@@ -18,6 +18,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
+#include <klocale.h>
+
 #include "lapsus.h"
 #include "lapsus_dbus.h"
 
@@ -193,7 +195,7 @@ QString LapsusDBus::getFeatureName(const QString &id)
 {
 	if (!_isValid) return QString();
 
-	return _featureName[id.lower()];
+	return i18n(_featureName[id.lower()]);
 }
 
 QStringList LapsusDBus::getFeatureArgs(const QString &id)

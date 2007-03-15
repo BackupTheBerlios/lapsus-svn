@@ -20,6 +20,7 @@
 
 #include <qcursor.h>
 
+#include <klocale.h>
 #include <kiconloader.h>
 
 #include "panel_main.h"
@@ -202,7 +203,7 @@ QSize LapsusPanelMain::minimumSize() const
 void LapsusPanelMain::showContextMenu()
 {
 	_popMenu = new KPopupMenu( this );
-	_popMenu->insertTitle( SmallIcon( "laptop" ), "Switches" );
+	_popMenu->insertTitle( SmallIcon( "laptop" ), i18n("Switches") );
 
 	KActionPtrList list = _actions->actions();
 	qHeapSort( list );

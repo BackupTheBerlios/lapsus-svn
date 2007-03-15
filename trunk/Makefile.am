@@ -1,4 +1,4 @@
-SUBDIRS = dbus-qt4-qt3backport daemon client
+SUBDIRS = dbus-qt4-qt3backport daemon client po
 
 $(top_srcdir)/configure.in: configure.in.in $(top_srcdir)/subdirs
 	cd $(top_srcdir) && $(MAKE) -f admin/Makefile.common configure.in ;
@@ -20,3 +20,10 @@ EXTRA_DIST = admin COPYING configure.in.in
 dist-hook:
 	cd $(top_distdir) && perl admin/am_edit -padmin
 	cd $(top_distdir) && $(MAKE) -f admin/Makefile.common subdirs
+
+messages:
+	$(EXTRACTRC) `find . -name \*.ui -o -name \*.rc` > rc.cpp
+	LIST=`find . -name \*.h -o -name \*.cpp -o -name \*.c`; \
+	if test -n "$$LIST"; then \
+		$(XGETTEXT) $$LIST -o $(podir)/lapsus.pot; \
+	fi

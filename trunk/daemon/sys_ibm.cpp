@@ -22,6 +22,9 @@
 #include <qfile.h>
 #include <qstringlist.h>
 
+// We don't need anything else from klocale.h
+#define I18N_NOOP(x)			x
+
 #include "sys_ibm.h"
 
 #define qPrintable(str)			(str.ascii())
@@ -276,18 +279,18 @@ bool SysIBM::ledFeature(const QString &id, QString &led)
 
 QString SysIBM::featureName(const QString &id)
 {
-	if (id == IBM_BACKLIGHT_ID) return "LCD Backlight control";
-	if (id == IBM_BLUETOOTH_ID) return "Bluetooth switch";
-	if (id == IBM_LIGHT_ID) return "ThinkLight switch";
-	if (id == IBM_VOLUME_ID) return "Volume control";
+	if (id == IBM_BACKLIGHT_ID) return I18N_NOOP("LCD Backlight");
+	if (id == IBM_BLUETOOTH_ID) return I18N_NOOP("Bluetooth adapter");
+	if (id == IBM_LIGHT_ID) return I18N_NOOP("ThinkLight");
+	if (id == IBM_VOLUME_ID) return I18N_NOOP("Volume");
 
 	QString tmp;
 
 	if (displayFeature(id, tmp))
-		return QString("%1 Display switch").arg(tmp.upper());
+		return QString("%1 Display").arg(tmp.upper());
 
 	if (ledFeature(id, tmp))
-		return QString("LED %1 switch").arg(tmp);
+		return QString("LED %1").arg(tmp);
 
 	printf("Unknown name for: '%s'\n", id.ascii());
 
