@@ -82,7 +82,7 @@ QString SysIBM::fieldValue(const QString &fieldName, const QString &path)
 
 	if (len < 1) return val;
 
-	val = readPathString(path);
+	val = dbgReadPathString(path);
 
 	if (val.length() < 1) return val;
 
@@ -329,6 +329,8 @@ QStringList SysIBM::featureArgs(const QString &id)
 
 QString SysIBM::featureRead(const QString &id)
 {
+	printf("Feature Read: '%s'\n\n", id.ascii());
+
 	if (id == IBM_BACKLIGHT_ID)
 		return fieldValue("level", IBM_BACKLIGHT_PATH);
 
@@ -383,6 +385,9 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 	bool res = false;
 	QString oVal = featureRead(id);
 
+	printf("Feature Write: '%s'\nOld value was: '%s'\nNew value is: '%s'\n\n",
+		id.ascii(), oVal.ascii(), nVal.ascii());
+
 	if (oVal.length() < 1) return false;
 
 	if (id == IBM_BACKLIGHT_ID)
@@ -398,7 +403,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 
 		if (oVal == lvl) return false;
 
-		res = writePathString(IBM_BACKLIGHT_PATH, QString("level %1").arg(lvl));
+		res = dbgWritePathString(IBM_BACKLIGHT_PATH, QString("level %1").arg(lvl));
 
 		if (res) dbus->signalFeatureChanged(id, lvl);
 
@@ -418,7 +423,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 
 		if (oVal == lvl) return false;
 
-		res = writePathString(IBM_VOLUME_PATH, QString("level %1").arg(lvl));
+		res = dbgWritePathString(IBM_VOLUME_PATH, QString("level %1").arg(lvl));
 
 		if (res) dbus->signalFeatureChanged(id, lvl);
 
@@ -435,7 +440,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 		if (val && oVal == IBM_ON) return false;
 		if (!val && oVal == IBM_OFF) return false;
 
-		res = writePathString(IBM_LIGHT_PATH, val?IBM_ON:IBM_OFF);
+		res = dbgWritePathString(IBM_LIGHT_PATH, val?IBM_ON:IBM_OFF);
 
 		if (res) dbus->signalFeatureChanged(id, val?IBM_ON:IBM_OFF);
 
@@ -452,7 +457,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 		if (val && oVal == IBM_ON) return false;
 		if (!val && oVal == IBM_OFF) return false;
 
-		res = writePathString(IBM_BLUETOOTH_PATH, val?IBM_ENABLE:IBM_DISABLE);
+		res = dbgWritePathString(IBM_BLUETOOTH_PATH, val?IBM_ENABLE:IBM_DISABLE);
 
 		if (res) dbus->signalFeatureChanged(id, val?IBM_ON:IBM_OFF);
 
@@ -471,8 +476,8 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 		if (val && oVal == IBM_ON) return false;
 		if (!val && oVal == IBM_OFF) return false;
 
-		if (val) res = writePathString(IBM_DISPLAY_PATH, tmp.append("_" IBM_ENABLE));
-		else res = writePathString(IBM_DISPLAY_PATH, tmp.append("_" IBM_DISABLE));
+		if (val) res = dbgWritePathString(IBM_DISPLAY_PATH, tmp.append("_" IBM_ENABLE));
+		else res = dbgWritePathString(IBM_DISPLAY_PATH, tmp.append("_" IBM_DISABLE));
 
 		if (res) dbus->signalFeatureChanged(id, val?IBM_ON:IBM_OFF);
 
@@ -490,7 +495,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 		if (val == 2)
 		{
 			if (oVal == IBM_ON) return false;
-			res = writePathString(IBM_LED_PATH, QString("%1 " IBM_ON).arg(tmp));
+			res = dbgWritePathString(IBM_LED_PATH, QString("%1 " IBM_ON).arg(tmp));
 
 			if (res)
 			{
@@ -501,22 +506,22 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 		else if (val == 1)
 		{
 			if (oVal == IBM_BLINK) return false;
-			res = writePathString(IBM_LED_PATH, QString("%1 " IBM_BLINK).arg(tmp));
+			res = dbgWritePathString(IBM_LED_PATH, QString("%1 " IBM_BLINK).arg(tmp));
 
 			if (res)
 			{
-				_leds[tmp] = IBM_ON;
+				_leds[tmp] = IBM_BLINK;
 				dbus->signalFeatureChanged(id, IBM_BLINK);
 			}
 		}
 		else
 		{
 			if (oVal == IBM_OFF) return false;
-			res = writePathString(IBM_LED_PATH, QString("%1 " IBM_OFF).arg(tmp));
+			res = dbgWritePathString(IBM_LED_PATH, QString("%1 " IBM_OFF).arg(tmp));
 
 			if (res)
 			{
-				_leds[tmp] = IBM_ON;
+				_leds[tmp] = IBM_OFF;
 				dbus->signalFeatureChanged(id, IBM_OFF);
 			}
 		}
@@ -525,4 +530,22 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 	}
 
 	return false;
+}
+
+QString SysIBM::dbgReadPathString(const QString &path)
+{
+	QString ret = readPathString(path);
+
+	printf("READ '%s':\n%s(END)\n\n", path.ascii(), ret.ascii());
+
+	return ret;
+}
+
+bool SysIBM::dbgWritePathString(const QString &path, const QString &val)
+{
+	bool ret = writePathString(path, val);
+
+	printf("WRITE [%d] '%s' <- '%s'\n\n", ret, path.ascii(), val.ascii());
+
+	return ret;
 }

@@ -46,6 +46,10 @@ class SysIBM : public SysBackend
 		bool hardwareDetected();
 		QString featurePrefix();
 
+	protected:
+		QString dbgReadPathString(const QString &path);
+		bool dbgWritePathString(const QString &path, const QString &val);
+
 	private:
 		QMap<QString, QString> _leds;
 		bool _hasLEDs;
