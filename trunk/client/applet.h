@@ -54,6 +54,7 @@ class LapsusApplet : public KPanelApplet
 		void rightButtonPressed();
 
 	private:
+		QBoxLayout *_layout;
 		LapsusPanelMain *_mainWidget;
 		LapsusDBus _dbus;
 		Qt::Orientation _orientation;

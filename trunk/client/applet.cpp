@@ -38,11 +38,13 @@ extern "C"
 
 LapsusApplet::LapsusApplet( const QString& configFile, Type t, QWidget *parent, const char *name )
 	: KPanelApplet( configFile, t, 0 , parent, name ),
-	_mainWidget(0), _orientation(orientation())
+	_layout(0), _mainWidget(0), _orientation(orientation())
 {
 	KGlobal::dirs()->addResourceType( "appicon", KStandardDirs::kde_default("data") + "lapsus/pics" );
 
 	setBackgroundMode(X11ParentRelative);
+
+	_layout = new QHBoxLayout(this);
 
 	changeOrientation(_orientation);
 }
@@ -70,9 +72,15 @@ void LapsusApplet::changeOrientation(Qt::Orientation orientation)
 {
 	_orientation = orientation;
 
-	if (_mainWidget) delete _mainWidget;
+	if (_mainWidget)
+	{
+		_layout->remove(_mainWidget);
+		delete _mainWidget;
+	}
 
 	_mainWidget = new LapsusPanelMain(this, &_dbus, _orientation);
+	_layout->add(_mainWidget);
+
 	_mainWidget->show();
 }
 
@@ -105,7 +113,6 @@ void LapsusApplet::preferences()
 
 void LapsusApplet::resizeEvent( QResizeEvent *e)
 {
-	_mainWidget->resize(e->size());
 }
 
 void LapsusApplet::mousePressEvent( QMouseEvent *e )

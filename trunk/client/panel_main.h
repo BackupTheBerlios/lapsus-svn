@@ -44,13 +44,13 @@ class LapsusPanelMain : public QWidget
 
 		QSize sizeHint() const;
 		QSize minimumSize() const;
+		QSizePolicy sizePolicy() const;
 
 		void appletPreferences();
 
 	protected:
 		LapsusDBus *_dbus;
 
-		void resizeEvent( QResizeEvent * );
 		void mousePressEvent( QMouseEvent * );
 
 	public slots:

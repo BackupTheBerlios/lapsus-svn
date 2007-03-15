@@ -211,9 +211,6 @@ void LapsusPanelSlider::resizeEvent(QResizeEvent *e)
 			if (e->size().height()<32) _iconLabel->hide();
 			else _iconLabel->show();
 		}
-
-		_slider->resize(_slider->width(), e->size().height());
-		_layout->invalidate();
 	}
 	else
 	{
@@ -222,9 +219,6 @@ void LapsusPanelSlider::resizeEvent(QResizeEvent *e)
 			if (e->size().width()<32) _iconLabel->hide();
 			else _iconLabel->show();
 		}
-
-		_slider->resize(e->size().width(),_slider->height());
-		_layout->invalidate();
 	}
 }
 

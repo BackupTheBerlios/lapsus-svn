@@ -219,9 +219,9 @@ void LapsusPanelMain::showContextMenu()
 	_popMenu->popup( pos );
 }
 
-void LapsusPanelMain::resizeEvent(QResizeEvent *e)
+QSizePolicy LapsusPanelMain::sizePolicy() const
 {
-	resize(e->size());
+	return QSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding );
 }
 
 void LapsusPanelMain::mousePressEvent( QMouseEvent *e )
