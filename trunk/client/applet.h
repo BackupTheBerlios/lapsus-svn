@@ -50,9 +50,6 @@ class LapsusApplet : public KPanelApplet
 		void mousePressEvent( QMouseEvent *e );
 		void resizeEvent( QResizeEvent * );
 
-	protected slots:
-		void rightButtonPressed();
-
 	private:
 		QBoxLayout *_layout;
 		LapsusPanelMain *_mainWidget;
