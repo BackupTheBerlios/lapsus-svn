@@ -46,7 +46,10 @@ class SysIBM : public SysBackend
 			const QString &device, uint id, uint value);
 
 		bool hardwareDetected();
-		QString featurePrefix();
+
+	protected slots:
+		void acpiEvent(const QString &group, const QString &action,
+				const QString &device, uint id, uint value);
 
 	protected:
 		QString dbgReadPathString(const QString &path);
@@ -64,10 +67,6 @@ class SysIBM : public SysBackend
 		void detect();
 
 		QString fieldValue(const QString &fieldName, const QString &path);
-		bool displayFeature(const QString &id);
-		bool displayFeature(const QString &id, QString &disp);
-		bool ledFeature(const QString &id);
-		bool ledFeature(const QString &id, QString &led);
 };
 
 #endif

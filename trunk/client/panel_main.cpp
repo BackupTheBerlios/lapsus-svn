@@ -23,6 +23,8 @@
 #include <klocale.h>
 #include <kiconloader.h>
 
+#include "lapsus.h"
+
 #include "panel_main.h"
 #include "panel_widget.h"
 #include "panel_default.h"
@@ -136,22 +138,18 @@ void LapsusPanelMain::loadConfig()
 			}
 			else if (LapsusPanelButton::supportsArgs(args))
 			{
-				if (id.find("bluetooth") >= 0)
+				if (id == LAPSUS_FEAT_BLUETOOTH_ID
+					|| id == LAPSUS_FEAT_WIRELESS_ID)
 				{
 					grp = QString("panel_%1").arg(id);
 					pEntries.push_back(grp);
 				}
-				else if (id.find("wireless") >= 0)
-				{
-					grp = QString("panel_%1").arg(id);
-					pEntries.push_back(grp);
-				}
-				else if (id.find("_led_") >= 0)
+				else if (id.startsWith(LAPSUS_FEAT_LED_ID_PREFIX))
 				{
 					grp = QString("menu_%1").arg(id);
 					mEntries.push_back(grp);
 				}
-				else if (id.endsWith("_light"))
+				else if (id == "thinklight")
 				{
 					grp = QString("menu_%1").arg(id);
 					mEntries.push_back(grp);

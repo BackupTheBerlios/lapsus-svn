@@ -106,21 +106,17 @@ void LapsusDaemon::doInit()
 
 	_dbus = new LapsusDBus(this);
 
-	if (!_dbus->isValid())
-	{
-		return;
-	}
+	if (!_dbus->isValid()) return;
 
+	_backend->setDBus(_dbus);
 	_acpiParser = new ACPIEventParser(_acpiFd);
 
 	connect(_acpiParser,
 		SIGNAL(acpiEvent(const QString &, const QString &,
 					const QString &, uint, uint)),
-		this,
+		_backend,
 		SLOT(acpiEvent(const QString &, const QString &,
 					const QString &, uint, uint)));
-
-	_backend->setDBus(_dbus);
 
 	_isValid = true;
 }
@@ -163,13 +159,4 @@ bool LapsusDaemon::featureWrite(const QString &id, const QString &nVal)
 
 	// TODO Check other features
 	return _backend->featureWrite(id.lower(), nVal.lower());
-}
-
-void LapsusDaemon::acpiEvent(const QString &group, const QString &action,
-	const QString &device, uint id, uint value)
-{
-	if (!_backend->checkACPIEvent(group, action, device, id, value))
-	{
-		_dbus->sendACPIEvent(group, action, device, id, value);
-	}
 }

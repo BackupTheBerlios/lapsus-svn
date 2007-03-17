@@ -32,12 +32,31 @@
 
 #define LAPSUS_INTERFACE		"de.berlios.Lapsus"
 
-#define LAPSUS_DBUS_ACPI_EVENT		"acpiEvent"
-#define LAPSUS_DBUS_FEATURE_CHANGED	"featureChanged"
-
 #define LAPSUS_DBUS_LIST_FEATURES	"listFeatures"
 #define LAPSUS_DBUS_GET_FEATURE_INFO	"getFeatureInfo"
 #define LAPSUS_DBUS_GET_FEATURE		"getFeature"
 #define LAPSUS_DBUS_SET_FEATURE		"setFeature"
+
+#define LAPSUS_DBUS_ACPI_EVENT		"acpiEvent"
+#define LAPSUS_DBUS_FEATURE_CHANGED	"featureChanged"
+
+// Following values have to be lower-case!
+#define LAPSUS_FEAT_LED_ID_PREFIX	"led_"
+#define LAPSUS_FEAT_DISPLAY_ID_PREFIX	"display_"
+#define LAPSUS_FEAT_BACKLIGHT_ID	"backlight"
+#define LAPSUS_FEAT_BLUETOOTH_ID	"bluetooth"
+#define LAPSUS_FEAT_WIRELESS_ID		"wireless"
+#define LAPSUS_FEAT_VOLUME_ID		"volume"
+
+#define LAPSUS_FEAT_ON			"on"
+#define LAPSUS_FEAT_OFF			"off"
+#define LAPSUS_FEAT_BLINK		"blink"
+#define LAPSUS_FEAT_MUTE		"mute"
+#define LAPSUS_FEAT_UNMUTE		"unmute"
+
+#define LAPSUS_FEAT_DISPLAY_LCD		"lcd"
+#define LAPSUS_FEAT_DISPLAY_CRT		"crt"
+#define LAPSUS_FEAT_DISPLAY_TV		"tv"
+#define LAPSUS_FEAT_DISPLAY_DVI		"dvi"
 
 #endif

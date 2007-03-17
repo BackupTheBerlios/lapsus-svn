@@ -31,7 +31,7 @@
  * Backend, which controls asus-laptop's kernel module /sys interface
  * files and "knows" what features can be supported.
  */
-class SysAsus : public QObject, public SysBackend
+class SysAsus : public SysBackend
 {
 	Q_OBJECT
 
@@ -40,7 +40,6 @@ class SysAsus : public QObject, public SysBackend
 		~SysAsus();
 
 		QStringList featureList();
-		QString featureName(const QString &id);
 		QStringList featureArgs(const QString &id);
 		QString featureRead(const QString &id);
 		bool featureWrite(const QString &id, const QString &nVal);
@@ -48,19 +47,22 @@ class SysAsus : public QObject, public SysBackend
 			const QString &device, uint id, uint value);
 
 		bool hardwareDetected();
-		QString featurePrefix();
 
 	protected slots:
+#ifdef HAVE_ALSA
 		void volumeChanged(int val);
-
+		void muteChanged(bool muted);
+#endif
+		void acpiEvent(const QString &group, const QString &action,
+				const QString &device, uint id, uint value);
 	private:
 		bool _hasSwitches;
 		bool _hasBacklight;
 		bool _hasDisplay;
-		bool _hasVolume;
 		uint _maxBacklight;
 
 #ifdef HAVE_ALSA
+		bool _hasVolume;
 		LapsusAlsaMixer *_mix;
 #endif
 

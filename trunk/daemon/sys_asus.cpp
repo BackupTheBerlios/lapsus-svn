@@ -22,9 +22,7 @@
 #include <qfile.h>
 #include <qstringlist.h>
 
-// We don't need anything else from klocale.h
-#define I18N_NOOP(x)			x
-
+#include "lapsus.h"
 #include "sys_asus.h"
 
 #define qPrintable(str)			(str.ascii())
@@ -34,32 +32,12 @@
 #define ASUS_SET_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/brightness"
 #define ASUS_MAX_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/max_brightness"
 
-// Following values have to be lower-case!
-#define ASUS_PREFIX			"asus_"
-#define ASUS_DISPLAY_ID			"asus_display_"
-#define ASUS_LED_ID			"asus_led_"
-#define ASUS_BACKLIGHT_ID		(ASUS_PREFIX "backlight")
-#define ASUS_BLUETOOTH_ID		(ASUS_PREFIX "bluetooth")
-#define ASUS_WIRELESS_ID		(ASUS_PREFIX "wireless")
-#define ASUS_VOLUME_ID			(ASUS_PREFIX "volume")
-
-// Following values have to be lower-case!
-#define ASUS_ON				"on"
-#define ASUS_OFF			"off"
-
-// Following values have to be lower-case!
-#define ASUS_LCD			"lcd"
-#define ASUS_CRT			"crt"
-#define ASUS_TV				"tv"
-#define ASUS_DVI			"dvi"
-
 SysAsus::SysAsus():
-	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false), _hasVolume(false),
-	_maxBacklight(0)
-{
+	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false), _maxBacklight(0)
 #ifdef HAVE_ALSA
-	_mix = 0;
+	,_hasVolume(false), _mix(0)
 #endif
+{
 	detect();
 }
 
@@ -68,11 +46,6 @@ SysAsus::~SysAsus()
 #ifdef HAVE_ALSA
 	if (_mix) delete _mix;
 #endif
-}
-
-QString SysAsus::featurePrefix()
-{
-	return ASUS_PREFIX;
 }
 
 void SysAsus::detect()
@@ -99,10 +72,18 @@ void SysAsus::detect()
 
 				if (QFile::exists(path) && fName.startsWith("asus:") && testR(path))
 				{
-					QString id = QString(ASUS_LED_ID "%1").arg(fName.mid(5).lower());
-					QString name = QString("%1 LED").arg(fName.mid(5));
+#if 0
+					// Known LED names - only for translation purposes.
+					I18N_NOOP("Mail LED");
+					I18N_NOOP("Touchpad LED");
+					I18N_NOOP("Recording LED");
+					I18N_NOOP("Phone LED");
+					I18N_NOOP("Gaming LED");
+#endif
 
-					name[0] = name[0].upper();
+					QString id = QString(LAPSUS_FEAT_LED_ID_PREFIX "%1").
+							arg(fName.mid(5).lower());
+					QString name = QString("%1 LED").arg(fName.mid(5)).upper();
 
 					setFeature(id, path, name);
 
@@ -118,7 +99,7 @@ void SysAsus::detect()
 
 	if (QFile::exists(path) && testR(path))
 	{
-		setFeature(ASUS_BLUETOOTH_ID, path, I18N_NOOP("Bluetooth adapter"));
+		setFeature(LAPSUS_FEAT_BLUETOOTH_ID, path);
 
 		_hasSwitches = true;
 	}
@@ -127,7 +108,7 @@ void SysAsus::detect()
 
 	if (QFile::exists(path) && testR(path))
 	{
-		setFeature(ASUS_WIRELESS_ID, path, I18N_NOOP("Wireless radio"));
+		setFeature(LAPSUS_FEAT_WIRELESS_ID, path);
 
 		_hasSwitches = true;
 	}
@@ -171,6 +152,9 @@ void SysAsus::detect()
 
 		connect(_mix, SIGNAL(volumeChanged(int)),
 			this, SLOT(volumeChanged(int)));
+
+		connect(_mix, SIGNAL(muteChanged(bool)),
+			this, SLOT(muteChanged(bool)));
 	}
 	else
 	{
@@ -180,16 +164,29 @@ void SysAsus::detect()
 #endif
 }
 
+#ifdef HAVE_ALSA
 void SysAsus::volumeChanged(int val)
 {
-#ifdef HAVE_ALSA
-	_dbus->signalFeatureChanged(ASUS_VOLUME_ID, QString::number(val));
-#endif
+	if (_dbus)
+		_dbus->signalFeatureChanged(LAPSUS_FEAT_VOLUME_ID, QString::number(val));
 }
+
+void SysAsus::muteChanged(bool muted)
+{
+	if (_dbus)
+		_dbus->signalFeatureChanged(LAPSUS_FEAT_VOLUME_ID,
+				muted?LAPSUS_FEAT_MUTE:LAPSUS_FEAT_UNMUTE);
+}
+#endif
 
 bool SysAsus::hardwareDetected()
 {
-	return _hasSwitches || _hasBacklight || _hasDisplay || _hasVolume;
+	return _hasSwitches
+		|| _hasBacklight
+#ifdef HAVE_ALSA
+		|| _hasVolume
+#endif
+		|| _hasDisplay;
 }
 
 QStringList SysAsus::featureList()
@@ -203,163 +200,111 @@ QStringList SysAsus::featureList()
 
 	if (_hasBacklight)
 	{
-		ret.append(ASUS_BACKLIGHT_ID);
+		ret.append(LAPSUS_FEAT_BACKLIGHT_ID);
 	}
 
 	if (_hasDisplay)
 	{
-		ret.append(ASUS_DISPLAY_ID ASUS_LCD);
-		ret.append(ASUS_DISPLAY_ID ASUS_CRT);
-		ret.append(ASUS_DISPLAY_ID ASUS_TV);
-		ret.append(ASUS_DISPLAY_ID ASUS_DVI);
+		ret.append(LAPSUS_FEAT_DISPLAY_ID_PREFIX LAPSUS_FEAT_DISPLAY_LCD);
+		ret.append(LAPSUS_FEAT_DISPLAY_ID_PREFIX LAPSUS_FEAT_DISPLAY_CRT);
+		ret.append(LAPSUS_FEAT_DISPLAY_ID_PREFIX LAPSUS_FEAT_DISPLAY_TV);
+		ret.append(LAPSUS_FEAT_DISPLAY_ID_PREFIX LAPSUS_FEAT_DISPLAY_DVI);
 	}
 
+#ifdef HAVE_ALSA
 	if (_hasVolume)
 	{
-		ret.append(ASUS_VOLUME_ID);
+		ret.append(LAPSUS_FEAT_VOLUME_ID);
 	}
-
-	return ret;
-}
-
-bool SysAsus::displayFeature(const QString &id)
-{
-	if (id.length() > strlen(ASUS_DISPLAY_ID)
-		&& id.startsWith(ASUS_DISPLAY_ID))
-	{
-		return true;
-	}
-
-	return false;
-}
-
-bool SysAsus::displayFeature(const QString &id, QString &disp)
-{
-	if (!displayFeature(id))
-		return false;
-
-	disp = id.mid(strlen(ASUS_DISPLAY_ID));
-
-	return true;
-}
-
-QString SysAsus::featureName(const QString &id)
-{
-
-#if 0
-	// Known feature names - only for translation purposes.
-	I18N_NOOP("Mail LED");
-	I18N_NOOP("Touchpad LED");
-	I18N_NOOP("Recording LED");
-	I18N_NOOP("Phone LED");
-	I18N_NOOP("Gaming LED");
-	I18N_NOOP("LCD Display");
-	I18N_NOOP("CRT Display");
-	I18N_NOOP("TV Display");
-	I18N_NOOP("DVI Display");
 #endif
 
-	if (id == ASUS_BACKLIGHT_ID)
-	{
-		return I18N_NOOP("LCD Backlight");
-	}
-	else if (id == ASUS_VOLUME_ID)
-	{
-		return I18N_NOOP("Volume");
-	}
-	else if (hasFeature(id))
-	{
-		return getFeatureName(id);
-	}
-
-	QString disp;
-
-	if (displayFeature(id, disp))
-	{
-		return QString("%1 Display").arg(disp.upper());
-	}
-
-	return "";
+	return ret;
 }
 
 QStringList SysAsus::featureArgs(const QString &id)
 {
 	QStringList ret;
 
-	if (id == ASUS_BACKLIGHT_ID)
+	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
 	{
 		if (_maxBacklight > 0)
 		{
 			ret.append(QString("0:%1").arg(QString::number(_maxBacklight)));
 		}
 	}
-	else if (id == ASUS_VOLUME_ID)
-	{
 #ifdef HAVE_ALSA
-		if (_mix)
-			ret.append(QString("0:%1").arg(QString::number(_mix->getMaxVolume())));
-#endif
-	}
-	else if (hasFeature(id) || displayFeature(id))
+	else if (id == LAPSUS_FEAT_VOLUME_ID)
 	{
-		ret.append(ASUS_ON);
-		ret.append(ASUS_OFF);
+		if (_mix)
+		{
+			if (_mix->isValid())
+			{
+				ret.append(QString("0:%1").arg(QString::number(_mix->getMaxVolume())));
+				ret.append(LAPSUS_FEAT_MUTE);
+				ret.append(LAPSUS_FEAT_UNMUTE);
+			}
+		}
+	}
+#endif
+	else if (hasFeature(id) || isDisplayFeature(id))
+	{
+		ret.append(LAPSUS_FEAT_ON);
+		ret.append(LAPSUS_FEAT_OFF);
 	}
 
 	return ret;
 }
 
-bool SysAsus::checkACPIEvent(const QString &group, const QString &action,
+void SysAsus::acpiEvent(const QString &group, const QString &action,
 	const QString &device, uint id, uint value)
 {
-	return false;
+	if (_dbus)
+		_dbus->sendACPIEvent(group, action, device, id, value);
 }
 
 QString SysAsus::featureRead(const QString &id)
 {
-	if (id == ASUS_BACKLIGHT_ID)
+	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
 	{
 		return readPathString(ASUS_GET_BACKLIGHT_PATH);
 	}
-	else if (id == ASUS_VOLUME_ID)
+#ifdef HAVE_ALSA
+	else if (id == LAPSUS_FEAT_VOLUME_ID)
 	{
-#ifndef HAVE_ALSA
-		return "";
-#else
 		if (!_mix) return "";
 
 		return QString::number(_mix->getVolume());
-#endif
 	}
+#endif
 	else if (hasFeature(id))
 	{
 		uint val = readIdUInt(id);
 
 		if (val)
-			return ASUS_ON;
+			return LAPSUS_FEAT_ON;
 
-		return ASUS_OFF;
+		return LAPSUS_FEAT_OFF;
 	}
 
 	QString disp;
 
-	if (displayFeature(id, disp))
+	if (isDisplayFeature(id, disp))
 	{
 		uint val = readPathUInt(ASUS_DISPLAY_PATH);
 		uint offs = 0;
 
-		if (disp == ASUS_LCD) offs = 0;
-		else if (disp == ASUS_CRT) offs = 1;
-		else if (disp == ASUS_TV) offs = 2;
-		else if (disp == ASUS_DVI) offs = 3;
+		if (disp == LAPSUS_FEAT_DISPLAY_LCD) offs = 0;
+		else if (disp == LAPSUS_FEAT_DISPLAY_CRT) offs = 1;
+		else if (disp == LAPSUS_FEAT_DISPLAY_TV) offs = 2;
+		else if (disp == LAPSUS_FEAT_DISPLAY_DVI) offs = 3;
 		else return "";
 
 		if (val & (1<<offs) )
 		{
-			return ASUS_ON;
+			return LAPSUS_FEAT_ON;
 		}
 
-		return ASUS_OFF;
+		return LAPSUS_FEAT_OFF;
 	}
 
 	return "";
@@ -367,7 +312,7 @@ QString SysAsus::featureRead(const QString &id)
 
 bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 {
-	if (id == ASUS_BACKLIGHT_ID)
+	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
 	{
 		bool res = false;
 
@@ -384,19 +329,20 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 
 		res = writePathUInt(ASUS_SET_BACKLIGHT_PATH, uVal);
 
-		if (res)
+		if (res && _dbus)
 		{
-			_dbus->signalFeatureChanged(ASUS_BACKLIGHT_ID, QString::number(uVal));
+			_dbus->signalFeatureChanged(LAPSUS_FEAT_BACKLIGHT_ID, QString::number(uVal));
 		}
 
 		return res;
 	}
-	else if (id == ASUS_VOLUME_ID)
+#ifdef HAVE_ALSA
+	else if (id == LAPSUS_FEAT_VOLUME_ID)
 	{
-#ifndef HAVE_ALSA
-		return false;
-#else
 		if (!_mix) return false;
+
+		if (nVal == LAPSUS_FEAT_MUTE) return _mix->setMuted(true);
+		if (nVal == LAPSUS_FEAT_UNMUTE) return _mix->setMuted(false);
 
 		bool res = false;
 
@@ -405,14 +351,14 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 		if (!res) return false;
 
 		return _mix->setVolume(val);
-#endif
 	}
+#endif
 	else if (hasFeature(id))
 	{
 		uint uVal = 0;
 
-		if (nVal == ASUS_ON) uVal = 1;
-		else if (nVal == ASUS_OFF) uVal = 0;
+		if (nVal == LAPSUS_FEAT_ON) uVal = 1;
+		else if (nVal == LAPSUS_FEAT_OFF) uVal = 0;
 		else return false;
 
 		uint oVal = readIdUInt(id);
@@ -421,7 +367,7 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 
 		bool res = writeIdUInt(id, uVal);
 
-		if (res)
+		if (res && _dbus)
 		{
 			_dbus->signalFeatureChanged(id, nVal);
 		}
@@ -431,19 +377,19 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 
 	QString disp;
 
-	if (displayFeature(id, disp))
+	if (isDisplayFeature(id, disp))
 	{
 		uint uVal;
 		uint offs = 0;
 
-		if (nVal == ASUS_ON) uVal = 1;
-		else if (nVal == ASUS_OFF) uVal = 0;
+		if (nVal == LAPSUS_FEAT_ON) uVal = 1;
+		else if (nVal == LAPSUS_FEAT_ON) uVal = 0;
 		else return false;
 
-		if (disp == ASUS_LCD) offs = 0;
-		else if (disp == ASUS_CRT) offs = 1;
-		else if (disp == ASUS_TV) offs = 2;
-		else if (disp == ASUS_DVI) offs = 3;
+		if (disp == LAPSUS_FEAT_DISPLAY_LCD) offs = 0;
+		else if (disp == LAPSUS_FEAT_DISPLAY_CRT) offs = 1;
+		else if (disp == LAPSUS_FEAT_DISPLAY_TV) offs = 2;
+		else if (disp == LAPSUS_FEAT_DISPLAY_DVI) offs = 3;
 		else return false;
 
 		uint sVal, oVal = readPathUInt(ASUS_DISPLAY_PATH);
@@ -463,7 +409,7 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 
 		bool res = writePathUInt(ASUS_DISPLAY_PATH, sVal);
 
-		if (res)
+		if (res && _dbus)
 		{
 			_dbus->signalFeatureChanged(id, nVal);
 		}

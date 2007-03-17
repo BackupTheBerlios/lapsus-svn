@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "lapsus.h"
 #include "sys_backend.h"
 
 #define qPrintable(str)         (str.ascii())
@@ -69,6 +70,80 @@ void SysBackend::setFeature(const QString &id, const QString &path, const QStrin
 {
 	_featurePaths.insert(id, path);
 	_featureNames.insert(id, name);
+}
+
+QString SysBackend::featureName(const QString &id)
+{
+	if (hasFeature(id))
+	{
+		QString name = getFeatureName(id);
+
+		if (name.length() > 0)
+			return name;
+	}
+
+	if (id == LAPSUS_FEAT_BLUETOOTH_ID) return I18N_NOOP("Bluetooth adapter");
+	if (id == LAPSUS_FEAT_WIRELESS_ID) return I18N_NOOP("Wireless radio");
+	if (id == LAPSUS_FEAT_BACKLIGHT_ID) return I18N_NOOP("LCD Backlight");
+	if (id == LAPSUS_FEAT_VOLUME_ID) return I18N_NOOP("Volume");
+
+	QString disp;
+
+#if 0
+	// Known Display names - only for translation purposes.
+	I18N_NOOP("LCD Display");
+	I18N_NOOP("CRT Display");
+	I18N_NOOP("TV Display");
+	I18N_NOOP("DVI Display");
+#endif
+	if (isDisplayFeature(id, disp))
+	{
+		return QString("%1 Display").arg(disp.upper());
+	}
+
+	return "";
+}
+
+bool SysBackend::isDisplayFeature(const QString &id)
+{
+	if (id.length() > strlen(LAPSUS_FEAT_DISPLAY_ID_PREFIX)
+		&& id.startsWith(LAPSUS_FEAT_DISPLAY_ID_PREFIX))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool SysBackend::isDisplayFeature(const QString &id, QString &disp)
+{
+	if (!isDisplayFeature(id))
+		return false;
+
+	disp = id.mid(strlen(LAPSUS_FEAT_DISPLAY_ID_PREFIX));
+
+	return true;
+}
+
+bool SysBackend::isLEDFeature(const QString &id)
+{
+	if (id.length() > strlen(LAPSUS_FEAT_LED_ID_PREFIX)
+		&& id.startsWith(LAPSUS_FEAT_LED_ID_PREFIX))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool SysBackend::isLEDFeature(const QString &id, QString &led)
+{
+	if (!isLEDFeature(id))
+		return false;
+
+	led = id.mid(strlen(LAPSUS_FEAT_LED_ID_PREFIX));
+
+	return true;
 }
 
 QStringList SysBackend::getFeatures()

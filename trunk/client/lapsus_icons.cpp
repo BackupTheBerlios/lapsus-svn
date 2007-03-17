@@ -22,6 +22,7 @@
 #include <qimage.h>
 #include <kiconloader.h>
 
+#include "lapsus.h"
 #include "lapsus_icons.h"
 
 LapsusIcons::LapsusIcons(const QString &id, KConfig *cfg):
@@ -41,9 +42,9 @@ LapsusIcons::~LapsusIcons()
 
 int LapsusIcons::loadNewAutoIcon(int size)
 {
-	if (_featureId.find("_backlight") >= 0)
+	if (_featureId == LAPSUS_FEAT_BACKLIGHT_ID)
 		return loadNewIcon("light_bulb", "", size);
-	else if (_featureId.find("_volume") >= 0)
+	else if (_featureId == LAPSUS_FEAT_VOLUME_ID)
 		return loadNewIcon("speaker", "", size);
 
 	return -1;
@@ -53,34 +54,35 @@ int LapsusIcons::loadNewAutoIcon(const QString &val, int size)
 {
 	QString first;
 	QString second;
-	int i;
 
-	if (_featureId.find("bluetooth") >= 0)
+	if (_featureId == LAPSUS_FEAT_BLUETOOTH_ID)
 	{
-		if (val == "on") first = "bluetooth";
-		else if (val == "off") first = "bluetooth_gray";
+		if (val == LAPSUS_FEAT_ON) first = "bluetooth";
+		else if (val == LAPSUS_FEAT_OFF) first = "bluetooth_gray";
 	}
-	else if (_featureId.find("wireless") >= 0)
+	else if (_featureId == LAPSUS_FEAT_WIRELESS_ID)
 	{
-		if (val == "on") first = "wifi";
-		else if (val == "off") first = "wifi_gray";
+		if (val == LAPSUS_FEAT_ON) first = "wifi";
+		else if (val == LAPSUS_FEAT_OFF) first = "wifi_gray";
 	}
-	else if ((i = _featureId.find("_led_")) >= 0 )
+	else if (_featureId.startsWith(LAPSUS_FEAT_LED_ID_PREFIX))
 	{
-		if (val == "on") first = "green";
-		else if (val == "off") first = "gray";
-		else if (val == "blink") first = "orange";
+		if (val == LAPSUS_FEAT_ON) first = "green";
+		else if (val == LAPSUS_FEAT_OFF) first = "gray";
+		else if (val == LAPSUS_FEAT_BLINK) first = "orange";
 
-		if ((int) _featureId.length() > i+5)
+		int len = strlen(LAPSUS_FEAT_LED_ID_PREFIX);
+
+		if ((int) _featureId.length() > len)
 		{
-			second = _featureId.mid(i+5, 1);
+			second = _featureId.mid(len, 1);
 		}
 	}
 	else
 	{
 		// TODO - what default values?
-		if (val == "on") first = "yellow";
-		else if (val == "off") first = "gray";
+		if (val == LAPSUS_FEAT_ON) first = "yellow";
+		else if (val == LAPSUS_FEAT_OFF) first = "gray";
 	}
 
 	return loadNewIcon(first, second, size);

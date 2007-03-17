@@ -47,6 +47,7 @@ class SIDInfo
 		bool setEmulMute(bool mute);
 
 	private:
+		bool _isEmulMuted;
 		long _lastVol;
 		snd_mixer_t* _handle;
 		snd_mixer_selem_id_t* _sid;
@@ -74,6 +75,8 @@ class LapsusAlsaMixer : public QObject
 		~LapsusAlsaMixer();
 
 		bool isValid();
+		bool hasVolume();
+		bool hasMute();
 
 		int getVolume();
 		int getMaxVolume();

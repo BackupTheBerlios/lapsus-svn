@@ -22,7 +22,7 @@
 
 SIDInfo::SIDInfo(snd_mixer_t* handle, snd_mixer_selem_id_t* sid) :
 	min(0), max(0), globalMax(0), hasMute(false), hasVolume(false),
-	_lastVol(0), _handle(handle), _sid(sid)
+	_isEmulMuted(false), _lastVol(0), _handle(handle), _sid(sid)
 {
 	if (!_sid) return;
 
@@ -97,12 +97,14 @@ bool SIDInfo::setRealVolume(long val)
 
 	snd_mixer_selem_set_playback_volume_all(elem, val);
 
-	return false;
+	return true;
 }
 
 bool SIDInfo::setVolume(long val)
 {
-	if (!hasVolume || !_sid || globalMax < 1) return 0;
+	if (!hasVolume || !_sid || globalMax < 1) return false;
+
+	if (val > 0) _isEmulMuted = false;
 
 	return setRealVolume(val*(max-min)/globalMax);
 }
@@ -120,7 +122,7 @@ bool SIDInfo::getMute()
 	snd_mixer_selem_get_playback_switch(elem, SND_MIXER_SCHN_FRONT_LEFT, &swl);
 	snd_mixer_selem_get_playback_switch(elem, SND_MIXER_SCHN_FRONT_RIGHT, &swr);
 
-	return (swl || swr);
+	return !(swl || swr);
 }
 
 bool SIDInfo::setMute(bool mute)
@@ -144,13 +146,17 @@ bool SIDInfo::setEmulMute(bool mute)
 
 	if (!elem) return false;
 
+	if (mute == _isEmulMuted) return true;
+
 	if (mute)
 	{
+		_isEmulMuted = true;
 		_lastVol = getRealVolume();
 		return setRealVolume(min);
 	}
 	else
 	{
+		_isEmulMuted = false;
 		bool ret = setRealVolume(_lastVol);
 		_lastVol = min;
 		return ret;
@@ -303,6 +309,12 @@ bool LapsusAlsaMixer::init()
 		connect(_sns[i], SIGNAL(activated(int)), this, SLOT(alsaEvent()));
 	}
 
+	// To read our current parameters. Signals will be emited, but those signals
+	// are not yet connected to anything - this method is called from constructor
+	// only.
+	getVolume();
+	isMuted();
+
 	return true;
 }
 
@@ -320,6 +332,26 @@ void LapsusAlsaMixer::alsaEvent()
 bool LapsusAlsaMixer::isValid()
 {
 	return _isValid;
+}
+
+bool LapsusAlsaMixer::hasVolume()
+{
+	for (int i = 0; i < ID_LAST; ++i)
+	{
+		if (sids[i] && sids[i]->hasVolume) return true;
+	}
+
+	return false;
+}
+
+bool LapsusAlsaMixer::hasMute()
+{
+	for (int i = 0; i < ID_LAST; ++i)
+	{
+		if (sids[i] && sids[i]->hasMute) return true;
+	}
+
+	return false;
 }
 
 int LapsusAlsaMixer::getVolume()
@@ -394,10 +426,15 @@ bool LapsusAlsaMixer::setMuted(bool mState)
 		}
 	}
 
+	// We haven't found anyt sids with mute capabilities,
+	// so let's try to use emulated mute switch which depends on
+	// volume control capabilities
 	for (int i = 0; i < ID_LAST; ++i)
 	{
-		if (sids[i] && sids[i]->hasMute && sids[i]->setEmulMute(mState))
+		if (sids[i] && sids[i]->hasVolume && sids[i]->setEmulMute(mState))
 		{
+			_curMute = mState;
+
 			// Signal should be emited by getVolume in alsaEvent
 			return true;
 		}

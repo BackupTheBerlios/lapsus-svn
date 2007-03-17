@@ -21,6 +21,7 @@
 #ifndef SYS_BACKEND_H
 #define SYS_BACKEND_H
 
+#include <qobject.h>
 #include <qstring.h>
 #include <qstringlist.h>
 #include <qmap.h>
@@ -35,30 +36,35 @@ class SysBackend;
 #include "alsa_mixer.h"
 #endif
 
+// We don't need anything else from klocale.h
+#define I18N_NOOP(x)			x
+
 /**
  * Generic backend for dealing with /sys interface files.
  * Provides methods for reading and writing values from/to those
  * files and dealing with id:path mappings.
  */
-class SysBackend
+class SysBackend: public QObject
 {
+	Q_OBJECT
+
 	public:
 		SysBackend();
 		virtual ~SysBackend();
 
 		virtual bool hardwareDetected() = 0;
-		virtual QString featurePrefix() = 0;
 
 		virtual QStringList featureList() = 0;
-		virtual QString featureName(const QString &id) = 0;
 		virtual QStringList featureArgs(const QString &id) = 0;
 		virtual QString featureRead(const QString &id) = 0;
 		virtual bool featureWrite(const QString &id, const QString &nVal) = 0;
+		virtual QString featureName(const QString &id);
 
-		virtual bool checkACPIEvent(const QString &group, const QString &action,
+		virtual void setDBus(LapsusDBus *dbus);
+
+	protected slots:
+		virtual void acpiEvent(const QString &group, const QString &action,
 				const QString &device, uint id, uint value) = 0;
-
-		void setDBus(LapsusDBus *dbus);
 
 	protected:
 		LapsusDBus *_dbus;
@@ -66,8 +72,13 @@ class SysBackend
 		bool hasFeature(const QString &id);
 		QString getFeaturePath(const QString &id);
 		QString getFeatureName(const QString &id);
-		void setFeature(const QString &id, const QString &path, const QString &name);
+		void setFeature(const QString &id, const QString &path, const QString &name = "");
 		QStringList getFeatures();
+
+		bool isDisplayFeature(const QString &id);
+		bool isDisplayFeature(const QString &id, QString &disp);
+		bool isLEDFeature(const QString &id);
+		bool isLEDFeature(const QString &id, QString &led);
 
 		QString readIdString(const QString &id);
 		bool writeIdString(const QString &id, const QString &val);
