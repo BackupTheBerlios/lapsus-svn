@@ -41,6 +41,7 @@
 #define ASUS_BACKLIGHT_ID		(ASUS_PREFIX "backlight")
 #define ASUS_BLUETOOTH_ID		(ASUS_PREFIX "bluetooth")
 #define ASUS_WIRELESS_ID		(ASUS_PREFIX "wireless")
+#define ASUS_VOLUME_ID			(ASUS_PREFIX "volume")
 
 // Following values have to be lower-case!
 #define ASUS_ON				"on"
@@ -53,14 +54,20 @@
 #define ASUS_DVI			"dvi"
 
 SysAsus::SysAsus():
-	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false),
-	maxBacklight(0)
+	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false), _hasVolume(false),
+	_maxBacklight(0)
 {
+#ifdef HAVE_ALSA
+	_mix = 0;
+#endif
 	detect();
 }
 
 SysAsus::~SysAsus()
 {
+#ifdef HAVE_ALSA
+	if (_mix) delete _mix;
+#endif
 }
 
 QString SysAsus::featurePrefix()
@@ -140,25 +147,49 @@ void SysAsus::detect()
 
 		if (QFile::exists(path) && testR(path))
 		{
-			maxBacklight = readPathUInt(path);
+			_maxBacklight = readPathUInt(path);
 
 			path = ASUS_SET_BACKLIGHT_PATH;
 
-			if (maxBacklight > 0 && QFile::exists(path))
+			if (_maxBacklight > 0 && QFile::exists(path))
 			{
 				_hasBacklight = true;
 			}
 			else
 			{
-				maxBacklight = 0;
+				_maxBacklight = 0;
 			}
 		}
 	}
+
+#ifdef HAVE_ALSA
+	_mix = new LapsusAlsaMixer();
+
+	if (_mix->isValid())
+	{
+		_hasVolume = true;
+
+		connect(_mix, SIGNAL(volumeChanged(int)),
+			this, SLOT(volumeChanged(int)));
+	}
+	else
+	{
+		delete _mix;
+		_mix = 0;
+	}
+#endif
+}
+
+void SysAsus::volumeChanged(int val)
+{
+#ifdef HAVE_ALSA
+	_dbus->signalFeatureChanged(ASUS_VOLUME_ID, QString::number(val));
+#endif
 }
 
 bool SysAsus::hardwareDetected()
 {
-	return _hasSwitches || _hasBacklight || _hasDisplay;
+	return _hasSwitches || _hasBacklight || _hasDisplay || _hasVolume;
 }
 
 QStringList SysAsus::featureList()
@@ -181,6 +212,11 @@ QStringList SysAsus::featureList()
 		ret.append(ASUS_DISPLAY_ID ASUS_CRT);
 		ret.append(ASUS_DISPLAY_ID ASUS_TV);
 		ret.append(ASUS_DISPLAY_ID ASUS_DVI);
+	}
+
+	if (_hasVolume)
+	{
+		ret.append(ASUS_VOLUME_ID);
 	}
 
 	return ret;
@@ -227,6 +263,10 @@ QString SysAsus::featureName(const QString &id)
 	{
 		return I18N_NOOP("LCD Backlight");
 	}
+	else if (id == ASUS_VOLUME_ID)
+	{
+		return I18N_NOOP("Volume");
+	}
 	else if (hasFeature(id))
 	{
 		return getFeatureName(id);
@@ -248,10 +288,17 @@ QStringList SysAsus::featureArgs(const QString &id)
 
 	if (id == ASUS_BACKLIGHT_ID)
 	{
-		if (maxBacklight > 0)
+		if (_maxBacklight > 0)
 		{
-			ret.append(QString("0:%1").arg(QString::number(maxBacklight)));
+			ret.append(QString("0:%1").arg(QString::number(_maxBacklight)));
 		}
+	}
+	else if (id == ASUS_VOLUME_ID)
+	{
+#ifdef HAVE_ALSA
+		if (_mix)
+			ret.append(QString("0:%1").arg(QString::number(_mix->getMaxVolume())));
+#endif
 	}
 	else if (hasFeature(id) || displayFeature(id))
 	{
@@ -262,11 +309,27 @@ QStringList SysAsus::featureArgs(const QString &id)
 	return ret;
 }
 
+bool SysAsus::checkACPIEvent(const QString &group, const QString &action,
+	const QString &device, uint id, uint value)
+{
+	return false;
+}
+
 QString SysAsus::featureRead(const QString &id)
 {
 	if (id == ASUS_BACKLIGHT_ID)
 	{
 		return readPathString(ASUS_GET_BACKLIGHT_PATH);
+	}
+	else if (id == ASUS_VOLUME_ID)
+	{
+#ifndef HAVE_ALSA
+		return "";
+#else
+		if (!_mix) return "";
+
+		return QString::number(_mix->getVolume());
+#endif
 	}
 	else if (hasFeature(id))
 	{
@@ -302,7 +365,7 @@ QString SysAsus::featureRead(const QString &id)
 	return "";
 }
 
-bool SysAsus::featureWrite(const QString &id, const QString &nVal, LapsusDBus *dbus)
+bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 {
 	if (id == ASUS_BACKLIGHT_ID)
 	{
@@ -312,8 +375,8 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal, LapsusDBus *d
 
 		if (!res) return false;
 
-		if (uVal > maxBacklight)
-			uVal = maxBacklight;
+		if (uVal > _maxBacklight)
+			uVal = _maxBacklight;
 
 		uint oVal = readPathUInt(ASUS_GET_BACKLIGHT_PATH);
 
@@ -323,10 +386,26 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal, LapsusDBus *d
 
 		if (res)
 		{
-			dbus->signalFeatureChanged(ASUS_BACKLIGHT_ID, QString::number(uVal));
+			_dbus->signalFeatureChanged(ASUS_BACKLIGHT_ID, QString::number(uVal));
 		}
 
 		return res;
+	}
+	else if (id == ASUS_VOLUME_ID)
+	{
+#ifndef HAVE_ALSA
+		return false;
+#else
+		if (!_mix) return false;
+
+		bool res = false;
+
+		int val = nVal.toInt(&res);
+
+		if (!res) return false;
+
+		return _mix->setVolume(val);
+#endif
 	}
 	else if (hasFeature(id))
 	{
@@ -344,7 +423,7 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal, LapsusDBus *d
 
 		if (res)
 		{
-			dbus->signalFeatureChanged(id, nVal);
+			_dbus->signalFeatureChanged(id, nVal);
 		}
 
 		return res;
@@ -386,7 +465,7 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal, LapsusDBus *d
 
 		if (res)
 		{
-			dbus->signalFeatureChanged(id, nVal);
+			_dbus->signalFeatureChanged(id, nVal);
 		}
 
 		return res;

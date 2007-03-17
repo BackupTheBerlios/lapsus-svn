@@ -41,7 +41,9 @@ class SysIBM : public SysBackend
 		QString featureName(const QString &id);
 		QStringList featureArgs(const QString &id);
 		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal, LapsusDBus *dbus);
+		bool featureWrite(const QString &id, const QString &nVal);
+		bool checkACPIEvent(const QString &group, const QString &action,
+			const QString &device, uint id, uint value);
 
 		bool hardwareDetected();
 		QString featurePrefix();

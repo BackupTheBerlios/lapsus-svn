@@ -330,6 +330,12 @@ QStringList SysIBM::featureArgs(const QString &id)
 	return ret;
 }
 
+bool SysIBM::checkACPIEvent(const QString &group, const QString &action,
+	const QString &device, uint id, uint value)
+{
+	return false;
+}
+
 QString SysIBM::featureRead(const QString &id)
 {
 	printf("Feature Read: '%s'\n\n", id.ascii());
@@ -383,7 +389,7 @@ QString SysIBM::featureRead(const QString &id)
 	return "";
 }
 
-bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *dbus)
+bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 {
 	bool res = false;
 	QString oVal = featureRead(id);
@@ -408,7 +414,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 
 		res = dbgWritePathString(IBM_BACKLIGHT_PATH, QString("level %1").arg(lvl));
 
-		if (res) dbus->signalFeatureChanged(id, lvl);
+		if (res) _dbus->signalFeatureChanged(id, lvl);
 
 		return res;
 	}
@@ -428,7 +434,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 
 		res = dbgWritePathString(IBM_VOLUME_PATH, QString("level %1").arg(lvl));
 
-		if (res) dbus->signalFeatureChanged(id, lvl);
+		if (res) _dbus->signalFeatureChanged(id, lvl);
 
 		return res;
 	}
@@ -445,7 +451,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 
 		res = dbgWritePathString(IBM_LIGHT_PATH, val?IBM_ON:IBM_OFF);
 
-		if (res) dbus->signalFeatureChanged(id, val?IBM_ON:IBM_OFF);
+		if (res) _dbus->signalFeatureChanged(id, val?IBM_ON:IBM_OFF);
 
 		return res;
 	}
@@ -462,7 +468,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 
 		res = dbgWritePathString(IBM_BLUETOOTH_PATH, val?IBM_ENABLE:IBM_DISABLE);
 
-		if (res) dbus->signalFeatureChanged(id, val?IBM_ON:IBM_OFF);
+		if (res) _dbus->signalFeatureChanged(id, val?IBM_ON:IBM_OFF);
 
 		return res;
 	}
@@ -482,7 +488,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 		if (val) res = dbgWritePathString(IBM_DISPLAY_PATH, tmp.append("_" IBM_ENABLE));
 		else res = dbgWritePathString(IBM_DISPLAY_PATH, tmp.append("_" IBM_DISABLE));
 
-		if (res) dbus->signalFeatureChanged(id, val?IBM_ON:IBM_OFF);
+		if (res) _dbus->signalFeatureChanged(id, val?IBM_ON:IBM_OFF);
 
 		return res;
 	}
@@ -503,7 +509,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 			if (res)
 			{
 				_leds[tmp] = IBM_ON;
-				dbus->signalFeatureChanged(id, IBM_ON);
+				_dbus->signalFeatureChanged(id, IBM_ON);
 			}
 		}
 		else if (val == 1)
@@ -514,7 +520,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 			if (res)
 			{
 				_leds[tmp] = IBM_BLINK;
-				dbus->signalFeatureChanged(id, IBM_BLINK);
+				_dbus->signalFeatureChanged(id, IBM_BLINK);
 			}
 		}
 		else
@@ -525,7 +531,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, LapsusDBus *db
 			if (res)
 			{
 				_leds[tmp] = IBM_OFF;
-				dbus->signalFeatureChanged(id, IBM_OFF);
+				_dbus->signalFeatureChanged(id, IBM_OFF);
 			}
 		}
 

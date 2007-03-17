@@ -21,6 +21,7 @@
 #ifndef SYS_ASUS_H
 #define SYS_ASUS_H
 
+#include <qobject.h>
 #include <qstringlist.h>
 #include <qstring.h>
 
@@ -30,8 +31,10 @@
  * Backend, which controls asus-laptop's kernel module /sys interface
  * files and "knows" what features can be supported.
  */
-class SysAsus : public SysBackend
+class SysAsus : public QObject, public SysBackend
 {
+	Q_OBJECT
+
 	public:
 		SysAsus();
 		~SysAsus();
@@ -40,16 +43,26 @@ class SysAsus : public SysBackend
 		QString featureName(const QString &id);
 		QStringList featureArgs(const QString &id);
 		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal, LapsusDBus *dbus);
+		bool featureWrite(const QString &id, const QString &nVal);
+		bool checkACPIEvent(const QString &group, const QString &action,
+			const QString &device, uint id, uint value);
 
 		bool hardwareDetected();
 		QString featurePrefix();
+
+	protected slots:
+		void volumeChanged(int val);
 
 	private:
 		bool _hasSwitches;
 		bool _hasBacklight;
 		bool _hasDisplay;
-		uint maxBacklight;
+		bool _hasVolume;
+		uint _maxBacklight;
+
+#ifdef HAVE_ALSA
+		LapsusAlsaMixer *_mix;
+#endif
 
 		void detect();
 		bool displayFeature(const QString &id);

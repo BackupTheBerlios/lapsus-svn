@@ -47,6 +47,8 @@ class LapsusDBus : public QObject, QDBusObjectBase
 		bool isValid();
 
 		void signalFeatureChanged(const QString &id, const QString &val);
+		void sendACPIEvent(const QString &group, const QString &action,
+				const QString &device, uint id, uint value);
 
 	private:
 		LapsusDaemon *_daemon;
@@ -69,10 +71,8 @@ class LapsusDBus : public QObject, QDBusObjectBase
 	protected:
 		virtual bool handleMethodCall(const QDBusMessage& message);
 
-	public slots:
+	protected slots:
 		void sendPendingSignals();
-		void sendACPIEvent(const QString &group, const QString &action,
-				const QString &device, uint id, uint value);
 };
 
 #endif

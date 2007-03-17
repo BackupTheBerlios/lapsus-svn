@@ -29,6 +29,12 @@ class SysBackend;
 
 #include "lapsus_dbus.h"
 
+#include "../config.h"
+
+#ifdef HAVE_ALSA
+#include "alsa_mixer.h"
+#endif
+
 /**
  * Generic backend for dealing with /sys interface files.
  * Provides methods for reading and writing values from/to those
@@ -47,9 +53,16 @@ class SysBackend
 		virtual QString featureName(const QString &id) = 0;
 		virtual QStringList featureArgs(const QString &id) = 0;
 		virtual QString featureRead(const QString &id) = 0;
-		virtual bool featureWrite(const QString &id, const QString &nVal, LapsusDBus *dbus) = 0;
+		virtual bool featureWrite(const QString &id, const QString &nVal) = 0;
+
+		virtual bool checkACPIEvent(const QString &group, const QString &action,
+				const QString &device, uint id, uint value) = 0;
+
+		void setDBus(LapsusDBus *dbus);
 
 	protected:
+		LapsusDBus *_dbus;
+
 		bool hasFeature(const QString &id);
 		QString getFeaturePath(const QString &id);
 		QString getFeatureName(const QString &id);

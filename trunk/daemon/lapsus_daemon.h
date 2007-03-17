@@ -46,6 +46,10 @@ class LapsusDaemon : public QObject
 		QString featureRead(const QString &id);
 		bool featureWrite(const QString &id, const QString &nVal);
 
+	protected slots:
+		void acpiEvent(const QString &group, const QString &action,
+				const QString &device, uint id, uint value);
+
 	private:
 		uint _acpiFd;
 		SysBackend *_backend;

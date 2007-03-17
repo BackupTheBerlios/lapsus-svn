@@ -33,12 +33,21 @@
 
 #define qPrintable(str)         (str.ascii())
 
-SysBackend::SysBackend()
+#ifdef HAVE_ALSA
+#include "alsa_mixer.cpp"
+#endif
+
+SysBackend::SysBackend() : _dbus(0)
 {
 }
 
 SysBackend::~SysBackend()
 {
+}
+
+void SysBackend::setDBus(LapsusDBus *dbus)
+{
+	_dbus = dbus;
 }
 
 bool SysBackend::hasFeature(const QString &id)
