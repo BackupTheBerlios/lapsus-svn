@@ -51,19 +51,16 @@ LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 
 		QStringList list = _dbus->getFeatureArgs(_featureId);
 
-		if (list.size() > 0)
-		{
-			list = QStringList::split(':', list[0]);
+		int minV, maxV;
 
-			if (list.size() > 1)
-			{
-				// TODO - maybe it should be re-initialized
-				// everytime dbus goes up ?
-				_isValid = true;
-				_hasDBus = true;
-				minSlider = list[0].toInt();
-				maxSlider = list[1].toInt();
-			}
+		if (getMinMaxArgs(list, &minV, &maxV))
+		{
+			// TODO - maybe it should be re-initialized
+			// everytime dbus goes up ?
+			_isValid = true;
+			_hasDBus = true;
+			minSlider = minV;
+			maxSlider = maxV;
 		}
 
 		sliderVal = _dbus->getFeature(_featureId).toInt();
@@ -136,25 +133,30 @@ LapsusPanelSlider::~LapsusPanelSlider()
 {
 }
 
-bool LapsusPanelSlider::supportsArgs(const QStringList & args)
+bool LapsusPanelSlider::getMinMaxArgs(const QStringList & args, int *minV, int *maxV)
 {
-	if (args.size() == 1)
+	for (uint i = 0; i < args.size(); ++i)
 	{
-		QStringList list = QStringList::split(':', args[0]);
+		QStringList list = QStringList::split(':', args[i]);
 
 		if (list.size() == 2)
 		{
-			int minV, maxV;
+			*minV = list[0].toInt();
+			*maxV = list[1].toInt();
 
-			minV = list[0].toInt();
-			maxV = list[1].toInt();
-
-			if ( minV < maxV )
+			if ( *minV < *maxV )
 				return true;
 		}
 	}
 
 	return false;
+}
+
+bool LapsusPanelSlider::supportsArgs(const QStringList & args)
+{
+	int minV, maxV;
+
+	return getMinMaxArgs(args, &minV, &maxV);
 }
 
 void LapsusPanelSlider::sliderValueChanged(int nValue)
