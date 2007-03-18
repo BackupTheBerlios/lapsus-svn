@@ -33,11 +33,10 @@
 #define ASUS_MAX_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/max_brightness"
 
 SysAsus::SysAsus():
-	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false), _maxBacklight(0),
+	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false), _maxBacklight(0)
 #ifdef HAVE_ALSA
-	_hasVolume(false), _mix(0),
+	,_hasVolume(false), _mix(0)
 #endif
-	_doCircular(false)
 {
 	detect();
 }
@@ -301,12 +300,28 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 
 #ifdef HAVE_ALSA
 
-	if (_hasVolume)
+	if (_hasVolume && _mix)
 	{
 		if (id == 0x32)
 		{
+			bool muted = _mix->isMuted();
+
 			_mix->toggleMute();
-			return;
+
+			if (muted != _mix->isMuted())
+			{
+				// Reveresed, muted is old value
+				if (muted)
+				{
+					_dbus->signalFeatureNotif(LAPSUS_FEAT_VOLUME_ID,
+								LAPSUS_FEAT_UNMUTE);
+				}
+				else
+				{
+					_dbus->signalFeatureNotif(LAPSUS_FEAT_VOLUME_ID,
+								LAPSUS_FEAT_MUTE);
+				}
+			}
 		}
 		else if (id == 0x31 || id == 0x30)
 		{
@@ -330,54 +345,23 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 	}
 #endif
 
-	if (_hasBacklight)
+	// I'm not sure what should be the ID range if max_backlight != 15...
+	if (_hasBacklight && id >= 0x20 && id <= 0x2e)
 	{
-		// I am not sure about 0x2b, becasue I have only backlight down working,
-		// which is 0x2c. But backlight up is next to it and should have the code
-		// 0x2b. That is also the reason why I added _doCircular feature. It is possible
-		// to control the brightness with only one key - either brightness up or down.
-		// When it reaches 0 or max backlight and the same key is pressed again - nothing happens,
-		// but one more press makes it start from the other side, so pressing bright. up works like:
-		// (max - 1) -> max -> max -> 0
-		// and bright. down:
-		// 1 -> 0 -> 0 -> max
-		if (id == 0x2c || id == 0x2b)
+		int oVal = readPathString(ASUS_GET_BACKLIGHT_PATH).toInt();
+		int nVal = id - 0x20;
+
+		if (oVal == 0 && nVal == 0)
+			nVal = _maxBacklight;
+
+		if (setBacklight(nVal) && _dbus)
 		{
-			int oVal = readPathString(ASUS_GET_BACKLIGHT_PATH).toInt();
-			int nVal;
-
-			if (id == 0x2c) nVal = oVal - 1;
-			else nVal = oVal + 1;
-
-			if (nVal > (int) _maxBacklight || nVal < 0)
-			{
-				if (!_doCircular)
-				{
-					_doCircular = true;
-
-					if (_dbus) _dbus->signalFeatureNotif(
-							LAPSUS_FEAT_BACKLIGHT_ID,
-							QString::number(oVal));
-					return;
-				}
-				else
-				{
-					if (nVal > (int) _maxBacklight) nVal = 0;
-					else nVal = _maxBacklight;
-				}
-			}
-
-			_doCircular = false;
-
-			if (setBacklight(nVal) && _dbus)
-			{
-				_dbus->signalFeatureNotif(
-					LAPSUS_FEAT_BACKLIGHT_ID,
-					QString::number(nVal));
-			}
-
-			return;
+			_dbus->signalFeatureNotif(
+				LAPSUS_FEAT_BACKLIGHT_ID,
+				QString::number(nVal));
 		}
+
+		return;
 	}
 
 	/*

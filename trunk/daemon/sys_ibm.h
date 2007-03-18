@@ -104,6 +104,7 @@ class SysIBM : public SysBackend
 		bool nvramReadBuf(unsigned char *buf, off_t pos, size_t len);
 		bool nvramRead(t_thinkpad_state *tState);
 		bool checkNVRAMPair(unsigned char vOld, unsigned char VNew, char *desc);
+		void signalNVRAMChange(const QString &id, unsigned char nVal);
 };
 
 #endif

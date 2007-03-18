@@ -106,20 +106,27 @@ int LapsusIcons::loadNewIcon(const QString &img, const QString &desc, int size)
 		QPainter p;
 		int iH = imgBase.height();
 		int iW = imgBase.width();
-		int siz = QMIN(imgBase.height(), imgBase.width());
+		QFont f;
 
-		// 55%
-		siz = (siz * 55) / 100;
+		int maxH = iH/2;
+		int maxW = iW/2;
+
+		int nSize = QMIN(imgBase.height(), imgBase.width())*6/10;
+		QSize size;
+
+		do
+		{
+			f.setPointSize(nSize);
+			QFontMetrics fm(f);
+			size = fm.size(0, desc, 1);
+			nSize--;
+		}
+		while(nSize > 5 && size.width() > maxW && size.height() > maxH);
 
 		p.begin( &imgBase);
-
-		QFont f;
-		f.setPointSize(siz);
 		p.setFont(f);
 
-		QRect r = p.boundingRect(0, 0, iW, iH, Qt::AlignCenter, desc, 1);
-
-		p.drawText((iW-(r.right()-r.left()))/2, (iH + siz) / 2, desc, 1);
+		p.drawText((iW - size.width())/2, (iH + (size.height()*5)/6) / 2, desc, 1);
 	}
 
 	int idx = _cachedIcons.count();

@@ -575,7 +575,7 @@ bool SysIBM::checkNVRAMPair(unsigned char vOld, unsigned char vNew, char *desc)
 {
 	if (vOld != vNew)
 	{
-		printf("NVRAM EVENT: %s = %ud\n\n", desc, vNew);
+		printf("NVRAM EVENT: %s = 0x%02x (%u)\n\n", desc, vNew, vNew);
 
 		_dbus->sendACPIEvent("ibm", "nvram_event", desc, 1, vNew);
 		return true;
@@ -629,7 +629,28 @@ void SysIBM::timerEvent( QTimerEvent * e)
 		CHECK_NVRAM_ARG(mute_toggle);
 		CHECK_NVRAM_ARG(powermgt_ac);
 		CHECK_NVRAM_ARG(powermgt_battery);
+
+		if (!_dbus) return;
+
+		if (_thinkpadOld->volume_level != _thinkpadNew->volume_level)
+		{
+			signalNVRAMChange(LAPSUS_FEAT_VOLUME_ID,
+					_thinkpadNew->volume_level);
+		}
+
+		if (_thinkpadOld->brightness_level != _thinkpadNew->brightness_level)
+		{
+			signalNVRAMChange(LAPSUS_FEAT_BACKLIGHT_ID,
+					_thinkpadNew->brightness_level);
+		}
 	}
+}
+void SysIBM::signalNVRAMChange(const QString &id, unsigned char nVal)
+{
+	QString val = QString::number(nVal);
+
+	_dbus->signalFeatureChanged(id, val);
+	_dbus->signalFeatureNotif(id, val);
 }
 
 bool SysIBM::nvramReadBuf(unsigned char *buf, off_t pos, size_t len)

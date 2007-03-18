@@ -66,9 +66,6 @@ class SysAsus : public SysBackend
 		bool _hasVolume;
 		LapsusAlsaMixer *_mix;
 #endif
-
-		bool _doCircular;
-
 		void detect();
 		bool setBacklight(uint nVal);
 };

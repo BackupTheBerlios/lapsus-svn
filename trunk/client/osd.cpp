@@ -200,6 +200,9 @@ void LapsusOSD::paintEvent( QPaintEvent* )
 
 void LapsusOSD::mousePressEvent( QMouseEvent* e )
 {
+	/*
+	// TODO Don't allow for this now. Later it should be possible
+	// to drag, but only during configuration - just like Amarok does.
 	_dragOffset = e->pos();
 
 	if( e->button() == LeftButton && !_dragging )
@@ -207,12 +210,13 @@ void LapsusOSD::mousePressEvent( QMouseEvent* e )
 		grabMouse( KCursor::sizeAllCursor() );
 		_dragging = true;
 	}
-	/*else if( e->button() == RightButton )
+	else if( e->button() == RightButton )
 	{
 		KPopupMenu m;
 		if( m.insertItem( i18n("Hide OSD") ) == m.exec( e->globalPos() ) )
 			hide();
-	}*/
+	}
+	*/
 }
 
 
@@ -272,7 +276,6 @@ QPoint LapsusOSD::fixupPosition( const QPoint& pp )
 
 	return p;
 }
-
 
 void LapsusOSD::readSettings( KConfigBase* c )
 {
