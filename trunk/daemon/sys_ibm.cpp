@@ -23,6 +23,11 @@
  *                                                                         *
  ***************************************************************************/
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <qdir.h>
 #include <qfile.h>
 #include <qstringlist.h>
