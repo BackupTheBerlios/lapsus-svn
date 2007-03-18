@@ -111,7 +111,11 @@ void LapsusOSD::renderOSD()
 		int textWidth = fontMetrics().width( _text );
 
 		// do not change the size every time the text changes, just in case we are too small
-		QSize newSize( QMAX( QMAX( 2*margin + icon.width() + margin + textWidth, 100 ), width() ),
+		//QSize newSize( QMAX( QMAX( 2*margin + icon.width() + margin + textWidth, 100 ), width() ),
+		//		QMAX( 2*margin + icon.height(), 2*margin + fontMetrics().height()*2 ) );
+
+		// change every time
+		QSize newSize( QMAX( 2*margin + icon.width() + margin + textWidth, 100 ),
 				QMAX( 2*margin + icon.height(), 2*margin + fontMetrics().height()*2 ) );
 
 		_osdBuffer.resize( newSize );
