@@ -16,6 +16,11 @@
  *   along with this program; if not, write to the                         *
  *   Free Software Foundation, Inc.,                                       *
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
+ *                                                                         *
+ *   Parts of this code were taken from:                                   *
+ *   ThinkPad Buttons - http://savannah.nongnu.org/projects/tpb/           *
+ *   by Markus Braun <markus.braun@krawel.de>                              *
+ *                                                                         *
  ***************************************************************************/
 
 #ifndef SYS_IBM_H
@@ -26,6 +31,29 @@
 #include <qstring.h>
 
 #include "sys_backend.h"
+
+#define IBM_NVRAM_DEVICE	"/dev/nvram"
+
+typedef struct {
+	unsigned char thinkpad_toggle;		/* ThinkPad button */
+	unsigned char zoom_toggle;		/* Zoom toggle */
+	unsigned char display_toggle;		/* Display toggle */
+	unsigned char home_toggle;		/* Home button */
+	unsigned char search_toggle;		/* Search button */
+	unsigned char mail_toggle;		/* Mail button */
+	unsigned char wireless_toggle;		/* Wireless button */
+	unsigned char thinklight_toggle;	/* ThinkLight */
+	unsigned char hibernate_toggle;		/* Hibernation/suspend toggle */
+	unsigned char display_state;		/* Display state */
+	unsigned char expand_toggle;		/* HV expansion state */
+	unsigned char brightness_level;		/* Brightness level */
+	unsigned char brightness_toggle;	/* Brightness toggle */
+	unsigned char volume_level;		/* Volume level */
+	unsigned char volume_toggle;		/* Volume toggle */
+	unsigned char mute_toggle;		/* Mute toggle */
+	unsigned char powermgt_ac;		/* Power management mode ac */
+	unsigned char powermgt_battery;		/* Power management mode battery */
+} t_thinkpad_state;
 
 /**
  * Backend, which controls asus-laptop's kernel module /sys interface
@@ -54,6 +82,7 @@ class SysIBM : public SysBackend
 	protected:
 		QString dbgReadPathString(const QString &path);
 		bool dbgWritePathString(const QString &path, const QString &val);
+		void timerEvent( QTimerEvent * );
 
 	private:
 		QMap<QString, QString> _leds;
@@ -63,10 +92,18 @@ class SysIBM : public SysBackend
 		bool _hasBluetooth;
 		bool _hasLight;
 		bool _hasVolume;
+		bool _hasNVRAM;
+		int _fdNVRAM;
+		t_thinkpad_state *_thinkpadNew;
+		t_thinkpad_state *_thinkpadOld;
+		int _timerNVRAMId;
 
 		void detect();
 
 		QString fieldValue(const QString &fieldName, const QString &path);
+		bool nvramReadBuf(unsigned char *buf, off_t pos, size_t len);
+		bool nvramRead(t_thinkpad_state *tState);
+		bool checkNVRAMPair(unsigned char vOld, unsigned char VNew, char *desc);
 };
 
 #endif

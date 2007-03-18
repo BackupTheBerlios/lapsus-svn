@@ -16,6 +16,11 @@
  *   along with this program; if not, write to the                         *
  *   Free Software Foundation, Inc.,                                       *
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
+ *                                                                         *
+ *   Parts of this code were taken from:                                   *
+ *   ThinkPad Buttons - http://savannah.nongnu.org/projects/tpb/           *
+ *   by Markus Braun <markus.braun@krawel.de>                              *
+ *                                                                         *
  ***************************************************************************/
 
 #include <qdir.h>
@@ -24,6 +29,10 @@
 
 #include "lapsus.h"
 #include "sys_ibm.h"
+
+// How often do we want to poll NVRAM for changes?
+// For example 200 = every 200ms
+#define NVRAM_POLL_INTERVAL_MS		200
 
 #define qPrintable(str)			(str.ascii())
 
@@ -49,13 +58,58 @@
 
 SysIBM::SysIBM():
 	_hasLEDs(false), _hasBacklight(false), _hasDisplay(false),
-	_hasBluetooth(false), _hasLight(false), _hasVolume(false)
+	_hasBluetooth(false), _hasLight(false), _hasVolume(false),
+	_hasNVRAM(false), _fdNVRAM(-1), _thinkpadNew(0), _thinkpadOld(0),
+	_timerNVRAMId(0)
 {
 	detect();
+
+	// We try to use NVRAM only if we know that it is IBM laptop
+	if (hardwareDetected())
+	{
+		_fdNVRAM = open(IBM_NVRAM_DEVICE, O_RDONLY|O_NONBLOCK);
+
+		if (_fdNVRAM >= 0)
+		{
+			printf("Opened NVRAM device\n\n");
+
+			_thinkpadNew = (t_thinkpad_state *) malloc(sizeof(t_thinkpad_state));
+
+			memset(_thinkpadNew, 0, sizeof(t_thinkpad_state));
+
+			if (nvramRead(_thinkpadNew))
+			{
+				_thinkpadOld = (t_thinkpad_state *) malloc(sizeof(t_thinkpad_state));
+
+				memcpy(_thinkpadOld, _thinkpadNew, sizeof(t_thinkpad_state));
+
+				_hasNVRAM = true;
+
+				_timerNVRAMId = startTimer(NVRAM_POLL_INTERVAL_MS);
+
+				printf("NVRAM polling started\n\n");
+			}
+			else
+			{
+				printf("Failed to read NVRAM\n\n");
+
+				free(_thinkpadNew);
+				_thinkpadNew = 0;
+			}
+		}
+		else
+		{
+			printf("Could not open NVRAM device...\n\n");
+		}
+	}
 }
 
 SysIBM::~SysIBM()
 {
+	if (_thinkpadNew) free(_thinkpadNew);
+	if (_thinkpadOld) free(_thinkpadOld);
+
+	if (_fdNVRAM >= 0) close(_fdNVRAM);
 }
 
 QString SysIBM::fieldValue(const QString &fieldName, const QString &path)
@@ -492,4 +546,118 @@ bool SysIBM::dbgWritePathString(const QString &path, const QString &val)
 	printf("WRITE [%d] '%s' <- '%s'\n\n", ret, path.ascii(), val.ascii());
 
 	return ret;
+}
+
+#define CHECK_NVRAM_ARG(arg)	checkNVRAMPair(_thinkpadOld->arg, _thinkpadNew->arg, #arg)
+
+bool SysIBM::checkNVRAMPair(unsigned char vOld, unsigned char vNew, char *desc)
+{
+	if (vOld != vNew)
+	{
+		printf("NVRAM EVENT: %s = %ud\n\n", desc, vNew);
+
+		_dbus->sendACPIEvent("ibm", "nvram_event", desc, 1, vNew);
+		return true;
+	}
+
+	return false;
+}
+
+void SysIBM::timerEvent( QTimerEvent * e)
+{
+	// If it is NVRAM timer, and we have dbus set.
+	// If we don't have dbus, there is no point in polling NVRAM
+	if (_timerNVRAMId && e->timerId() == _timerNVRAMId && _dbus)
+	{
+		t_thinkpad_state *tmp;
+
+		tmp = _thinkpadOld;
+		_thinkpadOld = _thinkpadNew;
+		_thinkpadNew = tmp;
+
+		if (!nvramRead(_thinkpadNew))
+		{
+			// nvram reading failed. We stop polling.
+			// Just to be safe... for now.
+			killTimer(_timerNVRAMId);
+			_timerNVRAMId = 0;
+
+			return;
+		}
+
+		// If nothing has changed...
+		if (!memcmp(_thinkpadOld, _thinkpadNew, sizeof(t_thinkpad_state)))
+			return;
+
+		// Something has changed. Lets check what:
+		CHECK_NVRAM_ARG(thinkpad_toggle);
+		CHECK_NVRAM_ARG(zoom_toggle);
+		CHECK_NVRAM_ARG(display_toggle);
+		CHECK_NVRAM_ARG(home_toggle);
+		CHECK_NVRAM_ARG(search_toggle);
+		CHECK_NVRAM_ARG(mail_toggle);
+		CHECK_NVRAM_ARG(wireless_toggle);
+		CHECK_NVRAM_ARG(thinklight_toggle);
+		CHECK_NVRAM_ARG(hibernate_toggle);
+		CHECK_NVRAM_ARG(display_state);
+		CHECK_NVRAM_ARG(expand_toggle);
+		CHECK_NVRAM_ARG(brightness_level);
+		CHECK_NVRAM_ARG(brightness_toggle);
+		CHECK_NVRAM_ARG(volume_level);
+		CHECK_NVRAM_ARG(volume_toggle);
+		CHECK_NVRAM_ARG(mute_toggle);
+		CHECK_NVRAM_ARG(powermgt_ac);
+		CHECK_NVRAM_ARG(powermgt_battery);
+	}
+}
+
+bool SysIBM::nvramReadBuf(unsigned char *buf, off_t pos, size_t len)
+{
+	if (lseek(_fdNVRAM, pos, SEEK_SET) != pos) return false;
+
+	if (read(_fdNVRAM, buf, len) != (int) len) return false;
+
+	return true;
+}
+
+/* get the current state from the nvram */
+bool SysIBM::nvramRead(t_thinkpad_state *tState)
+{
+	unsigned char buf[4];
+
+	// Read only the interesting bytes from nvram to reduce the CPU usage
+	// The kernel nvram driver reads byte-by-byte from nvram, so just
+	// reading interesting bytes reduces the amount of inb() calls */
+
+	if (!nvramReadBuf(buf, 0x39, 0x01)) return false;
+
+	tState->powermgt_ac		= (buf[0] & 0x07);
+	tState->powermgt_battery	= (buf[0] & 0x38) >> 3;
+
+	if (!nvramReadBuf(buf, 0x56, 0x04)) return false;
+
+	tState->home_toggle		= (buf[0] & 0x01);
+	tState->search_toggle		= (buf[0] & 0x02) >> 1;
+	tState->mail_toggle		= (buf[0] & 0x04) >> 2;
+	tState->wireless_toggle		= (buf[0] & 0x20) >> 5;
+	tState->thinkpad_toggle		= (buf[1] & 0x08) >> 3;
+	tState->zoom_toggle		= (buf[1] & 0x20) >> 5;
+	tState->display_toggle		= (buf[1] & 0x40) >> 6;
+	tState->hibernate_toggle	= (buf[2] & 0x01);
+	tState->thinklight_toggle	= (buf[2] & 0x10) >> 4;
+	tState->display_state		= (buf[3] & 0x03);
+	tState->expand_toggle		= (buf[3] & 0x10) >> 4;
+
+	if (!nvramReadBuf(buf, 0x5e, 0x01)) return false;
+
+	tState->brightness_level	= (buf[0] & 0x07);
+	tState->brightness_toggle	= (buf[0] & 0x20) >> 5;
+
+	if (!nvramReadBuf(buf, 0x60, 0x01)) return false;
+
+	tState->volume_level		= (buf[0] & 0x0f);
+	tState->volume_toggle		= (buf[0] & 0x80) >> 7;
+	tState->mute_toggle		= (buf[0] & 0x40) >> 6;
+
+	return true;
 }
