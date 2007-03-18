@@ -41,6 +41,7 @@ class SysAsus : public SysBackend
 
 		QStringList featureList();
 		QStringList featureArgs(const QString &id);
+		QStringList featureParams(const QString &id);
 		QString featureRead(const QString &id);
 		bool featureWrite(const QString &id, const QString &nVal);
 		bool checkACPIEvent(const QString &group, const QString &action,
@@ -66,7 +67,10 @@ class SysAsus : public SysBackend
 		LapsusAlsaMixer *_mix;
 #endif
 
+		bool _doCircular;
+
 		void detect();
+		bool setBacklight(uint nVal);
 };
 
 #endif

@@ -93,6 +93,16 @@ void LapsusDBus::signalFeatureChanged(const QString &id, const QString &val)
 	safeSendSignal(LAPSUS_DBUS_FEATURE_CHANGED, params);
 }
 
+void LapsusDBus::signalFeatureNotif(const QString &id, const QString &val)
+{
+	QValueList<QDBusData> params;
+
+	params.append(QDBusData::fromString(id));
+	params.append(QDBusData::fromString(val));
+
+	safeSendSignal(LAPSUS_DBUS_FEATURE_NOTIF, params);
+}
+
 void LapsusDBus::sendACPIEvent(const QString &group, const QString &action,
 				const QString &device, uint id, uint value)
 {
@@ -110,10 +120,16 @@ void LapsusDBus::sendACPIEvent(const QString &group, const QString &action,
 bool LapsusDBus::safeSendSignal(const QString &sigName,
 				const QValueList<QDBusData>& params)
 {
+	/*
+	// When ALSA is used it is possible that the reply is no longer
+	// beeing processed, but it is probably too close to sending
+	// the reply and the signal is not received anyway.
+	// So lets just always use timer to send the signals
 	if (!_processingReply)
 	{
 		return sendSignal(sigName, params);
 	}
+	*/
 
 	signalsToSend.push_back(sigName);
 	signalValsToSend.push_back(params);
@@ -219,6 +235,7 @@ bool LapsusDBus::handleMethodCall(const QDBusMessage& message)
 
 			reply << QDBusData::fromString(_daemon->featureName(id));
 			reply << QDBusData::fromList(_daemon->featureArgs(id));
+			reply << QDBusData::fromList(_daemon->featureParams(id));
 		}
 		else
 		{

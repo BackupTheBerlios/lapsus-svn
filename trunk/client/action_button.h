@@ -22,6 +22,8 @@
 #ifndef LAPSUS_ACTION_BUTTON_H
 #define LAPSUS_ACTION_BUTTON_H
 
+#include <qmap.h>
+
 #include <kactioncollection.h>
 #include <kaction.h>
 #include <kconfig.h>
@@ -45,12 +47,10 @@ class LapsusActionButton : public KAction, protected LapsusIcons
 		QString _name;
 		QStringList _vals;
 		QString _curVal;
-		int _iconOn;
-		int _iconBlink;
-		int _iconOff;
 		QString _featureId;
 		bool _hasDBus;
 		bool _isValid;
+		QMap<QString, int> _icons;
 
 		void checkCurVal();
 

@@ -119,13 +119,6 @@ QStringList SysGeneric::featureArgs(const QString &id)
 	return ret;
 }
 
-void SysGeneric::acpiEvent(const QString &group, const QString &action,
-	const QString &device, uint id, uint value)
-{
-	if (_dbus)
-		_dbus->sendACPIEvent(group, action, device, id, value);
-}
-
 QString SysGeneric::featureRead(const QString &id)
 {
 #ifdef HAVE_ALSA

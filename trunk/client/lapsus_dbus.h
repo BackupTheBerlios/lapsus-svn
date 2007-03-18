@@ -47,6 +47,7 @@ class LapsusDBus : public QObject
 		QStringList listFeatures();
 		QString getFeatureName(const QString &id);
 		QStringList getFeatureArgs(const QString &id);
+		QStringList getFeatureParams(const QString &id);
 		QString getFeature(const QString &id);
 
 	protected:
@@ -60,6 +61,7 @@ class LapsusDBus : public QObject
 		QMap<QString, QString> _featureVal;
 		QMap<QString, QString> _featureName;
 		QMap<QString, QStringList> _featureArgs;
+		QMap<QString, QStringList> _featureParams;
 		int _timerId;
 
 		void connError();
@@ -73,6 +75,7 @@ class LapsusDBus : public QObject
 
 	signals:
 		void featureChanged(const QString &id, const QString &val);
+		void featureNotif(const QString &id, const QString &val);
 		void stateChanged(bool state);
 };
 

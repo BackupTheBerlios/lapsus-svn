@@ -32,9 +32,13 @@
 #include "panel_button.h"
 #include "action_button.h"
 
+// 1.5 sec
+#define OSD_TIMEOUT_MS			2000
+
 LapsusPanelMain::LapsusPanelMain(QWidget *parent, LapsusDBus *dbus,
 			Qt::Orientation orientation):
-	QWidget( parent ), _dbus( dbus ), _cfg("lapsusrc"), _orientation( orientation )
+	QWidget( parent ), _dbus( dbus ), _cfg("lapsusrc"),
+	_orientation( orientation ), _osd(0), _osdTimer(0)
 {
 	_layout = new FlowLayout(this, _orientation);
 	_layout->setSpacing(4);
@@ -47,22 +51,60 @@ LapsusPanelMain::LapsusPanelMain(QWidget *parent, LapsusDBus *dbus,
 
 	int added = 0;
 
-	for (uint i = 0; i < _panelEntries.size(); ++i)
+	if (_dbus)
 	{
-		LapsusPanelWidget *widget = LapsusPanelWidget::newAppletwidget(
-			_panelEntries[i], _orientation, this, _dbus, &_cfg);
+		// TODO - cleanup following mess ;)
 
-		if (widget)
+		for ( QStringList::ConstIterator it = _panelEntries.begin();
+			it != _panelEntries.end(); ++it )
 		{
-			++added;
+			LapsusPanelWidget *widget =
+				LapsusPanelWidget::newAppletwidget(
+				*it, _orientation, this,
+				_dbus, &_cfg);
 
-			_layout->add(widget);
+			if (widget)
+			{
+				++added;
 
-			connect(widget, SIGNAL(rightButtonPressed()),
-				this, SLOT(showContextMenu()));
+				_layout->add(widget);
 
-			widget->show();
+				connect(widget, SIGNAL(rightButtonPressed()),
+					this, SLOT(showContextMenu()));
+
+				widget->show();
+			}
 		}
+
+		for ( QStringList::ConstIterator it = _menuEntries.begin();
+			it != _menuEntries.end(); ++it )
+		{
+			QString str = *it;
+
+			_cfg.setGroup(str);
+
+			if (!_cfg.hasKey("feature_id")) continue;
+
+			QString fId = _cfg.readEntry("feature_id");
+
+			if (fId.length() < 1
+				|| dbus->getFeatureName(fId).length() < 1
+				|| dbus->getFeatureArgs(fId).size() < 1)
+			{
+				continue;
+			}
+
+			if (!( KToggleAction* )_actions->action(str))
+			{
+				new LapsusActionButton(str, _dbus, &_cfg, _actions);
+			}
+		}
+
+		connect(_dbus,
+			SIGNAL(featureNotif(const QString &, const QString &)),
+			this,
+			SLOT(featureNotif(const QString &, const QString &)));
+
 	}
 
 	if (added < 1)
@@ -76,16 +118,6 @@ LapsusPanelMain::LapsusPanelMain(QWidget *parent, LapsusDBus *dbus,
 		_layout->add(widget);
 
 		widget->show();
-	}
-
-	for ( QStringList::ConstIterator it = _menuEntries.begin(); it != _menuEntries.end(); ++it )
-	{
-		QString str = *it;
-
-		if (!( KToggleAction* )_actions->action(str))
-		{
-			new LapsusActionButton(str, _dbus, &_cfg, _actions);
-		}
 	}
 }
 
@@ -229,6 +261,43 @@ void LapsusPanelMain::mousePressEvent( QMouseEvent *e )
 	{
 		e->accept();
 		showContextMenu();
+	}
+}
+
+void LapsusPanelMain::featureNotif(const QString &id, const QString &val)
+{
+	if (!_osd) _osd = new LapsusOSD(this);
+
+	if (!_dbus) return;
+
+	QString name = _dbus->getFeatureName(id);
+
+	if (name.length() < 1) return;
+
+	if (_osdTimer)
+	{
+		killTimer(_osdTimer);
+		_osdTimer = 0;
+	}
+
+	_osd->setText(QString("%1: %2").arg(name).arg(val.upper()));
+	_osd->show();
+
+	// TODO This should be kept in configuration
+	_osdTimer = startTimer(OSD_TIMEOUT_MS);
+}
+
+void LapsusPanelMain::timerEvent( QTimerEvent * e)
+{
+	if (_osdTimer && e->timerId() == _osdTimer)
+	{
+		killTimer(_osdTimer);
+		_osdTimer = 0;
+
+		if (_osd)
+		{
+			_osd->hide();
+		}
 	}
 }
 

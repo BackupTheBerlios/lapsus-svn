@@ -170,7 +170,10 @@ void LapsusPanelSlider::featureChanged(const QString &id, const QString &val)
 {
 	if (id == _featureId)
 	{
-		_slider->setValue(val.toInt());
+		bool ok;
+		int i = val.toInt(&ok);
+
+		if (ok) _slider->setValue(i);
 	}
 }
 

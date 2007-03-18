@@ -18,13 +18,14 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
+#include "lapsus.h"
+
 #include "action_button.h"
 
 LapsusActionButton::LapsusActionButton(const QString &id, LapsusDBus *dbus, KConfig *cfg,
 			QObject *parent, const KShortcut &cut):
 	KAction(id, cut, 0, 0, parent, id), LapsusIcons(id, cfg),
-	_dbus(dbus),_cfg(cfg), _id(id), _iconOn(-1), _iconBlink(-1), _iconOff(-1),
-	_hasDBus(false), _isValid(false)
+	_dbus(dbus),_cfg(cfg), _id(id), _hasDBus(false), _isValid(false)
 {
 	_cfg->setGroup(id);
 
@@ -45,16 +46,17 @@ LapsusActionButton::LapsusActionButton(const QString &id, LapsusDBus *dbus, KCon
 		{
 			_isValid = true;
 			_hasDBus = true;
+
+			for (QStringList::Iterator it = _vals.begin(); it != _vals.end(); ++it)
+			{
+				int icon = loadNewAutoIcon(*it, 16);
+
+				if (icon >= 0) _icons.insert(*it, icon);
+			}
 		}
 
 		_curVal = _dbus->getFeature(_featureId);
 	}
-
-	_iconOn = loadNewAutoIcon("on", 16);
-	_iconOff = loadNewAutoIcon("off", 16);
-
-	if (_featureId.startsWith("ibm_"))
-		_iconBlink = loadNewAutoIcon("blink", 16);
 
 	checkCurVal();
 
@@ -74,47 +76,19 @@ LapsusActionButton::~LapsusActionButton()
 
 void LapsusActionButton::checkCurVal()
 {
-	if (_dbus && _hasDBus)
+	if (_icons.contains(_curVal))
 	{
-		if (_curVal == "on")
-		{
-			if (_iconOn >= 0)
-			{
-				setIconSet(getIcon(_iconOn));
-				setText(_name);
-			}
-			else
-			{
-				setText(QString("+ %1").arg(_name));
-			}
+		int icon = _icons[_curVal];
 
-			return;
-		}
-		else if (_curVal == "blink")
+		if (icon >= 0)
 		{
-			if (_iconBlink >= 0)
-			{
-				setIconSet(getIcon(_iconBlink));
-				setText(_name);
-			}
-			else
-			{
-				setText(QString("* %1").arg(_name));
-			}
-
+			setIconSet(getIcon(icon));
+			setText(_name);
 			return;
 		}
 	}
 
-	if (_iconOff >= 0)
-	{
-		setIconSet(getIcon(_iconOff));
-		setText(_name);
-	}
-	else
-	{
-		setText(QString("- %1").arg(_name));
-	}
+	setText(QString("%1: %2").arg(_name).arg(_curVal.upper()));
 }
 
 void LapsusActionButton::featureChanged(const QString &id, const QString &val)

@@ -39,6 +39,7 @@
 
 #define LAPSUS_DBUS_ACPI_EVENT		"acpiEvent"
 #define LAPSUS_DBUS_FEATURE_CHANGED	"featureChanged"
+#define LAPSUS_DBUS_FEATURE_NOTIF	"featureNotif"
 
 // Following values have to be lower-case!
 #define LAPSUS_FEAT_LED_ID_PREFIX	"led_"
@@ -58,5 +59,7 @@
 #define LAPSUS_FEAT_DISPLAY_CRT		"crt"
 #define LAPSUS_FEAT_DISPLAY_TV		"tv"
 #define LAPSUS_FEAT_DISPLAY_DVI		"dvi"
+
+#define LAPSUS_FEAT_PARAM_NOTIF		"notifs"
 
 #endif

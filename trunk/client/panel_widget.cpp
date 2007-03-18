@@ -39,16 +39,25 @@ LapsusPanelWidget* LapsusPanelWidget::newAppletwidget(
 	const QString &id, Qt::Orientation orientation,
 	QWidget *parent, LapsusDBus *dbus, KConfig *cfg)
 {
-	if (id.length() < 1) return 0;
+	if (id.length() < 1 || !dbus) return 0;
 
 	cfg->setGroup(id.lower());
 
-	if (!cfg->hasKey("widget_type"))
+	if (!cfg->hasKey("widget_type")
+		|| !cfg->hasKey("feature_id"))
 	{
 		return 0;
 	}
 
 	QString wType = cfg->readEntry("widget_type");
+	QString fId = cfg->readEntry("feature_id");
+
+	if (fId.length() < 1
+		|| dbus->getFeatureName(fId).length() < 1
+		|| dbus->getFeatureArgs(fId).size() < 1)
+	{
+		return 0;
+	}
 
 	if (wType == "slider")
 	{

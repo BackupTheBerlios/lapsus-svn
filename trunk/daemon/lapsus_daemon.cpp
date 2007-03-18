@@ -157,6 +157,14 @@ QStringList LapsusDaemon::featureArgs(const QString &id)
 	return _backend->featureArgs(id.lower());
 }
 
+QStringList LapsusDaemon::featureParams(const QString &id)
+{
+	if (!_isValid) return QStringList();
+
+	// TODO Add generic features - for example cpufreq control
+	return _backend->featureParams(id.lower());
+}
+
 QString LapsusDaemon::featureRead(const QString &id)
 {
 	if (!_isValid) return QString();

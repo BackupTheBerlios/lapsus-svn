@@ -58,13 +58,14 @@ class SysBackend: public QObject
 		virtual QStringList featureArgs(const QString &id) = 0;
 		virtual QString featureRead(const QString &id) = 0;
 		virtual bool featureWrite(const QString &id, const QString &nVal) = 0;
+		virtual QStringList featureParams(const QString &id);
 		virtual QString featureName(const QString &id);
 
 		virtual void setDBus(LapsusDBus *dbus);
 
 	protected slots:
 		virtual void acpiEvent(const QString &group, const QString &action,
-				const QString &device, uint id, uint value) = 0;
+				const QString &device, uint id, uint value);
 
 	protected:
 		LapsusDBus *_dbus;

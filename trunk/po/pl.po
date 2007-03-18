@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-03-15 16:59+0100\n"
-"PO-Revision-Date: 2007-03-15 16:33+0100\n"
+"POT-Creation-Date: 2007-03-18 21:14+0100\n"
+"PO-Revision-Date: 2007-03-18 21:17+0100\n"
 "Last-Translator: Jakub Schmidtke <sjakub@users.berlios.de>\n"
 "Language-Team: Polish <pl@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -17,62 +17,94 @@ msgstr ""
 "Plural-Forms:  nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%"
 "100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: daemon/sys_asus.cpp:114 daemon/sys_ibm.cpp:283
-msgid "Bluetooth adapter"
-msgstr "Kontroler Bluetooth"
-
-#: daemon/sys_asus.cpp:123
-msgid "Wireless radio"
-msgstr "Nadajnik sieci bezprzewodowej"
-
-#: daemon/sys_asus.cpp:215
+#: daemon/sys_asus.cpp:78
 msgid "Mail LED"
 msgstr "Dioda pocztowa"
 
-#: daemon/sys_asus.cpp:216
+#: daemon/sys_asus.cpp:79
 msgid "Touchpad LED"
 msgstr "Dioda touchpada"
 
-#: daemon/sys_asus.cpp:217
+#: daemon/sys_asus.cpp:80
 msgid "Recording LED"
 msgstr "Dioda nagrywania"
 
-#: daemon/sys_asus.cpp:218
+#: daemon/sys_asus.cpp:81
 msgid "Phone LED"
 msgstr "Dioda telefonu"
 
-#: daemon/sys_asus.cpp:219
+#: daemon/sys_asus.cpp:82
 msgid "Gaming LED"
 msgstr "Dioda gier"
 
-#: daemon/sys_asus.cpp:220
-msgid "LCD Display"
-msgstr "Wyświetlacz LCD"
+#: daemon/sys_backend.cpp:97
+msgid "Bluetooth adapter"
+msgstr "Kontroler Bluetooth"
 
-#: daemon/sys_asus.cpp:221
-msgid "CRT Display"
-msgstr "Wyjście CRT"
+#: daemon/sys_backend.cpp:98
+msgid "Wireless radio"
+msgstr "Nadajnik sieci bezprzewodowej"
 
-#: daemon/sys_asus.cpp:222
-msgid "TV Display"
-msgstr "Wyjście TV"
-
-#: daemon/sys_asus.cpp:223
-msgid "DVI Display"
-msgstr "Wyjście DVI"
-
-#: daemon/sys_asus.cpp:228 daemon/sys_ibm.cpp:282
+#: daemon/sys_backend.cpp:99
 msgid "LCD Backlight"
 msgstr "Jasność wyświetlacza"
 
-#: daemon/sys_ibm.cpp:284
+#: daemon/sys_backend.cpp:100
+msgid "Volume"
+msgstr "Głośność"
+
+#: daemon/sys_backend.cpp:106
+msgid "LCD Display"
+msgstr "Wyświetlacz LCD"
+
+#: daemon/sys_backend.cpp:107
+msgid "CRT Display"
+msgstr "Wyjście CRT"
+
+#: daemon/sys_backend.cpp:108
+msgid "TV Display"
+msgstr "Wyjście TV"
+
+#: daemon/sys_backend.cpp:109
+msgid "DVI Display"
+msgstr "Wyjście DVI"
+
+#: daemon/sys_ibm.cpp:219
+msgid "Power LED"
+msgstr "Dioda zasilania"
+
+#: daemon/sys_ibm.cpp:221
+msgid "Orange Battery LED"
+msgstr "Pomarańczowa dioda baterii"
+
+#: daemon/sys_ibm.cpp:223
+msgid "Green Battery LED"
+msgstr "Zielona dioda baterii"
+
+#: daemon/sys_ibm.cpp:225
+msgid "UltraBase LED"
+msgstr "Dioda UltraBase"
+
+#: daemon/sys_ibm.cpp:227
+msgid "UltraBay LED"
+msgstr "Dioda UltraBay"
+
+#: daemon/sys_ibm.cpp:229
+msgid "5th LED"
+msgstr "5 LED"
+
+#: daemon/sys_ibm.cpp:231
+msgid "6th LED"
+msgstr "6 LED"
+
+#: daemon/sys_ibm.cpp:233
+msgid "Standby LED"
+msgstr "Dioda stanu uśpienia"
+
+#: daemon/sys_ibm.cpp:296
 msgid "ThinkLight"
 msgstr "ThinkLight"
 
-#: daemon/sys_ibm.cpp:285
-msgid "Volume"
-msgstr "Kontrola głośności"
-
-#: client/panel_main.cpp:206
+#: client/panel_main.cpp:236
 msgid "Switches"
 msgstr "Przełączniki"

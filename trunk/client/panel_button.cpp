@@ -22,13 +22,13 @@
 #include <qlabel.h>
 #include <qtooltip.h>
 
+#include "lapsus.h"
 #include "panel_button.h"
 
 LapsusPanelButton::LapsusPanelButton( const QString &id,
 	Qt::Orientation orientation, QWidget *parent, LapsusDBus *dbus, KConfig *cfg) :
 		LapsusPanelWidget(id, orientation, parent, dbus, cfg),
-		_layout(0), _iconLabel(0), _iconOn(-1), _iconOff(-1),
-		_hasDBus(false), _isValid(false)
+		_layout(0), _iconLabel(0), _hasDBus(false), _isValid(false)
 {
 	_layout = new QHBoxLayout( this );
 	_layout->setAlignment(Qt::AlignCenter);
@@ -49,6 +49,13 @@ LapsusPanelButton::LapsusPanelButton( const QString &id,
 		{
 			_isValid = true;
 			_hasDBus = true;
+
+			for (QStringList::Iterator it = _vals.begin(); it != _vals.end(); ++it)
+			{
+				int icon = loadNewAutoIcon(*it, 20);
+
+				if (icon >= 0) _icons.insert(*it, icon);
+			}
 		}
 
 		_curVal = _dbus->getFeature(_featureId);
@@ -61,9 +68,6 @@ LapsusPanelButton::LapsusPanelButton( const QString &id,
 	_iconLabel->resize(24, 24);
 
 	installEventFilter(this);
-
-	_iconOn = loadNewAutoIcon("on", 20);
-	_iconOff = loadNewAutoIcon("off", 20);
 
 	_layout->add(_iconLabel);
 	_layout->addStretch();
@@ -112,20 +116,18 @@ void LapsusPanelButton::checkCurVal()
 {
 	_iconLabel->clear();
 
-	if (_dbus && _hasDBus && _curVal == "on")
+	if (_icons.contains(_curVal))
 	{
-		if (_iconOn >= 0)
-			_iconLabel->setPixmap(getIcon(_iconOn));
-		else
-			_iconLabel->setText("+");
+		int icon = _icons[_curVal];
+
+		if (icon >= 0)
+		{
+			_iconLabel->setPixmap(getIcon(icon));
+			return;
+		}
 	}
-	else
-	{
-		if (_iconOff >= 0)
-			_iconLabel->setPixmap(getIcon(_iconOff));
-		else
-			_iconLabel->setText("-");
-	}
+
+	_iconLabel->setText(QString("%1").arg(_curVal.upper()));
 }
 
 void LapsusPanelButton::featureChanged(const QString &id, const QString &val)

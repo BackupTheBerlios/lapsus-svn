@@ -122,6 +122,7 @@ void LapsusDBus::initParams()
 
 	_features.clear();
 	_featureArgs.clear();
+	_featureParams.clear();
 	_featureName.clear();
 
 	if (reply.type() != QDBusMessage::ReplyMessage)
@@ -142,7 +143,7 @@ void LapsusDBus::initParams()
 
 	if (!ok) return;
 
-	QStringList strList;
+	QStringList argList, paramList;
 
 	for (QStringList::iterator it = tmpFeatures.begin(); it != tmpFeatures.end(); ++it)
 	{
@@ -156,9 +157,10 @@ void LapsusDBus::initParams()
 
 		if (reply.type() == QDBusMessage::ReplyMessage)
 		{
-			if (reply.count() == 2
+			if (reply.count() == 3
 				&& reply[0].type() == QDBusData::String
-				&& reply[1].type() == QDBusData::List )
+				&& reply[1].type() == QDBusData::List
+				&& reply[2].type() == QDBusData::List )
 			{
 				ok = false;
 
@@ -168,12 +170,23 @@ void LapsusDBus::initParams()
 
 				ok = false;
 
-				strList = list.toStringList(&ok);
+				argList = list.toStringList(&ok);
+
+				if (!ok) continue;
+
+				list = reply[2].toList(&ok);
+
+				if (!ok) continue;
+
+				ok = false;
+
+				paramList = list.toStringList(&ok);
 
 				if (!ok) continue;
 
 				_features.append(id);
-				_featureArgs.insert(id, strList);
+				_featureArgs.insert(id, argList);
+				_featureParams.insert(id, paramList);
 				_featureName.insert(id, reply[0].toString());
 
 				getFeature(id);
@@ -195,7 +208,11 @@ QString LapsusDBus::getFeatureName(const QString &id)
 {
 	if (!_isValid) return QString();
 
-	return i18n(_featureName[id.lower()]);
+	QString str = _featureName[id.lower()];
+
+	if (str.length() > 0) return i18n(str);
+
+	return str;
 }
 
 QStringList LapsusDBus::getFeatureArgs(const QString &id)
@@ -203,6 +220,13 @@ QStringList LapsusDBus::getFeatureArgs(const QString &id)
 	if (!_isValid) return QStringList();
 
 	return _featureArgs[id.lower()];
+}
+
+QStringList LapsusDBus::getFeatureParams(const QString &id)
+{
+	if (!_isValid) return QStringList();
+
+	return _featureParams[id.lower()];
 }
 
 QString LapsusDBus::getFeature(const QString &id)
@@ -332,7 +356,8 @@ void LapsusDBus::handleDBusSignal(const QDBusMessage &message)
 
 	if (message.type() != QDBusMessage::SignalMessage) return;
 
-	if (message.member() == LAPSUS_DBUS_FEATURE_CHANGED)
+	if (message.member() == LAPSUS_DBUS_FEATURE_CHANGED
+		|| message.member() == LAPSUS_DBUS_FEATURE_NOTIF)
 	{
 		if (message.count() != 2
 			|| message[0].type() != QDBusData::String
@@ -344,9 +369,15 @@ void LapsusDBus::handleDBusSignal(const QDBusMessage &message)
 		QString sName = message[0].toString();
 		QString sVal = message[1].toString();
 
-		_featureVal.insert(sName, sVal);
-
-		emit featureChanged(sName, sVal);
+		if (message.member() == LAPSUS_DBUS_FEATURE_CHANGED)
+		{
+			_featureVal.insert(sName, sVal);
+			emit featureChanged(sName, sVal);
+		}
+		else
+		{
+			emit featureNotif(sName, sVal);
+		}
 
 		return;
 	}

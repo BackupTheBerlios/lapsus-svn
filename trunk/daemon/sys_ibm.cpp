@@ -212,7 +212,26 @@ void SysIBM::detect()
 		val = fieldValue("status", path);
 
 		if (val == "supported")
+		{
 			_hasLEDs = true;
+
+			setFeature(LAPSUS_FEAT_LED_ID_PREFIX "0", "",
+					I18N_NOOP("Power LED"));
+			setFeature(LAPSUS_FEAT_LED_ID_PREFIX "1", "",
+					I18N_NOOP("Orange Battery LED"));
+			setFeature(LAPSUS_FEAT_LED_ID_PREFIX "2", "",
+					I18N_NOOP("Green Battery LED"));
+			setFeature(LAPSUS_FEAT_LED_ID_PREFIX "3", "",
+					I18N_NOOP("UltraBase LED"));
+			setFeature(LAPSUS_FEAT_LED_ID_PREFIX "4", "",
+					I18N_NOOP("UltraBay LED"));
+			setFeature(LAPSUS_FEAT_LED_ID_PREFIX "5", "",
+					I18N_NOOP("5th LED"));
+			setFeature(LAPSUS_FEAT_LED_ID_PREFIX "6", "",
+					I18N_NOOP("6th LED"));
+			setFeature(LAPSUS_FEAT_LED_ID_PREFIX "7", "",
+					I18N_NOOP("Standby LED"));
+		}
 	}
 
 	path = IBM_DISPLAY_PATH;
@@ -238,10 +257,7 @@ QStringList SysIBM::featureList()
 
 	if (_hasLEDs)
 	{
-		for (int i = 0; i <= 7; i++)
-		{
-			ret.append(QString(LAPSUS_FEAT_LED_ID_PREFIX "%1").arg(QString::number(i)));
-		}
+		ret += getFeatures();
 	}
 
 	if (_hasBacklight)

@@ -8,7 +8,7 @@ lib_LTLIBRARIES = lapsus_panelapplet.la
 
 lapsus_panelapplet_la_SOURCES = \
 applet.cpp panel_main.cpp panel_widget.cpp panel_default.cpp panel_slider.cpp panel_button.cpp action_button.cpp \
-lapsus_icons.cpp flowlayout.cpp ksmallslider.cpp lapsus_dbus.cpp
+lapsus_icons.cpp flowlayout.cpp ksmallslider.cpp lapsus_dbus.cpp osd.cpp
 
 lapsus_panelapplet_la_LDFLAGS = -module -avoid-version $(all_libraries)
 

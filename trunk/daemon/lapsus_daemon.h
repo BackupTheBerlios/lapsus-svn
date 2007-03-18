@@ -43,6 +43,7 @@ class LapsusDaemon : public QObject
 		QStringList featureList();
 		QString featureName(const QString &id);
 		QStringList featureArgs(const QString &id);
+		QStringList featureParams(const QString &id);
 		QString featureRead(const QString &id);
 		bool featureWrite(const QString &id, const QString &nVal);
 

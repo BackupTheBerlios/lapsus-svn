@@ -48,19 +48,17 @@ class SysGeneric : public SysBackend
 
 		bool hardwareDetected();
 
-	protected slots:
 #ifdef HAVE_ALSA
+	protected slots:
 		void volumeChanged(int val);
 		void muteChanged(bool muted);
 #endif
-		void acpiEvent(const QString &group, const QString &action,
-				const QString &device, uint id, uint value);
+
 	private:
 #ifdef HAVE_ALSA
 		bool _hasVolume;
 		LapsusAlsaMixer *_mix;
 #endif
-
 		void detect();
 };
 

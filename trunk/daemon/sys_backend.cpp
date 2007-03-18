@@ -51,6 +51,13 @@ void SysBackend::setDBus(LapsusDBus *dbus)
 	_dbus = dbus;
 }
 
+void SysBackend::acpiEvent(const QString &group, const QString &action,
+	const QString &device, uint id, uint value)
+{
+	if (_dbus)
+		_dbus->sendACPIEvent(group, action, device, id, value);
+}
+
 bool SysBackend::hasFeature(const QString &id)
 {
 	return _featurePaths.contains(id);
@@ -64,6 +71,11 @@ QString SysBackend::getFeaturePath(const QString &id)
 QString SysBackend::getFeatureName(const QString &id)
 {
 	return _featureNames[id];
+}
+
+QStringList SysBackend::featureParams(const QString &)
+{
+	return QStringList();
 }
 
 void SysBackend::setFeature(const QString &id, const QString &path, const QString &name)

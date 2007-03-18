@@ -37,8 +37,8 @@ class LapsusIcons
 
 		int loadNewAutoIcon(int size);
 		int loadNewAutoIcon(const QString &val, int size);
-		int loadNewIcon(const QString &first, int size);
-		int loadNewIcon(const QString &first, const QString &second, int size);
+		int loadNewIcon(const QString &img, int size);
+		int loadNewIcon(const QString &img, const QString &desc, int size);
 		QPixmap getIcon(int id) const;
 
 	private:

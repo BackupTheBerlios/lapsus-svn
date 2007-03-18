@@ -52,72 +52,80 @@ int LapsusIcons::loadNewAutoIcon(int size)
 
 int LapsusIcons::loadNewAutoIcon(const QString &val, int size)
 {
-	QString first;
-	QString second;
+	QString img;
+	QString desc;
 
 	if (_featureId == LAPSUS_FEAT_BLUETOOTH_ID)
 	{
-		if (val == LAPSUS_FEAT_ON) first = "bluetooth";
-		else if (val == LAPSUS_FEAT_OFF) first = "bluetooth_gray";
+		if (val == LAPSUS_FEAT_ON) img = "bluetooth";
+		else if (val == LAPSUS_FEAT_OFF) img = "bluetooth_gray";
 	}
 	else if (_featureId == LAPSUS_FEAT_WIRELESS_ID)
 	{
-		if (val == LAPSUS_FEAT_ON) first = "wifi";
-		else if (val == LAPSUS_FEAT_OFF) first = "wifi_gray";
+		if (val == LAPSUS_FEAT_ON) img = "wifi";
+		else if (val == LAPSUS_FEAT_OFF) img = "wifi_gray";
 	}
 	else if (_featureId.startsWith(LAPSUS_FEAT_LED_ID_PREFIX))
 	{
-		if (val == LAPSUS_FEAT_ON) first = "green";
-		else if (val == LAPSUS_FEAT_OFF) first = "gray";
-		else if (val == LAPSUS_FEAT_BLINK) first = "orange";
+		if (val == LAPSUS_FEAT_ON) img = "green";
+		else if (val == LAPSUS_FEAT_OFF) img = "gray";
+		else if (val == LAPSUS_FEAT_BLINK) img = "orange";
 
 		int len = strlen(LAPSUS_FEAT_LED_ID_PREFIX);
 
 		if ((int) _featureId.length() > len)
 		{
-			second = _featureId.mid(len, 1);
+			desc = _featureId.mid(len, 1).upper();
 		}
 	}
 	else
 	{
 		// TODO - what default values?
-		if (val == LAPSUS_FEAT_ON) first = "yellow";
-		else if (val == LAPSUS_FEAT_OFF) first = "gray";
+		if (val == LAPSUS_FEAT_ON) img = "yellow";
+		else if (val == LAPSUS_FEAT_OFF) img = "gray";
 	}
 
-	return loadNewIcon(first, second, size);
+	return loadNewIcon(img, desc, size);
 }
 
-int LapsusIcons::loadNewIcon(const QString &first, int size)
+int LapsusIcons::loadNewIcon(const QString &img, int size)
 {
-	return loadNewIcon(first, QString(), size);
+	return loadNewIcon(img, "", size);
 }
 
-int LapsusIcons::loadNewIcon(const QString &first, const QString &second, int size)
+int LapsusIcons::loadNewIcon(const QString &img, const QString &desc, int size)
 {
-	if (first.length() < 1) return -1;
+	if (img.length() < 1) return -1;
 
-	QPixmap imgFirst = UserIcon(first);
+	QPixmap imgBase = UserIcon(img);
 
-	if (imgFirst.isNull()) return -1;
+	if (imgBase.isNull()) return -1;
 
-	if (second.length() > 0)
+	if (desc.length() > 0)
 	{
-		QPixmap imgSecond = UserIcon(second);
+		QPainter p;
+		int iH = imgBase.height();
+		int iW = imgBase.width();
+		int siz = QMIN(imgBase.height(), imgBase.width());
 
-		if (!imgSecond.isNull())
-		{
-			QPainter p;
+		// 55%
+		siz = (siz * 55) / 100;
 
-			p.begin( &imgFirst);
-			p.drawPixmap (0, 0, imgSecond);
-		}
+		p.begin( &imgBase);
+
+		QFont f;
+		f.setPointSize(siz);
+		p.setFont(f);
+
+		QRect r = p.boundingRect(0, 0, iW, iH, Qt::AlignCenter, desc, 1);
+
+		p.drawText((iW-(r.right()-r.left()))/2, (iH + siz) / 2, desc, 1);
 	}
 
 	int idx = _cachedIcons.count();
 
 	_cachedIcons.push_back(
-		QPixmap(imgFirst.convertToImage().smoothScale(size, size)));
+		QPixmap(imgBase.convertToImage().smoothScale(size, size)));
 
 	return idx;
 }

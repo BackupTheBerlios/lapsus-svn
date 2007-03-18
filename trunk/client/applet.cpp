@@ -111,7 +111,7 @@ void LapsusApplet::preferences()
 	_mainWidget->appletPreferences();
 }
 
-void LapsusApplet::resizeEvent( QResizeEvent *e)
+void LapsusApplet::resizeEvent( QResizeEvent *)
 {
 }
 

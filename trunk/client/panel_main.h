@@ -28,6 +28,7 @@
 
 #include "lapsus_dbus.h"
 #include "flowlayout.h"
+#include "osd.h"
 
 class LapsusPanelMain : public QWidget
 {
@@ -52,9 +53,13 @@ class LapsusPanelMain : public QWidget
 		LapsusDBus *_dbus;
 
 		void mousePressEvent( QMouseEvent * );
+		void timerEvent( QTimerEvent * );
 
 	public slots:
 		void showContextMenu();
+
+	protected slots:
+		void featureNotif(const QString &id, const QString &val);
 
 	private:
 		KConfig _cfg;
@@ -64,6 +69,8 @@ class LapsusPanelMain : public QWidget
 		KPopupMenu* _popMenu;
 		KActionCollection* _actions;
 		Qt::Orientation _orientation;
+		LapsusOSD* _osd;
+		int _osdTimer;
 
 		void saveConfig();
 		void loadConfig();

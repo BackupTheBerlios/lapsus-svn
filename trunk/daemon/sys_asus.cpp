@@ -33,10 +33,11 @@
 #define ASUS_MAX_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/max_brightness"
 
 SysAsus::SysAsus():
-	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false), _maxBacklight(0)
+	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false), _maxBacklight(0),
 #ifdef HAVE_ALSA
-	,_hasVolume(false), _mix(0)
+	_hasVolume(false), _mix(0),
 #endif
+	_doCircular(false)
 {
 	detect();
 }
@@ -264,9 +265,129 @@ QStringList SysAsus::featureArgs(const QString &id)
 	return ret;
 }
 
+QStringList SysAsus::featureParams(const QString &id)
+{
+	QStringList ret;
+
+	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
+	{
+		ret.append(LAPSUS_FEAT_PARAM_NOTIF);
+	}
+#ifdef HAVE_ALSA
+	else if (id == LAPSUS_FEAT_VOLUME_ID)
+	{
+		if (_mix)
+		{
+			if (_mix->isValid())
+			{
+				ret.append(LAPSUS_FEAT_PARAM_NOTIF);
+			}
+		}
+	}
+#endif
+
+	return ret;
+}
+
 void SysAsus::acpiEvent(const QString &group, const QString &action,
 	const QString &device, uint id, uint value)
 {
+	if (group != "hotkey" || action != "hotkey" || device != "ATKD")
+	{
+		if (_dbus)
+			_dbus->sendACPIEvent(group, action, device, id, value);
+		return;
+	}
+
+#ifdef HAVE_ALSA
+
+	if (_hasVolume)
+	{
+		if (id == 0x32)
+		{
+			_mix->toggleMute();
+			return;
+		}
+		else if (id == 0x31 || id == 0x30)
+		{
+			int val = _mix->getVolume();
+			int mVal = _mix->getMaxVolume();
+
+			if (id == 0x30) val += 5;
+			else val -= 5;
+
+			if (val < 0) val = 0;
+			if (val > mVal) val = mVal;
+
+			if (_mix->setVolume(val) && _dbus)
+			{
+				_dbus->signalFeatureNotif(LAPSUS_FEAT_VOLUME_ID,
+						QString::number(val));
+			}
+
+			return;
+		}
+	}
+#endif
+
+	if (_hasBacklight)
+	{
+		// I am not sure about 0x2b, becasue I have only backlight down working,
+		// which is 0x2c. But backlight up is next to it and should have the code
+		// 0x2b. That is also the reason why I added _doCircular feature. It is possible
+		// to control the brightness with only one key - either brightness up or down.
+		// When it reaches 0 or max backlight and the same key is pressed again - nothing happens,
+		// but one more press makes it start from the other side, so pressing bright. up works like:
+		// (max - 1) -> max -> max -> 0
+		// and bright. down:
+		// 1 -> 0 -> 0 -> max
+		if (id == 0x2c || id == 0x2b)
+		{
+			int oVal = readPathString(ASUS_GET_BACKLIGHT_PATH).toInt();
+			int nVal;
+
+			if (id == 0x2c) nVal = oVal - 1;
+			else nVal = oVal + 1;
+
+			if (nVal > (int) _maxBacklight || nVal < 0)
+			{
+				if (!_doCircular)
+				{
+					_doCircular = true;
+
+					if (_dbus) _dbus->signalFeatureNotif(
+							LAPSUS_FEAT_BACKLIGHT_ID,
+							QString::number(oVal));
+					return;
+				}
+				else
+				{
+					if (nVal > (int) _maxBacklight) nVal = 0;
+					else nVal = _maxBacklight;
+				}
+			}
+
+			_doCircular = false;
+
+			if (setBacklight(nVal) && _dbus)
+			{
+				_dbus->signalFeatureNotif(
+					LAPSUS_FEAT_BACKLIGHT_ID,
+					QString::number(nVal));
+			}
+
+			return;
+		}
+	}
+
+	/*
+	if (_hasTouchpad && id == 0x6b)
+	{
+	}
+	*/
+
+	// Unknown hotkey. Just send is as a normal ACPI event.
+
 	if (_dbus)
 		_dbus->sendACPIEvent(group, action, device, id, value);
 }
@@ -319,6 +440,25 @@ QString SysAsus::featureRead(const QString &id)
 	return "";
 }
 
+bool SysAsus::setBacklight(uint uVal)
+{
+	if (uVal > _maxBacklight)
+		uVal = _maxBacklight;
+
+	uint oVal = readPathUInt(ASUS_GET_BACKLIGHT_PATH);
+
+	if (oVal == uVal) return false;
+
+	bool res = writePathUInt(ASUS_SET_BACKLIGHT_PATH, uVal);
+
+	if (res && _dbus)
+	{
+		_dbus->signalFeatureChanged(LAPSUS_FEAT_BACKLIGHT_ID, QString::number(uVal));
+	}
+
+	return res;
+}
+
 bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 {
 	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
@@ -329,21 +469,7 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 
 		if (!res) return false;
 
-		if (uVal > _maxBacklight)
-			uVal = _maxBacklight;
-
-		uint oVal = readPathUInt(ASUS_GET_BACKLIGHT_PATH);
-
-		if (oVal == uVal) return false;
-
-		res = writePathUInt(ASUS_SET_BACKLIGHT_PATH, uVal);
-
-		if (res && _dbus)
-		{
-			_dbus->signalFeatureChanged(LAPSUS_FEAT_BACKLIGHT_ID, QString::number(uVal));
-		}
-
-		return res;
+		return setBacklight(uVal);
 	}
 #ifdef HAVE_ALSA
 	else if (id == LAPSUS_FEAT_VOLUME_ID)
