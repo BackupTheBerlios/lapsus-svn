@@ -18,8 +18,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef SYS_ASUS_H
-#define SYS_ASUS_H
+#ifndef SYS_GENERIC_H
+#define SYS_GENERIC_H
 
 #include <qobject.h>
 #include <qstringlist.h>
@@ -28,16 +28,16 @@
 #include "sys_backend.h"
 
 /**
- * Backend, which controls asus-laptop's kernel module /sys interface
- * files and "knows" what features can be supported.
+ * Generic backend, which can be used if all other backends fail to detect
+ * specific hardware. For now it only tries to use AlsaMixer.
  */
-class SysAsus : public SysBackend
+class SysGeneric : public SysBackend
 {
 	Q_OBJECT
 
 	public:
-		SysAsus();
-		~SysAsus();
+		SysGeneric();
+		~SysGeneric();
 
 		QStringList featureList();
 		QStringList featureArgs(const QString &id);
@@ -56,11 +56,6 @@ class SysAsus : public SysBackend
 		void acpiEvent(const QString &group, const QString &action,
 				const QString &device, uint id, uint value);
 	private:
-		bool _hasSwitches;
-		bool _hasBacklight;
-		bool _hasDisplay;
-		uint _maxBacklight;
-
 #ifdef HAVE_ALSA
 		bool _hasVolume;
 		LapsusAlsaMixer *_mix;

@@ -144,6 +144,15 @@ void SysAsus::detect()
 	}
 
 #ifdef HAVE_ALSA
+	// If we still don't have any hardware detected,
+	// don't try to open AlsaMixer. ALSA is available
+	// on most systems, so all of them would be detected as
+	// Asus laptops only because they have ALSA installed.
+	// That is wrong. We want to try to run AlsaMixer only
+	// if we alreayd know that we are running on Asus Laptop.
+
+	if (!hardwareDetected()) return;
+
 	_mix = new LapsusAlsaMixer();
 
 	if (_mix->isValid())

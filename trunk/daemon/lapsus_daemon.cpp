@@ -23,6 +23,7 @@
 
 #include "sys_asus.h"
 #include "sys_ibm.h"
+#include "sys_generic.h"
 
 LapsusDaemon::LapsusDaemon(uint acpiFd):
 	_acpiFd(acpiFd), _backend(0), _dbus(0), _acpiParser(0),
@@ -87,6 +88,17 @@ bool LapsusDaemon::detectHardware()
 			printf("Feature Value: %s\n\n", tmp->featureRead(line).ascii());
 		}
 
+		_backend = tmp;
+		return true;
+	}
+
+	delete tmp;
+
+	// Try Generic Backend
+	tmp = new SysGeneric();
+
+	if (tmp->hardwareDetected())
+	{
 		_backend = tmp;
 		return true;
 	}
