@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-03-18 21:14+0100\n"
-"PO-Revision-Date: 2007-03-18 21:17+0100\n"
+"POT-Creation-Date: 2007-03-19 03:51+0100\n"
+"PO-Revision-Date: 2007-03-19 03:53+0100\n"
 "Last-Translator: Jakub Schmidtke <sjakub@users.berlios.de>\n"
 "Language-Team: Polish <pl@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -17,23 +17,23 @@ msgstr ""
 "Plural-Forms:  nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%"
 "100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: daemon/sys_asus.cpp:78
+#: daemon/sys_asus.cpp:80
 msgid "Mail LED"
 msgstr "Dioda pocztowa"
 
-#: daemon/sys_asus.cpp:79
+#: daemon/sys_asus.cpp:81
 msgid "Touchpad LED"
 msgstr "Dioda touchpada"
 
-#: daemon/sys_asus.cpp:80
+#: daemon/sys_asus.cpp:82
 msgid "Recording LED"
 msgstr "Dioda nagrywania"
 
-#: daemon/sys_asus.cpp:81
+#: daemon/sys_asus.cpp:83
 msgid "Phone LED"
 msgstr "Dioda telefonu"
 
-#: daemon/sys_asus.cpp:82
+#: daemon/sys_asus.cpp:84
 msgid "Gaming LED"
 msgstr "Dioda gier"
 
@@ -53,19 +53,23 @@ msgstr "Jasność wyświetlacza"
 msgid "Volume"
 msgstr "Głośność"
 
-#: daemon/sys_backend.cpp:106
+#: daemon/sys_backend.cpp:101
+msgid "Touchpad"
+msgstr "Touchpad"
+
+#: daemon/sys_backend.cpp:107
 msgid "LCD Display"
 msgstr "Wyświetlacz LCD"
 
-#: daemon/sys_backend.cpp:107
+#: daemon/sys_backend.cpp:108
 msgid "CRT Display"
 msgstr "Wyjście CRT"
 
-#: daemon/sys_backend.cpp:108
+#: daemon/sys_backend.cpp:109
 msgid "TV Display"
 msgstr "Wyjście TV"
 
-#: daemon/sys_backend.cpp:109
+#: daemon/sys_backend.cpp:110
 msgid "DVI Display"
 msgstr "Wyjście DVI"
 
@@ -91,11 +95,11 @@ msgstr "Dioda UltraBay"
 
 #: daemon/sys_ibm.cpp:229
 msgid "5th LED"
-msgstr "5 LED"
+msgstr "Dioda 5"
 
 #: daemon/sys_ibm.cpp:231
 msgid "6th LED"
-msgstr "6 LED"
+msgstr "Dioda 6"
 
 #: daemon/sys_ibm.cpp:233
 msgid "Standby LED"
@@ -105,6 +109,6 @@ msgstr "Dioda stanu uśpienia"
 msgid "ThinkLight"
 msgstr "ThinkLight"
 
-#: client/panel_main.cpp:236
+#: client/panel_main.cpp:251
 msgid "Switches"
 msgstr "Przełączniki"
