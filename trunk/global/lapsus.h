@@ -48,6 +48,7 @@
 #define LAPSUS_FEAT_BLUETOOTH_ID	"bluetooth"
 #define LAPSUS_FEAT_WIRELESS_ID		"wireless"
 #define LAPSUS_FEAT_VOLUME_ID		"volume"
+#define LAPSUS_FEAT_TOUCHPAD_ID		"touchpad"
 
 #define LAPSUS_FEAT_ON			"on"
 #define LAPSUS_FEAT_OFF			"off"

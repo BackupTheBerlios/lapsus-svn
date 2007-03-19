@@ -18,8 +18,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef SYS_AMIXER_H
-#define SYS_AMIXER_H
+#ifndef LAPSUS_ALSA_MIXER_H
+#define LAPSUS_ALSA_MIXER_H
 
 #include <qobject.h>
 #include <qsocketnotifier.h>

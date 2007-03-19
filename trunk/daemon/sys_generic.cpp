@@ -21,10 +21,12 @@
 #include "lapsus.h"
 #include "sys_generic.h"
 
-SysGeneric::SysGeneric()
+SysGeneric::SysGeneric():
+	_hasTouchpad(false),
 #ifdef HAVE_ALSA
-	: _hasVolume(false), _mix(0)
+	_hasVolume(false), _mix(0),
 #endif
+	_synap(0)
 {
 	detect();
 }
@@ -34,6 +36,7 @@ SysGeneric::~SysGeneric()
 #ifdef HAVE_ALSA
 	if (_mix) delete _mix;
 #endif
+	if (_synap) delete _synap;
 }
 
 void SysGeneric::detect()
@@ -57,6 +60,20 @@ void SysGeneric::detect()
 		_mix = 0;
 	}
 #endif
+	_synap = new LapsusSynaptics();
+
+	if (_synap->isValid())
+	{
+		_hasTouchpad = true;
+
+		connect(_synap, SIGNAL(stateChanged(bool)),
+			this, SLOT(touchpadChanged(bool)));
+	}
+	else
+	{
+		delete _synap;
+		_synap = 0;
+	}
 }
 
 #ifdef HAVE_ALSA
@@ -74,13 +91,22 @@ void SysGeneric::muteChanged(bool muted)
 }
 #endif
 
+void SysGeneric::touchpadChanged(bool nState)
+{
+	if (_dbus)
+	{
+		_dbus->signalFeatureChanged(LAPSUS_FEAT_TOUCHPAD_ID,
+			nState?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
+	}
+}
+
 bool SysGeneric::hardwareDetected()
 {
+	return _hasTouchpad
 #ifdef HAVE_ALSA
-	return _hasVolume;
-#else
-	return false;
+		|| _hasVolume
 #endif
+	;
 }
 
 QStringList SysGeneric::featureList()
@@ -93,6 +119,10 @@ QStringList SysGeneric::featureList()
 		ret.append(LAPSUS_FEAT_VOLUME_ID);
 	}
 #endif
+	if (_hasTouchpad)
+	{
+		ret.append(LAPSUS_FEAT_TOUCHPAD_ID);
+	}
 
 	return ret;
 }
@@ -115,14 +145,27 @@ QStringList SysGeneric::featureArgs(const QString &id)
 		}
 	}
 #endif
+	else if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+	{
+		ret.append(LAPSUS_FEAT_ON);
+		ret.append(LAPSUS_FEAT_OFF);
+	}
 
 	return ret;
 }
 
 QString SysGeneric::featureRead(const QString &id)
 {
+	if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+	{
+		if (!_synap) return "";
+
+		if (_synap->getState()) return LAPSUS_FEAT_ON;
+
+		return LAPSUS_FEAT_OFF;
+	}
 #ifdef HAVE_ALSA
-	if (id == LAPSUS_FEAT_VOLUME_ID)
+	else if (id == LAPSUS_FEAT_VOLUME_ID)
 	{
 		if (!_mix) return "";
 
@@ -135,8 +178,17 @@ QString SysGeneric::featureRead(const QString &id)
 
 bool SysGeneric::featureWrite(const QString &id, const QString &nVal)
 {
+	if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+	{
+		if (!_synap) return false;
+
+		if (nVal == LAPSUS_FEAT_ON)
+			return _synap->setState(true);
+
+		return _synap->setState(false);
+	}
 #ifdef HAVE_ALSA
-	if (id == LAPSUS_FEAT_VOLUME_ID)
+	else if (id == LAPSUS_FEAT_VOLUME_ID)
 	{
 		if (!_mix) return false;
 

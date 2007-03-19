@@ -186,6 +186,11 @@ void LapsusPanelMain::loadConfig()
 					grp = QString("menu_%1").arg(id);
 					mEntries.push_back(grp);
 				}
+				else if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+				{
+					grp = QString("menu_%1").arg(id);
+					mEntries.push_back(grp);
+				}
 				else
 				{
 					continue;

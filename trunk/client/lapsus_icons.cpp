@@ -78,6 +78,11 @@ int LapsusIcons::loadNewAutoIcon(const QString &val, int size)
 			desc = _featureId.mid(len, 1).upper();
 		}
 	}
+	else if (_featureId == LAPSUS_FEAT_TOUCHPAD_ID)
+	{
+		if (val == LAPSUS_FEAT_ON) img = "red";
+		else if (val == LAPSUS_FEAT_OFF) img = "gray";
+	}
 	else
 	{
 		// TODO - what default values?

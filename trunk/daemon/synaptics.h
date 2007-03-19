@@ -18,54 +18,45 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef SYS_GENERIC_H
-#define SYS_GENERIC_H
+#ifndef LAPSUS_SYNAPTICS_H
+#define LAPSUS_SYNAPTICS_H
 
 #include <qobject.h>
-#include <qstringlist.h>
-#include <qstring.h>
+#include <qprocess.h>
 
 #include "sys_backend.h"
 
-#include "synaptics.h"
-
-/**
- * Generic backend, which can be used if all other backends fail to detect
- * specific hardware. For now it only tries to use AlsaMixer.
- */
-class SysGeneric : public SysBackend
+class LapsusSynaptics : public QObject
 {
 	Q_OBJECT
 
 	public:
-		SysGeneric();
-		~SysGeneric();
+		LapsusSynaptics();
+		~LapsusSynaptics();
 
-		QStringList featureList();
-		QStringList featureArgs(const QString &id);
-		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
-		bool checkACPIEvent(const QString &group, const QString &action,
-			const QString &device, uint id, uint value);
+		bool isValid();
 
-		bool hardwareDetected();
+		bool getState();
+		bool setState(bool nState);
+		bool toggleState();
 
-#ifdef HAVE_ALSA
+	signals:
+		void stateChanged(bool nState);
+
 	protected slots:
-		void volumeChanged(int val);
-		void muteChanged(bool muted);
-#endif
-		void touchpadChanged(bool nState);
+		void readFromStdout();
+		void getProcessExited();
+		void setProcessExited();
 
 	private:
-		bool _hasTouchpad;
-#ifdef HAVE_ALSA
-		bool _hasVolume;
-		LapsusAlsaMixer *_mix;
-#endif
-		LapsusSynaptics *_synap;
+		QProcess* _procGet;
+		QProcess* _procSet;
+		bool _isValid;
+		bool _isOn;
+		QString _dataRead;
 
-		void detect();
+		bool runGetProc();
+		bool runSetProc(bool nState);
 };
 
 #endif

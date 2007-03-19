@@ -27,6 +27,8 @@
 
 #include "sys_backend.h"
 
+#include "synaptics.h"
+
 /**
  * Backend, which controls asus-laptop's kernel module /sys interface
  * files and "knows" what features can be supported.
@@ -54,18 +56,23 @@ class SysAsus : public SysBackend
 		void volumeChanged(int val);
 		void muteChanged(bool muted);
 #endif
+		void touchpadChanged(bool nState);
 		void acpiEvent(const QString &group, const QString &action,
 				const QString &device, uint id, uint value);
 	private:
 		bool _hasSwitches;
 		bool _hasBacklight;
 		bool _hasDisplay;
+		bool _hasTouchpad;
 		uint _maxBacklight;
 
 #ifdef HAVE_ALSA
 		bool _hasVolume;
 		LapsusAlsaMixer *_mix;
 #endif
+		LapsusSynaptics *_synap;
+		bool _notifyTouchpadChange;
+
 		void detect();
 		bool setBacklight(uint nVal);
 };

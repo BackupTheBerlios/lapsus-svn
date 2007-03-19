@@ -33,10 +33,12 @@
 #define ASUS_MAX_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/max_brightness"
 
 SysAsus::SysAsus():
-	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false), _maxBacklight(0)
+	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false),
+	_hasTouchpad(false), _maxBacklight(0),
 #ifdef HAVE_ALSA
-	,_hasVolume(false), _mix(0)
+	_hasVolume(false), _mix(0),
 #endif
+	_synap(0), _notifyTouchpadChange(false)
 {
 	detect();
 }
@@ -46,6 +48,7 @@ SysAsus::~SysAsus()
 #ifdef HAVE_ALSA
 	if (_mix) delete _mix;
 #endif
+	if (_synap) delete _synap;
 }
 
 void SysAsus::detect()
@@ -143,7 +146,6 @@ void SysAsus::detect()
 		}
 	}
 
-#ifdef HAVE_ALSA
 	// If we still don't have any hardware detected,
 	// don't try to open AlsaMixer. ALSA is available
 	// on most systems, so all of them would be detected as
@@ -151,7 +153,12 @@ void SysAsus::detect()
 	// That is wrong. We want to try to run AlsaMixer only
 	// if we alreayd know that we are running on Asus Laptop.
 
+	// We also don't want to detect Synaptics client, as it is
+	// probably present on most laptops.
+
 	if (!hardwareDetected()) return;
+
+#ifdef HAVE_ALSA
 
 	_mix = new LapsusAlsaMixer();
 
@@ -171,6 +178,21 @@ void SysAsus::detect()
 		_mix = 0;
 	}
 #endif
+
+	_synap = new LapsusSynaptics();
+
+	if (_synap->isValid())
+	{
+		_hasTouchpad = true;
+
+		connect(_synap, SIGNAL(stateChanged(bool)),
+			this, SLOT(touchpadChanged(bool)));
+	}
+	else
+	{
+		delete _synap;
+		_synap = 0;
+	}
 }
 
 #ifdef HAVE_ALSA
@@ -188,13 +210,27 @@ void SysAsus::muteChanged(bool muted)
 }
 #endif
 
+void SysAsus::touchpadChanged(bool nState)
+{
+	if (_dbus)
+	{
+		_dbus->signalFeatureChanged(LAPSUS_FEAT_TOUCHPAD_ID,
+			nState?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
+
+		if (_notifyTouchpadChange)
+		{
+			_dbus->signalFeatureNotif(LAPSUS_FEAT_TOUCHPAD_ID,
+				nState?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
+		}
+	}
+
+	_notifyTouchpadChange = false;
+}
+
 bool SysAsus::hardwareDetected()
 {
 	return _hasSwitches
 		|| _hasBacklight
-#ifdef HAVE_ALSA
-		|| _hasVolume
-#endif
 		|| _hasDisplay;
 }
 
@@ -227,6 +263,11 @@ QStringList SysAsus::featureList()
 	}
 #endif
 
+	if (_hasTouchpad)
+	{
+		ret.append(LAPSUS_FEAT_TOUCHPAD_ID);
+	}
+
 	return ret;
 }
 
@@ -255,6 +296,11 @@ QStringList SysAsus::featureArgs(const QString &id)
 		}
 	}
 #endif
+	else if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+	{
+		ret.append(LAPSUS_FEAT_ON);
+		ret.append(LAPSUS_FEAT_OFF);
+	}
 	else if (hasFeature(id) || isDisplayFeature(id))
 	{
 		ret.append(LAPSUS_FEAT_ON);
@@ -268,7 +314,8 @@ QStringList SysAsus::featureParams(const QString &id)
 {
 	QStringList ret;
 
-	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
+	if (id == LAPSUS_FEAT_BACKLIGHT_ID
+		|| id == LAPSUS_FEAT_TOUCHPAD_ID)
 	{
 		ret.append(LAPSUS_FEAT_PARAM_NOTIF);
 	}
@@ -364,11 +411,14 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 		return;
 	}
 
-	/*
-	if (_hasTouchpad && id == 0x6b)
+	if (_hasTouchpad && id == 0x6b && _synap)
 	{
+		_notifyTouchpadChange = true;
+
+		_synap->toggleState();
+
+		return;
 	}
-	*/
 
 	// Unknown hotkey. Just send is as a normal ACPI event.
 
@@ -390,6 +440,14 @@ QString SysAsus::featureRead(const QString &id)
 		return QString::number(_mix->getVolume());
 	}
 #endif
+	else if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+	{
+		if (!_synap) return "";
+
+		if (_synap->getState()) return LAPSUS_FEAT_ON;
+
+		return LAPSUS_FEAT_OFF;
+	}
 	else if (hasFeature(id))
 	{
 		uint val = readIdUInt(id);
@@ -472,6 +530,17 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 		return _mix->setVolume(val);
 	}
 #endif
+	else if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+	{
+		if (!_synap) return false;
+
+		_notifyTouchpadChange = false;
+
+		if (nVal == LAPSUS_FEAT_ON)
+			return _synap->setState(true);
+
+		return _synap->setState(false);
+	}
 	else if (hasFeature(id))
 	{
 		uint uVal = 0;

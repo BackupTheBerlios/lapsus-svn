@@ -98,6 +98,7 @@ QString SysBackend::featureName(const QString &id)
 	if (id == LAPSUS_FEAT_WIRELESS_ID) return I18N_NOOP("Wireless radio");
 	if (id == LAPSUS_FEAT_BACKLIGHT_ID) return I18N_NOOP("LCD Backlight");
 	if (id == LAPSUS_FEAT_VOLUME_ID) return I18N_NOOP("Volume");
+	if (id == LAPSUS_FEAT_TOUCHPAD_ID) return I18N_NOOP("Touchpad");
 
 	QString disp;
 
