@@ -86,7 +86,9 @@ void SysAsus::detect()
 
 					QString id = QString(LAPSUS_FEAT_LED_ID_PREFIX "%1").
 							arg(fName.mid(5).lower());
-					QString name = QString("%1 LED").arg(fName.mid(5)).upper();
+					QString name = QString("%1 LED").arg(fName.mid(5));
+
+					name[0] = name[0].upper();
 
 					setFeature(id, path, name);
 
