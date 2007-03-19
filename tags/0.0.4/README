@@ -1,0 +1,150 @@
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                                                                           *
+*  Lapsus is in a very early development stage, but hopefully it will       *
+*  became mature program one day.                                           *
+*  There may be (well, for sure is) a number of bugs and issues,            *
+*  but it already can be quite usefull.                                     *
+*                                                                           *
+*  It may do strange things and I am not responsible for anything           *
+*  that happens when you use that program. However, I am using it myself    *
+*  and haven't seen any disasters (so far ;)).                              *
+*                                                                           *
+*                                                                           *
+*  IBM/Lenovo users: BE CAREFUL! I can't test it myself on IBM laptop,      *
+*  so IBM support is more experimental than Asus support. If you wish       *
+*  to try and test it, please run lapsusd in no-daemon mode:                *
+*          ./lapsusd --no-daemon                                            *
+*  It will print lots of debugging information. I will appreciate any       *
+*  information and suggestion that will help make this code better!         *
+*  The same goes for Asus users, but I can test Asus backend myself         *
+*  whereas I can not test IBM backend myself.                               *
+*                                                                           *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+  This program is licensed under the GNU General Public License.
+  See the COPYING file for more information.
+
+
+Notes
+=====
+
+
+Lapsus is a program created to let laptops users use many of the features
+of their laptops which are supported by Linux. For now, there are two
+hardware-specific backends - Asus and IBM, and one 'generic' backend for
+all unsupported hardware. Asus backend is used to control features provided
+by asus-laptop module from acpi4asus project (http://acpi4asus.sourceforge.net)
+IBM backend is used to control features provided by IBM ThinkPad ACPI Extras
+Driver (http://ibm-acpi.sourceforge.net), as well as NVRAM device using
+the code taken from ThinkPad Buttons project (http://www.nongnu.org/tpb/)
+
+It consist of daemon program, which runs with root priviliges and reads
+and writes to files created by asus-laptop in /sys/ directory, monitors ACPI
+events and (in the future) controls cpufreq utils.
+
+The other part is a KDE Panel Applet, which is similar to KMix Applet (even
+the code was stolen ;) ) and lets to change LCD backlight power similar to the
+way KMix Applet lets to change sound volume, and control switch values which
+are supported by lapsusd (LEDs, bluetooth, wifi...).
+
+(lapsusd can also be controlled without lapsus program - see 'LapsusD' below)
+
+Sometime int the future there will be standalone client with the similar
+functions as the applet. As for now, there is only applet with very limited
+functions set - it lets to change LED values, switch on/off wirelles and
+bluetooth and change backlight power of ASUS laptops.
+
+I plan to add more features, like display switching, binding
+hotkeys ("multimedia" keys supported by ACPI) to programs
+and actions, add OSD information when changing volume/backlight/etc
+(similar to OSD provided by ASUS programs in Windows) and possibility
+to control cpufreq utils from the tray. It should also monitor
+battery status and change 'power profiles' (with cpufreq) depending
+on power status. I know there is KDE program which does that,
+but I would like lapsus to be all-in-one ASUS laptop utility.
+
+It should, probably, be possible to add other laptop brands very easily,
+but unless there is someone with different type of hardware who would like
+to help, it will be ASUS only utility.
+Actually there is also IBM backend provided, but I don't have any laptop
+which I could test it on, so it's more experimental than the rest of the
+code ;)
+
+It was created as a Qt4 program, and then ported to Qt3 with
+dbus-qt4-qt3backport (included in the source tree od lapsus).
+
+
+
+LapsusD
+-------
+
+It is possible to use lapsusd and control it without lapsus program/applet but
+with dbus-send command.
+
+dbus-send --print-reply --system --dest=de.berlios.Lapsus /LapsusDaemon \
+de.berlios.Lapsus.* arguments
+
+Where * is a command of lapsusd, and arguments are command specific.
+
+For example, to switch bluetooth on you can use this command:
+
+dbus-send --print-reply --system --dest=de.berlios.Lapsus /LapsusDaemon \
+de.berlios.Lapsus.setFeature string:'asus_bluetooth' string:'on'
+
+To switch it off use string:'off'.
+
+Possible methods are:
+
+de.berlios.Lapsus.listFeatures - to get a list of IDs of supported features
+                                 It does not take any arguments.
+
+de.berlios.Lapsus.getFeatureInfo - to get an info for a given feature ID
+                                   It takes ID as an argument and returns
+                                   feature name/description and a list of
+                                   possible arguments. Range arguments,
+                                   for example for backlight power is
+                                   given as 'from:to' string.
+
+de.berlios.Lapsus.getFeature - it gets a feature ID as an argument and
+                               returns string with current feature's value
+
+de.berlios.Lapsus.setFeature - it takes feature ID and a new value for it.
+                               It returns a bool value, which might be
+                               false either if the feature ID is not
+                               recognised, an argument is invalid,
+                               or that feature already had given value.
+
+
+It also generates two signals (async events):
+
+de.berlios.Lapsus.featureChanged - it has feature ID and new value of the
+                                   feature. It is generated everytime lapsusd
+                                   changes that value (but if something else
+                                   modifies it, for example using /sys
+                                   interface directly, the signal is not
+                                   generated)
+
+de.berlios.Lapsus.featureNotif - the same as above (and both are sent one
+                                  after another), but inicates, that the change
+                                  was triggered by external event - like
+                                  hotkey press event, or NVRAM state change.
+                                  Used to show OSD information.
+
+de.berlios.Lapsus.acpiEvent - generated for every ACPI event. Arguments
+                              are similar to those generated by /proc/acpi
+
+dbus-send can be used together with one (or even more) lapsus programs
+running at the same time - everything should work just fine :)
+
+
+
+
+For more (hopefully) information please visit http://lapsus.berlios.de
+
+
+
+Jakub Schmidtke
+sjakub@users.berlios.de
+

@@ -1,0 +1,114 @@
+# translation of pl.po to Polish
+# This file is put in the public domain.
+#
+# Jakub Schmidtke <sjakub@users.berlios.de>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: pl\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-03-19 03:51+0100\n"
+"PO-Revision-Date: 2007-03-19 03:53+0100\n"
+"Last-Translator: Jakub Schmidtke <sjakub@users.berlios.de>\n"
+"Language-Team: Polish <pl@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms:  nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%"
+"100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: daemon/sys_asus.cpp:80
+msgid "Mail LED"
+msgstr "Dioda pocztowa"
+
+#: daemon/sys_asus.cpp:81
+msgid "Touchpad LED"
+msgstr "Dioda touchpada"
+
+#: daemon/sys_asus.cpp:82
+msgid "Recording LED"
+msgstr "Dioda nagrywania"
+
+#: daemon/sys_asus.cpp:83
+msgid "Phone LED"
+msgstr "Dioda telefonu"
+
+#: daemon/sys_asus.cpp:84
+msgid "Gaming LED"
+msgstr "Dioda gier"
+
+#: daemon/sys_backend.cpp:97
+msgid "Bluetooth adapter"
+msgstr "Kontroler Bluetooth"
+
+#: daemon/sys_backend.cpp:98
+msgid "Wireless radio"
+msgstr "Nadajnik sieci bezprzewodowej"
+
+#: daemon/sys_backend.cpp:99
+msgid "LCD Backlight"
+msgstr "Jasność wyświetlacza"
+
+#: daemon/sys_backend.cpp:100
+msgid "Volume"
+msgstr "Głośność"
+
+#: daemon/sys_backend.cpp:101
+msgid "Touchpad"
+msgstr "Touchpad"
+
+#: daemon/sys_backend.cpp:107
+msgid "LCD Display"
+msgstr "Wyświetlacz LCD"
+
+#: daemon/sys_backend.cpp:108
+msgid "CRT Display"
+msgstr "Wyjście CRT"
+
+#: daemon/sys_backend.cpp:109
+msgid "TV Display"
+msgstr "Wyjście TV"
+
+#: daemon/sys_backend.cpp:110
+msgid "DVI Display"
+msgstr "Wyjście DVI"
+
+#: daemon/sys_ibm.cpp:219
+msgid "Power LED"
+msgstr "Dioda zasilania"
+
+#: daemon/sys_ibm.cpp:221
+msgid "Orange Battery LED"
+msgstr "Pomarańczowa dioda baterii"
+
+#: daemon/sys_ibm.cpp:223
+msgid "Green Battery LED"
+msgstr "Zielona dioda baterii"
+
+#: daemon/sys_ibm.cpp:225
+msgid "UltraBase LED"
+msgstr "Dioda UltraBase"
+
+#: daemon/sys_ibm.cpp:227
+msgid "UltraBay LED"
+msgstr "Dioda UltraBay"
+
+#: daemon/sys_ibm.cpp:229
+msgid "5th LED"
+msgstr "Dioda 5"
+
+#: daemon/sys_ibm.cpp:231
+msgid "6th LED"
+msgstr "Dioda 6"
+
+#: daemon/sys_ibm.cpp:233
+msgid "Standby LED"
+msgstr "Dioda stanu uśpienia"
+
+#: daemon/sys_ibm.cpp:296
+msgid "ThinkLight"
+msgstr "ThinkLight"
+
+#: client/panel_main.cpp:251
+msgid "Switches"
+msgstr "Przełączniki"
