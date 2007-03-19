@@ -1,6 +1,6 @@
 
 If you are interested in "generic" instructions and how to set compiler
-options etc. the end of this file.
+options etc. look at the end of this file.
 
 The program (actually the daemon, but client is useless without the daemon)
 to run needs asus-laptop kernel module version >= 0.40 loaded.
