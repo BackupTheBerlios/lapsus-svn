@@ -135,9 +135,16 @@ void LapsusPanelMain::loadConfig()
 {
 	_cfg.setGroup("applet");
 
-	if (_dbus->isValid()
-		& (!_cfg.hasKey("panel_entries")
-			|| !_cfg.hasKey("menu_entries")) )
+	bool doAuto = true;
+
+	if (_cfg.hasKey("autodetect"))
+	{
+		QString str = _cfg.readEntry("autodetect");
+
+		if (str.length() > 0 && str != "true") doAuto = false;
+	}
+
+	if (_dbus->isValid() && doAuto )
 	{
 		QStringList fL = _dbus->listFeatures();
 		QStringList pEntries;
@@ -147,6 +154,9 @@ void LapsusPanelMain::loadConfig()
 		_cfg.deleteGroup("applet");
 
 		_cfg.setGroup("applet");
+
+		// So it's easier to change if user wants to set it to false :)
+		_cfg.writeEntry("autodetect", "true");
 
 		// It would be nice to have 'applet' group at the beginning
 		_cfg.writeEntry("panel_entries", QStringList());
