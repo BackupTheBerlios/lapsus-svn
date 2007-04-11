@@ -395,13 +395,20 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 #endif
 
 	// I'm not sure what should be the ID range if max_backlight != 15...
-	if (_hasBacklight && id >= 0x20 && id <= 0x2e)
+	if (_hasBacklight
+		&& (	(id >= 0x20 && id <= 0x2e)
+			|| (id >= 0x11 && id <= 0x1f)))
 	{
 		int oVal = readPathString(ASUS_GET_BACKLIGHT_PATH).toInt();
-		int nVal = id - 0x20;
+		int nVal;
 
-		if (oVal == 0 && nVal == 0)
+		if (id < 0x20) nVal = id - 0x10;
+		else nVal = id - 0x20;
+
+		if (nVal == 0 && oVal == nVal)
 			nVal = _maxBacklight;
+		else if (nVal == (int) _maxBacklight && oVal == nVal)
+			nVal = 0;
 
 		if (setBacklight(nVal) && _dbus)
 		{
