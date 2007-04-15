@@ -42,13 +42,15 @@
 #define LAPSUS_DBUS_FEATURE_NOTIF	"featureNotif"
 
 // Following values have to be lower-case!
-#define LAPSUS_FEAT_LED_ID_PREFIX	"led_"
-#define LAPSUS_FEAT_DISPLAY_ID_PREFIX	"display_"
-#define LAPSUS_FEAT_BACKLIGHT_ID	"backlight"
-#define LAPSUS_FEAT_BLUETOOTH_ID	"bluetooth"
-#define LAPSUS_FEAT_WIRELESS_ID		"wireless"
-#define LAPSUS_FEAT_VOLUME_ID		"volume"
-#define LAPSUS_FEAT_TOUCHPAD_ID		"touchpad"
+#define LAPSUS_FEAT_LED_ID_PREFIX		"led_"
+#define LAPSUS_FEAT_DISPLAY_ID_PREFIX		"display_"
+#define LAPSUS_FEAT_BACKLIGHT_ID		"backlight"
+#define LAPSUS_FEAT_BLUETOOTH_ID		"bluetooth"
+#define LAPSUS_FEAT_WIRELESS_ID			"wireless"
+#define LAPSUS_FEAT_VOLUME_ID			"volume"
+#define LAPSUS_FEAT_TOUCHPAD_ID			"touchpad"
+#define LAPSUS_FEAT_LIGHT_SENSOR_ID		"light_sensor"
+#define LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID	"light_sensor_level"
 
 #define LAPSUS_FEAT_ON			"on"
 #define LAPSUS_FEAT_OFF			"off"

@@ -44,6 +44,7 @@ class SysAsus : public SysBackend
 		QStringList featureList();
 		QStringList featureArgs(const QString &id);
 		QStringList featureParams(const QString &id);
+		QString featureName(const QString &id);
 		QString featureRead(const QString &id);
 		bool featureWrite(const QString &id, const QString &nVal);
 		bool checkACPIEvent(const QString &group, const QString &action,
@@ -64,7 +65,9 @@ class SysAsus : public SysBackend
 		bool _hasBacklight;
 		bool _hasDisplay;
 		bool _hasTouchpad;
+		bool _hasLightSensor;
 		uint _maxBacklight;
+		uint _maxLightSensor;
 
 #ifdef HAVE_ALSA
 		bool _hasVolume;
@@ -75,6 +78,7 @@ class SysAsus : public SysBackend
 
 		void detect();
 		bool setBacklight(uint nVal);
+		bool setLightSensorLevel(uint nVal);
 };
 
 #endif
