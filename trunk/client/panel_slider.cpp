@@ -27,6 +27,7 @@
 LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 	Qt::Orientation orientation, QWidget *parent, LapsusDBus *dbus, KConfig *cfg) :
 		LapsusPanelWidget(id, orientation, parent, dbus, cfg),
+		_layout(0), _slider(0), _iconLabel(0),
 		_hasDBus(false), _isValid(false)
 {
 	if ( orientation == Qt::Horizontal )
