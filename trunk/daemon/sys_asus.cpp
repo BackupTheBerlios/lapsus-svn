@@ -37,7 +37,7 @@
 SysAsus::SysAsus():
 	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false),
 	_hasTouchpad(false), _hasLightSensor(false), _maxBacklight(0),
-	_maxLightSensor(7),
+	_maxLightSensor(7), // maxLightSensor can't be larger than 15!
 #ifdef HAVE_ALSA
 	_hasVolume(false), _mix(0),
 #endif
@@ -150,6 +150,12 @@ void SysAsus::detect()
 
 			if (_maxBacklight > 0 && QFile::exists(path))
 			{
+				// maxBacklight should not be larger than 15 - 
+				// if it is we are running into problems while dealing
+				// with brightness_up and down hotkeys.
+				if (_maxBacklight > 15)
+					_maxBacklight = 15;
+				
 				_hasBacklight = true;
 			}
 			else
@@ -431,61 +437,72 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 	}
 #endif
 
-	// if a lightsensor is available and enabled, the brightness button controls
+	// if a LightSensor is available and enabled, the brightness button controls
 	// its sensitivity level instead of directly controlling the backlight
-	// TODO - what if max_ls_level != 7?
-	if (_hasLightSensor
-		&& (	(id >= 0x20 && id <= 0x26)
-			|| (id >= 0x11 && id <= 0x17))
-		&& (featureRead(LAPSUS_FEAT_LIGHT_SENSOR_ID).toInt()))
+	if (_hasLightSensor && featureRead(LAPSUS_FEAT_LIGHT_SENSOR_ID) == LAPSUS_FEAT_ON)
 	{
-		int oVal = readPathString(ASUS_LS_LEVEL_PATH).toInt();
-		int nVal;
-
-		if (id < 0x20) nVal = id - 0x10;
-		else nVal = id - 0x20;
-
-		if (nVal == 0 && oVal == nVal)
-			nVal = _maxLightSensor;
-		else if (nVal == (int) _maxLightSensor && oVal == nVal)
-			nVal = 0;
-
-		if (setLightSensorLevel(nVal) && _dbus)
+		if (	(id >= 0x20 && id < (0x20 + _maxLightSensor) ) ||
+			(id > 0x10 && id <= (0x10 + _maxLightSensor)))
 		{
-			_dbus->signalFeatureNotif(
-				LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID,
-				QString::number(nVal));
+			int oVal = readPathString(ASUS_LS_LEVEL_PATH).toInt();
+			int nVal;
+	
+			if (id < 0x20) nVal = id - 0x10;
+			else nVal = id - 0x20;
+	
+			// UP: 0->1->...->max->0->1->...
+			// DOWN: max->max-1->...->1->0->max->max-1->...
+			// In case one of the buttons (up/down) doesn't work we
+			// are still able to choose any of possible values
+			if (nVal == 0 && oVal == nVal)
+				nVal = _maxLightSensor;
+			else if (nVal == (int) _maxLightSensor && oVal == nVal)
+				nVal = 0;
+	
+			if (setLightSensorLevel(nVal) && _dbus)
+			{
+				_dbus->signalFeatureNotif(
+					LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID,
+					QString::number(nVal));
+			}
+	
+			return;
 		}
-
-		return;
 	}
-
-	// I'm not sure what should be the ID range if max_backlight != 15...
 	// Works only when LightSensor is disabled
-	// TODO - what if max_backlight != 15?
-	if (_hasBacklight && !_hasLightSensor
-		&& (	(id >= 0x20 && id <= 0x2e)
-			|| (id >= 0x11 && id <= 0x1f)))
+	else
 	{
-		int oVal = readPathString(ASUS_GET_BACKLIGHT_PATH).toInt();
-		int nVal;
-
-		if (id < 0x20) nVal = id - 0x10;
-		else nVal = id - 0x20;
-
-		if (nVal == 0 && oVal == nVal)
-			nVal = _maxBacklight;
-		else if (nVal == (int) _maxBacklight && oVal == nVal)
-			nVal = 0;
-
-		if (setBacklight(nVal) && _dbus)
+		// In case max_backlight is not 15 we are still running into problems,
+		// because 0x10+max can't be >= 0x20... But maybe max_backlight is lower.
+		// Just to be safe we limit max_backlight to value 15 during init.
+		if (_hasBacklight
+			&& (	(id >= 0x20 && id < (0x20 + _maxBacklight) ) ||
+				(id > 0x10 && id <= (0x10 + _maxBacklight))))
 		{
-			_dbus->signalFeatureNotif(
-				LAPSUS_FEAT_BACKLIGHT_ID,
-				QString::number(nVal));
+			int oVal = readPathString(ASUS_GET_BACKLIGHT_PATH).toInt();
+			int nVal;
+	
+			if (id < 0x20) nVal = id - 0x10;
+			else nVal = id - 0x20;
+	
+			// UP: 0->1->...->max->0->1->...
+			// DOWN: max->max-1->...->1->0->max->max-1->...
+			// In case one of the buttons (up/down) doesn't work we
+			// are still able to choose any of possible values
+			if (nVal == 0 && oVal == nVal)
+				nVal = _maxBacklight;
+			else if (nVal == (int) _maxBacklight && oVal == nVal)
+				nVal = 0;
+	
+			if (setBacklight(nVal) && _dbus)
+			{
+				_dbus->signalFeatureNotif(
+					LAPSUS_FEAT_BACKLIGHT_ID,
+					QString::number(nVal));
+			}
+			
+			return;
 		}
-
-		return;
 	}
 
 	if (_hasTouchpad && id == 0x6b && _synap)
@@ -501,7 +518,7 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 	{
 		QString nVal = LAPSUS_FEAT_ON;
 
-		if (featureRead(LAPSUS_FEAT_LIGHT_SENSOR_ID).toInt())
+		if (featureRead(LAPSUS_FEAT_LIGHT_SENSOR_ID) == nVal)
 			nVal = LAPSUS_FEAT_OFF;
 		
 		if (featureWrite(LAPSUS_FEAT_LIGHT_SENSOR_ID, nVal) && _dbus)
