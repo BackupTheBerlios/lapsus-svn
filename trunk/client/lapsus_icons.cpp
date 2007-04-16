@@ -46,6 +46,8 @@ int LapsusIcons::loadNewAutoIcon(int size)
 		return loadNewIcon("light_bulb", "", size);
 	else if (_featureId == LAPSUS_FEAT_VOLUME_ID)
 		return loadNewIcon("speaker", "", size);
+	else if (_featureId == LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID)
+		return loadNewIcon("moon", "", size);
 
 	return -1;
 }
