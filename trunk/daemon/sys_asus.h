@@ -77,8 +77,8 @@ class SysAsus : public SysBackend
 		bool _notifyTouchpadChange;
 
 		void detect();
-		bool setBacklight(uint nVal);
-		bool setLightSensorLevel(uint nVal);
+		bool setBacklight(uint nVal, bool forceSignal = false);
+		bool setLightSensorLevel(uint nVal, bool forceSignal = false);
 };
 
 #endif

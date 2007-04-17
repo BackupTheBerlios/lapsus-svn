@@ -459,7 +459,12 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 			else if (nVal == (int) _maxLightSensor && oVal == nVal)
 				nVal = 0;
 	
-			if (setLightSensorLevel(nVal) && _dbus)
+			// We force the method to send a signal with current value - the same reason
+			// why we do that with brightness.
+			setLightSensorLevel(nVal, true);
+
+			// Same as with brightness - we wan't OSD even if it didn't modify the value.
+			if (_dbus)
 			{
 				_dbus->signalFeatureNotif(
 					LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID,
@@ -494,7 +499,15 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 			else if (nVal == (int) _maxBacklight && oVal == nVal)
 				nVal = 0;
 	
-			if (setBacklight(nVal) && _dbus)
+			// Backlight is changed by a hotkey - no risk of infinite loop
+			// of signals - we force setBacklight to emit a signal with
+			// current brightness value. Needed if something else modified
+			// backlight already.
+			setBacklight(nVal, true);
+			
+			// We also want to show OSD even if we haven't modified the brightness
+			// Hotkey has been pressed, so we want to show OSD.
+			if (_dbus)
 			{
 				_dbus->signalFeatureNotif(
 					LAPSUS_FEAT_BACKLIGHT_ID,
@@ -595,18 +608,18 @@ QString SysAsus::featureRead(const QString &id)
 	return "";
 }
 
-bool SysAsus::setBacklight(uint uVal)
+bool SysAsus::setBacklight(uint uVal, bool forceSignal)
 {
 	if (uVal > _maxBacklight)
 		uVal = _maxBacklight;
 
 	uint oVal = readPathUInt(ASUS_GET_BACKLIGHT_PATH);
 
-	if (oVal == uVal) return false;
+	bool res = false;
 
-	bool res = writePathUInt(ASUS_SET_BACKLIGHT_PATH, uVal);
+	if (oVal != uVal) res = writePathUInt(ASUS_SET_BACKLIGHT_PATH, uVal);
 
-	if (res && _dbus)
+	if (_dbus && (res || forceSignal))
 	{
 		_dbus->signalFeatureChanged(LAPSUS_FEAT_BACKLIGHT_ID, QString::number(uVal));
 	}
@@ -614,18 +627,18 @@ bool SysAsus::setBacklight(uint uVal)
 	return res;
 }
 
-bool SysAsus::setLightSensorLevel(uint uVal)
+bool SysAsus::setLightSensorLevel(uint uVal, bool forceSignal)
 {
 	if (uVal > _maxLightSensor)
 		uVal = _maxLightSensor;
 
 	uint oVal = readPathUInt(ASUS_LS_LEVEL_PATH);
 
-	if (oVal == uVal) return false;
+	bool res = false;
 
-	bool res = writePathUInt(ASUS_LS_LEVEL_PATH, uVal);
+	if (oVal != uVal) res = writePathUInt(ASUS_LS_LEVEL_PATH, uVal);
 
-	if (res && _dbus)
+	if (_dbus && (res || forceSignal))
 	{
 		_dbus->signalFeatureChanged(LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID, QString::number(uVal));
 	}
