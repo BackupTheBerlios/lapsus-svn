@@ -38,6 +38,7 @@ SysAsus::SysAsus():
 	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false),
 	_hasTouchpad(false), _hasLightSensor(false), _maxBacklight(0),
 	_maxLightSensor(7), // maxLightSensor can't be larger than 15!
+	_lastBacklightHotkeySet(-1),
 #ifdef HAVE_ALSA
 	_hasVolume(false), _mix(0),
 #endif
@@ -484,7 +485,6 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 			&& (	(id >= 0x20 && id < (0x20 + _maxBacklight) ) ||
 				(id > 0x10 && id <= (0x10 + _maxBacklight))))
 		{
-			int oVal = readPathString(ASUS_GET_BACKLIGHT_PATH).toInt();
 			int nVal;
 	
 			if (id < 0x20) nVal = id - 0x10;
@@ -494,9 +494,9 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 			// DOWN: max->max-1->...->1->0->max->max-1->...
 			// In case one of the buttons (up/down) doesn't work we
 			// are still able to choose any of possible values
-			if (nVal == 0 && oVal == nVal)
+			if (nVal == 0 && _lastBacklightHotkeySet == nVal)
 				nVal = _maxBacklight;
-			else if (nVal == (int) _maxBacklight && oVal == nVal)
+			else if (nVal == (int) _maxBacklight && _lastBacklightHotkeySet == nVal)
 				nVal = 0;
 	
 			// Backlight is changed by a hotkey - no risk of infinite loop
@@ -504,6 +504,8 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 			// current brightness value. Needed if something else modified
 			// backlight already.
 			setBacklight(nVal, true);
+			
+			_lastBacklightHotkeySet = nVal;
 			
 			// We also want to show OSD even if we haven't modified the brightness
 			// Hotkey has been pressed, so we want to show OSD.

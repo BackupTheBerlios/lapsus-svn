@@ -68,6 +68,7 @@ class SysAsus : public SysBackend
 		bool _hasLightSensor;
 		uint _maxBacklight;
 		uint _maxLightSensor;
+		int _lastBacklightHotkeySet;
 
 #ifdef HAVE_ALSA
 		bool _hasVolume;
