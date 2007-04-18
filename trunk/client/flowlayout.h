@@ -50,9 +50,9 @@ class FlowLayout : public QLayout
 
 	private:
 		Qt::Orientation _orientation;
-		QPtrList<QLayoutItem> list;
-		int cachedW;
-		int cachedH;
+		QPtrList<QLayoutItem> _list;
+		int _cachedW;
+		int _cachedH;
 
 		int doLayout( const QRect&, bool testonly = FALSE );
 		int doLayoutHorizontal( const QRect&, bool testonly = FALSE );

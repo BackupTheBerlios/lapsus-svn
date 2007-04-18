@@ -23,48 +23,48 @@
 class FlowLayoutIterator :public QGLayoutIterator
 {
 	public:
-		FlowLayoutIterator( QPtrList<QLayoutItem> *l ) :idx(0), list(l)  {}
+		FlowLayoutIterator( QPtrList<QLayoutItem> *l ) :_idx(0), _list(l)  {}
 		uint count() const;
 		QLayoutItem *current();
 		QLayoutItem *next();
 		QLayoutItem *takeCurrent();
 
 	private:
-		int idx;
-		QPtrList<QLayoutItem> *list;
+		int _idx;
+		QPtrList<QLayoutItem> *_list;
 };
 
 uint FlowLayoutIterator::count() const
 {
-    return list->count();
+    return _list->count();
 }
 
 QLayoutItem *FlowLayoutIterator::current()
 {
-    return idx < int(count()) ? list->at(idx) : 0;
+    return _idx < int(count()) ? _list->at(_idx) : 0;
 }
 
 QLayoutItem *FlowLayoutIterator::next()
 {
-    idx++; return current();
+    _idx++; return current();
 }
 
 QLayoutItem *FlowLayoutIterator::takeCurrent()
 {
-    return idx < int(count()) ? list->take( idx ) : 0;
+    return _idx < int(count()) ? _list->take( _idx ) : 0;
 }
 
 FlowLayout::FlowLayout( QWidget* parent, Qt::Orientation orientation, int border, int space, const char* name ):
-	QLayout( parent, border, space, name ), _orientation(orientation), cachedW(0), cachedH(0)
+	QLayout( parent, border, space, name ), _orientation(orientation), _cachedW(0), _cachedH(0)
 {
 }
 
 FlowLayout::FlowLayout( QLayout* parent, Qt::Orientation orientation, int space, const char* name ):
-	QLayout( parent, space, name ), _orientation(orientation), cachedW(0), cachedH(0)
+	QLayout( parent, space, name ), _orientation(orientation), _cachedW(0), _cachedH(0)
 {
 }
 FlowLayout::FlowLayout( Qt::Orientation orientation, int space, const char* name ):
-	QLayout( space, name ), _orientation(orientation), cachedW(0), cachedH(0)
+	QLayout( space, name ), _orientation(orientation), _cachedW(0), _cachedH(0)
 {
 }
 
@@ -75,37 +75,37 @@ FlowLayout::~FlowLayout()
 
 int FlowLayout::heightForWidth( int w ) const
 {
-	if ( cachedW != w )
+	if ( _cachedW != w )
 	{
 		//Not all C++ compilers support "mutable" yet:
 		FlowLayout * mthis = (FlowLayout*)this;
 		int h = mthis->doLayout( QRect(0,0,w,0), true );
-		mthis->cachedH = h;
-		mthis->cachedW = w;
+		mthis->_cachedH = h;
+		mthis->_cachedW = w;
 		return h;
 	}
 
-	return cachedH;
+	return _cachedH;
 }
 
 int FlowLayout::widthForHeight( int h ) const
 {
-	if ( cachedH != h )
+	if ( _cachedH != h )
 	{
 		//Not all C++ compilers support "mutable" yet:
 		FlowLayout * mthis = (FlowLayout*)this;
 		int w = mthis->doLayout( QRect(0,0,0,h), true );
-		mthis->cachedH = h;
-		mthis->cachedW = w;
+		mthis->_cachedH = h;
+		mthis->_cachedW = w;
 		return w;
 	}
 
-	return cachedW;
+	return _cachedW;
 }
 
 void FlowLayout::addItem( QLayoutItem *item)
 {
-	list.append( item );
+	_list.append( item );
 }
 
 bool FlowLayout::hasHeightForWidth() const
@@ -121,7 +121,7 @@ bool FlowLayout::hasWidthForHeight() const
 QSize FlowLayout::sizeHint() const
 {
 	QSize s(0,0);
-	QPtrListIterator<QLayoutItem> it(list);
+	QPtrListIterator<QLayoutItem> it(_list);
 	QLayoutItem *o;
 
 	while ( (o=it.current()) != 0 )
@@ -140,7 +140,7 @@ QSizePolicy::ExpandData FlowLayout::expanding() const
 
 QLayoutIterator FlowLayout::iterator()
 {
-	return QLayoutIterator( new FlowLayoutIterator( &list ) );
+	return QLayoutIterator( new FlowLayoutIterator( &_list ) );
 }
 
 void FlowLayout::setGeometry( const QRect &r )
@@ -152,7 +152,7 @@ void FlowLayout::setGeometry( const QRect &r )
 QSize FlowLayout::minimumSize() const
 {
 	QSize s(0,0);
-	QPtrListIterator<QLayoutItem> it(list);
+	QPtrListIterator<QLayoutItem> it(_list);
 	QLayoutItem *o;
 
 	while ( (o=it.current()) != 0 )
@@ -177,7 +177,7 @@ int FlowLayout::doLayoutHorizontal( const QRect &r, bool testonly )
 	int x = r.x();
 	int y = r.y();
 	int w = 0;
-	QPtrListIterator<QLayoutItem> it(list);
+	QPtrListIterator<QLayoutItem> it(_list);
 	QLayoutItem *o;
 
 	while ( (o=it.current()) != 0 )
@@ -215,7 +215,7 @@ int FlowLayout::doLayoutVertical( const QRect &r, bool testonly )
 	int x = r.x();
 	int y = r.y();
 	int h = 0;
-	QPtrListIterator<QLayoutItem> it(list);
+	QPtrListIterator<QLayoutItem> it(_list);
 	QLayoutItem *o;
 
 	while ( (o=it.current()) != 0 )
