@@ -219,7 +219,16 @@ void SysAsus::detect()
 void SysAsus::volumeChanged(int val)
 {
 	if (_dbus)
-		_dbus->signalFeatureChanged(LAPSUS_FEAT_VOLUME_ID, QString::number(val));
+	{
+		QStringList args;
+		
+		args.append(QString::number(val));
+		
+		if (_mix->isMuted())
+			args.append(LAPSUS_FEAT_MUTE);
+		
+		_dbus->signalFeatureChanged(LAPSUS_FEAT_VOLUME_ID, args);
+	}
 }
 
 void SysAsus::muteChanged(bool muted)
@@ -421,16 +430,34 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 			int val = _mix->getVolume();
 			int mVal = _mix->getMaxVolume();
 
-			if (id == 0x30) val += 5;
-			else val -= 5;
+			if (id == 0x30)
+			{
+				val += 5;
+				
+				// VolumeUp also unmutes the mixer.
+				if (_mix->isMuted())
+					_mix->toggleMute();
+			}
+			else
+			{
+				val -= 5;
+			}
 
 			if (val < 0) val = 0;
 			if (val > mVal) val = mVal;
 
 			if (_mix->setVolume(val) && _dbus)
 			{
-				_dbus->signalFeatureNotif(LAPSUS_FEAT_VOLUME_ID,
-						QString::number(val));
+				QStringList args;
+				
+				args.append(QString::number(val));
+				
+				if (_mix->isMuted())
+				{
+					args.append(LAPSUS_FEAT_MUTE);
+				}
+				
+				_dbus->signalFeatureNotif(LAPSUS_FEAT_VOLUME_ID, args);
 			}
 
 			return;
@@ -562,6 +589,13 @@ QString SysAsus::featureRead(const QString &id)
 	{
 		if (!_mix) return "";
 
+		if (_mix->isMuted())
+		{
+			return QString("%1,%2")
+				.arg(QString::number(_mix->getVolume()))
+				.arg(LAPSUS_FEAT_MUTE);
+		}
+		
 		return QString::number(_mix->getVolume());
 	}
 #endif

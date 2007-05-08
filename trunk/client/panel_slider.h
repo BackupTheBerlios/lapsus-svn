@@ -63,8 +63,10 @@ class LapsusPanelSlider : public LapsusPanelWidget
 		QString _featureId;
 		bool _hasDBus;
 		bool _isValid;
+		bool _supportsMute;
+		// TODO - temporary 'hack' - it should be more generic!
 
-		static bool getMinMaxArgs(const QStringList & args, int *minV, int *maxV);
+		static bool getMinMaxArgs(const QStringList & args, int *minV, int *maxV, bool *supportsMute);
 };
 
 #endif

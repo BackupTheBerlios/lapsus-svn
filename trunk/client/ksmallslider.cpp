@@ -508,7 +508,7 @@ void KSmallSlider::setGray( bool value )
    {
       grayed = value;
       update();
-      //repaint();
+//      repaint();
    }
 }
 

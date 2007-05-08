@@ -83,6 +83,16 @@ void LapsusDBus::doInit()
 	return;
 }
 
+void LapsusDBus::signalFeatureChanged(const QString &id, const char *val)
+{
+	signalFeatureChanged(id, QString(val));
+}
+
+void LapsusDBus::signalFeatureChanged(const QString &id, const QStringList &vList)
+{
+	signalFeatureChanged(id, vList.join(","));
+}
+
 void LapsusDBus::signalFeatureChanged(const QString &id, const QString &val)
 {
 	QValueList<QDBusData> params;
@@ -91,6 +101,16 @@ void LapsusDBus::signalFeatureChanged(const QString &id, const QString &val)
 	params.append(QDBusData::fromString(val));
 
 	safeSendSignal(LAPSUS_DBUS_FEATURE_CHANGED, params);
+}
+
+void LapsusDBus::signalFeatureNotif(const QString &id, const char *val)
+{
+	signalFeatureNotif(id, QString(val));
+}
+
+void LapsusDBus::signalFeatureNotif(const QString &id, const QStringList &vList)
+{
+	signalFeatureNotif(id, vList.join(","));
 }
 
 void LapsusDBus::signalFeatureNotif(const QString &id, const QString &val)
