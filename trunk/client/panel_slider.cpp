@@ -258,6 +258,12 @@ bool LapsusPanelSlider::eventFilter( QObject* obj, QEvent* e )
 			emit rightButtonPressed();
 			return true;
 		}
+		
+		if (qme->button() == Qt::MidButton)
+		{
+			// TODO - middle button action
+			return true;
+		}
 
 		if (!_isValid || !_hasDBus)
 			return true;

@@ -303,6 +303,9 @@ void KSmallSlider::mouseMoveEvent( QMouseEvent *e )
     if ( state != Dragging )
         return;
     */
+    
+    if (e->state() != Qt::LeftButton) return;
+    
     int pos = goodPart( e->pos() );
     moveSlider( pos );
 }
