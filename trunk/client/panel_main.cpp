@@ -29,6 +29,7 @@
 #include "panel_widget.h"
 #include "panel_default.h"
 #include "panel_slider.h"
+#include "panel_vol_slider.h"
 #include "panel_button.h"
 #include "action_button.h"
 
@@ -168,7 +169,17 @@ void LapsusPanelMain::loadConfig()
 			QString grp;
 			QStringList args = _dbus->getFeatureArgs(id);
 
-			if (LapsusPanelSlider::supportsArgs(args))
+			if (LapsusPanelVolSlider::supportsArgs(args))
+			{
+				grp = QString("panel_%1").arg(id);
+				pEntries.push_front(grp);
+
+				_cfg.deleteGroup(grp);
+				_cfg.setGroup(grp);
+				_cfg.writeEntry("widget_type", "vol_slider");
+				_cfg.writeEntry("feature_id", id);
+			}
+			else if (LapsusPanelSlider::supportsArgs(args))
 			{
 				grp = QString("panel_%1").arg(id);
 				pEntries.push_front(grp);

@@ -18,67 +18,27 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "panel_widget.h"
+#ifndef LAPSUS_PANEL_VOL_SLIDER_H
+#define LAPSUS_PANEL_VOL_SLIDER_H
+
 #include "panel_slider.h"
-#include "panel_vol_slider.h"
-#include "panel_button.h"
 
-LapsusPanelWidget::LapsusPanelWidget( const QString &id,
-			Qt::Orientation orientation, QWidget *parent,
-			LapsusDBus *dbus, KConfig *cfg):
-	QWidget( parent, id ), LapsusIcons(id, cfg), _dbus(dbus),
-	_cfg(cfg), _panelOrientation( orientation ), _id( id )
+class LapsusPanelVolSlider : public LapsusPanelSlider
 {
-	setBackgroundMode(X11ParentRelative);
-}
+	Q_OBJECT
 
-LapsusPanelWidget::~LapsusPanelWidget()
-{
-}
+	public:
+		LapsusPanelVolSlider(const QString &id,
+			Qt::Orientation orient, QWidget *parent,
+			LapsusDBus *dbus, KConfig *cfg);
+		~LapsusPanelVolSlider();
 
-LapsusPanelWidget* LapsusPanelWidget::newAppletwidget(
-	const QString &id, Qt::Orientation orientation,
-	QWidget *parent, LapsusDBus *dbus, KConfig *cfg)
-{
-	if (id.length() < 1 || !dbus) return 0;
+		virtual bool eventFilter( QObject* obj, QEvent* e );
 
-	cfg->setGroup(id.lower());
+		static bool supportsArgs(const QStringList & args);
 
-	if (!cfg->hasKey("widget_type")
-		|| !cfg->hasKey("feature_id"))
-	{
-		return 0;
-	}
+	protected slots:
+		virtual void featureChanged(const QString &id, const QString &val);
+};
 
-	QString wType = cfg->readEntry("widget_type");
-	QString fId = cfg->readEntry("feature_id");
-
-	if (fId.length() < 1
-		|| dbus->getFeatureName(fId).length() < 1
-		|| dbus->getFeatureArgs(fId).size() < 1)
-	{
-		return 0;
-	}
-
-	if (wType == "vol_slider")
-	{
-		return new LapsusPanelVolSlider(id.lower(), orientation,
-				parent, dbus, cfg);
-	}
-	else if (wType == "slider")
-	{
-		return new LapsusPanelSlider(id.lower(), orientation,
-				parent, dbus, cfg);
-	}
-	else if (wType == "button")
-	{
-		return new LapsusPanelButton(id.lower(), orientation,
-				parent, dbus, cfg);
-	}
-
-	return 0;
-}
-
-void LapsusPanelWidget::resizeEvent( QResizeEvent * )
-{
-}
+#endif

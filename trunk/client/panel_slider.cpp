@@ -29,7 +29,7 @@ LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 	Qt::Orientation orientation, QWidget *parent, LapsusDBus *dbus, KConfig *cfg) :
 		LapsusPanelWidget(id, orientation, parent, dbus, cfg),
 		_layout(0), _slider(0), _iconLabel(0),
-		_hasDBus(false), _isValid(false), _supportsMute(false)
+		_hasDBus(false), _isValid(false), _dontSendChange(false)
 {
 	if ( orientation == Qt::Horizontal )
 		_layout = new QVBoxLayout( this );
@@ -55,7 +55,7 @@ LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 
 		int minV, maxV;
 
-		if (getMinMaxArgs(list, &minV, &maxV, &_supportsMute))
+		if (getMinMaxArgs(list, &minV, &maxV))
 		{
 			// TODO - maybe it should be re-initialized
 			// everytime dbus goes up ?
@@ -135,11 +135,8 @@ LapsusPanelSlider::~LapsusPanelSlider()
 {
 }
 
-bool LapsusPanelSlider::getMinMaxArgs(const QStringList & args, int *minV, int *maxV, bool *supportsMute)
+bool LapsusPanelSlider::getMinMaxArgs(const QStringList & args, int *minV, int *maxV)
 {
-	// TODO Temporary hack only for (un)mute value of volume feature!
-	bool hasMute = false;
-	bool hasUnMute = false;
 	bool ret = false;
 	
 	for (uint i = 0; i < args.size(); ++i)
@@ -154,29 +151,21 @@ bool LapsusPanelSlider::getMinMaxArgs(const QStringList & args, int *minV, int *
 			if ( *minV < *maxV )
 				ret = true;
 		}
-		else if (list.size() < 2)
-		{
-			if (args[i] == LAPSUS_FEAT_MUTE) hasMute = true;
-			else if (args[i] == LAPSUS_FEAT_UNMUTE) hasUnMute = true;
-		}
 	}
 	
-	if (hasMute && hasUnMute) *supportsMute = true;
-
 	return ret;
 }
 
 bool LapsusPanelSlider::supportsArgs(const QStringList & args)
 {
 	int minV, maxV;
-	bool sM;
 
-	return getMinMaxArgs(args, &minV, &maxV, &sM);
+	return getMinMaxArgs(args, &minV, &maxV);
 }
 
 void LapsusPanelSlider::sliderValueChanged(int nValue)
 {
-	if (!_dbus || !_hasDBus) return;
+	if (!_dbus || !_hasDBus || _dontSendChange) return;
 
 	_dbus->setFeature(_featureId, QString::number(nValue));
 }
@@ -187,36 +176,28 @@ void LapsusPanelSlider::featureChanged(const QString &id, const QString &val)
 	{
 		QStringList args = QStringList::split(",", val);
 			
-		bool setGray = false;
 		bool setVal = false;
 		int nVal = 0;
 		
 		for (uint i = 0; i < args.size(); ++i)
 		{
-			if (args[i] == LAPSUS_FEAT_MUTE)
+			bool ok;
+	
+			int x = args[i].toInt(&ok);
+			
+			if (ok)
 			{
-				setGray = true;
-			}
-			else if (args[i] == LAPSUS_FEAT_UNMUTE)
-			{
-				setGray = false;
-			}
-			else
-			{
-				bool ok;
-		
-				int x = args[i].toInt(&ok);
-				
-				if (ok)
-				{
-					setVal = true;
-					nVal = x;
-				}
+				setVal = true;
+				nVal = x;
 			}
 		}
 		
-		_slider->setGray(setGray);
-		if (setVal) _slider->setValue(nVal);
+		if (setVal)
+		{
+			_dontSendChange = true;
+			_slider->setValue(nVal);
+			_dontSendChange = false;
+		}
 
 	}
 }
@@ -301,19 +282,10 @@ bool LapsusPanelSlider::eventFilter( QObject* obj, QEvent* e )
 			emit rightButtonPressed();
 			return true;
 		}
-		
-		if (qme->button() == Qt::MidButton)
-		{
-			if (_supportsMute && _dbus && _hasDBus)
-			{
-				_slider->setGray(!_slider->gray());
-				
-				_dbus->setFeature(_featureId, (_slider->gray())?LAPSUS_FEAT_MUTE:LAPSUS_FEAT_UNMUTE);
-			}
-			
-			return true;
-		}
 
+		if (qme->button() == Qt::MidButton)
+			return true;
+		
 		if (!_isValid || !_hasDBus)
 			return true;
 	}

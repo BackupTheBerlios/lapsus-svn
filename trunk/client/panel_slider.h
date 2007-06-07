@@ -40,7 +40,7 @@ class LapsusPanelSlider : public LapsusPanelWidget
 		QSize minimumSize() const;
 		QSizePolicy sizePolicy() const;
 
-		bool eventFilter( QObject* obj, QEvent* e );
+		virtual bool eventFilter( QObject* obj, QEvent* e );
 
 		static bool supportsArgs(const QStringList & args);
 
@@ -54,19 +54,18 @@ class LapsusPanelSlider : public LapsusPanelWidget
 	protected slots:
 		void dbusStateChanged(bool state);
 		void sliderValueChanged(int nValue);
-		void featureChanged(const QString &id, const QString &val);
+		virtual void featureChanged(const QString &id, const QString &val);
 
-	private:
+	protected:
 		QBoxLayout* _layout;
 		KSmallSlider* _slider;
 		QLabel* _iconLabel;
 		QString _featureId;
 		bool _hasDBus;
 		bool _isValid;
-		bool _supportsMute;
-		// TODO - temporary 'hack' - it should be more generic!
+		bool _dontSendChange;
 
-		static bool getMinMaxArgs(const QStringList & args, int *minV, int *maxV, bool *supportsMute);
+		static bool getMinMaxArgs(const QStringList & args, int *minV, int *maxV);
 };
 
 #endif
