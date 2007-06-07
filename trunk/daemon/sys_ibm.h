@@ -103,7 +103,7 @@ class SysIBM : public SysBackend
 		QString fieldValue(const QString &fieldName, const QString &path);
 		bool nvramReadBuf(unsigned char *buf, off_t pos, size_t len);
 		bool nvramRead(t_thinkpad_state *tState);
-		bool checkNVRAMPair(unsigned char vOld, unsigned char VNew, char *desc);
+		bool checkNVRAMPair(unsigned char vOld, unsigned char VNew, const char *desc);
 		void signalNVRAMChange(const QString &id, unsigned char nVal);
 };
 

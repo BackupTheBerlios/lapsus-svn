@@ -36,7 +36,7 @@
 
 LapsusDBus::LapsusDBus(LapsusDaemon *daemon):
 	_daemon(daemon), _isValid(false),
-	_processingReply(false), _timerSet(false)
+	_timerSet(false)
 {
 	doInit();
 }
@@ -137,22 +137,10 @@ void LapsusDBus::sendACPIEvent(const QString &group, const QString &action,
 	safeSendSignal(LAPSUS_DBUS_ACPI_EVENT, params);
 }
 
-bool LapsusDBus::safeSendSignal(const QString &sigName,
+bool LapsusDBus::safeSendSignal(const char *sigName,
 				const QValueList<QDBusData>& params)
 {
-	/*
-	// When ALSA is used it is possible that the reply is no longer
-	// beeing processed, but it is probably too close to sending
-	// the reply and the signal is not received anyway.
-	// So lets just always use timer to send the signals
-	if (!_processingReply)
-	{
-		return sendSignal(sigName, params);
-	}
-	*/
-
-	signalsToSend.push_back(sigName);
-	signalValsToSend.push_back(params);
+	signalsToSend.append(new SignalToSend(sigName, params));
 
 	if (!_timerSet)
 	{
@@ -165,19 +153,16 @@ bool LapsusDBus::safeSendSignal(const QString &sigName,
 
 void LapsusDBus::sendPendingSignals()
 {
-	while(signalsToSend.size() > 0 && signalValsToSend.size() > 0)
+	SignalToSend *sSig = signalsToSend.first();
+	
+	while ( (sSig = signalsToSend.take()) )
 	{
-		QString name = signalsToSend.first();
-		signalsToSend.pop_front();
-
-		QValueList<QDBusData> params = signalValsToSend.first();
-		signalValsToSend.pop_front();
-
-		sendSignal(name, params);
+		sendSignal(sSig->signalID, sSig->signalParams);
+		
+		delete sSig;
 	}
-
+	
 	signalsToSend.clear();
-	signalValsToSend.clear();
 
 	_timerSet = false;
 }
@@ -224,11 +209,7 @@ bool LapsusDBus::handleMethodCall(const QDBusMessage& message)
 
 		QDBusMessage reply = QDBusMessage::methodReply(message);
 
-		_processingReply = true;
-
 		reply << QDBusData::fromList(_daemon->featureList());
-
-		_processingReply = false;
 
 		_connection.send(reply);
 
@@ -247,8 +228,6 @@ bool LapsusDBus::handleMethodCall(const QDBusMessage& message)
 
 		QDBusMessage reply = QDBusMessage::methodReply(message);
 
-		_processingReply = true;
-
 		if (message.member() == LAPSUS_DBUS_GET_FEATURE_INFO)
 		{
 			QString id = message[0].toString();
@@ -261,8 +240,6 @@ bool LapsusDBus::handleMethodCall(const QDBusMessage& message)
 		{
 			reply << QDBusData::fromString(_daemon->featureRead(message[0].toString()));
 		}
-
-		_processingReply = false;
 
 		_connection.send(reply);
 
@@ -282,14 +259,10 @@ bool LapsusDBus::handleMethodCall(const QDBusMessage& message)
 
 		QDBusMessage reply = QDBusMessage::methodReply(message);
 
-		_processingReply = true;
-
 		reply << QDBusData::fromBool(
 				_daemon->featureWrite(
 					message[0].toString(),
 					message[1].toString()));
-
-		_processingReply = false;
 
 		_connection.send(reply);
 

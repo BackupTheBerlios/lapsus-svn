@@ -571,7 +571,7 @@ bool SysIBM::dbgWritePathString(const QString &path, const QString &val)
 
 #define CHECK_NVRAM_ARG(arg)	checkNVRAMPair(_thinkpadOld->arg, _thinkpadNew->arg, #arg)
 
-bool SysIBM::checkNVRAMPair(unsigned char vOld, unsigned char vNew, char *desc)
+bool SysIBM::checkNVRAMPair(unsigned char vOld, unsigned char vNew, const char *desc)
 {
 	if (vOld != vNew)
 	{

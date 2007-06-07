@@ -24,7 +24,7 @@
 #include <qobject.h>
 #include <qstring.h>
 #include <qstringlist.h>
-#include <qvaluelist.h>
+#include <qptrlist.h>
 
 // Qt DBUS includes
 #include <dbus/qdbusdatalist.h>
@@ -36,6 +36,19 @@
 class LapsusDBus;
 
 #include "lapsus_daemon.h"
+
+class SignalToSend
+{
+	public:
+		const char *signalID;
+		QValueList<QDBusData> signalParams;
+		
+		SignalToSend(const char *sID,
+			const QValueList<QDBusData> & sList):
+			signalID(sID), signalParams(sList)
+		{
+		}
+};
 
 class LapsusDBus : public QObject, QDBusObjectBase
 {
@@ -61,14 +74,12 @@ class LapsusDBus : public QObject, QDBusObjectBase
 		LapsusDaemon *_daemon;
 		QDBusConnection _connection;
 		bool _isValid;
-		bool _processingReply;
 		bool _timerSet;
 
-		QStringList signalsToSend;
-		QValueList< QValueList<QDBusData> > signalValsToSend;
+		QPtrList< SignalToSend > signalsToSend;
 
 		void doInit();
-		bool safeSendSignal(const QString &sigName,
+		bool safeSendSignal(const char *sigName,
 				const QValueList<QDBusData>& params);
 		bool sendSignal(const QString &sigName,
 				const QValueList<QDBusData>& params);
