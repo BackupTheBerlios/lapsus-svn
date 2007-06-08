@@ -32,6 +32,8 @@
 
 #define LAPSUS_INTERFACE		"de.berlios.Lapsus"
 
+#define LAPSUSD_LIB_PATH		"/var/lib/lapsusd/"
+
 #define LAPSUS_DBUS_LIST_FEATURES	"listFeatures"
 #define LAPSUS_DBUS_GET_FEATURE_INFO	"getFeatureInfo"
 #define LAPSUS_DBUS_GET_FEATURE		"getFeature"
@@ -42,6 +44,9 @@
 #define LAPSUS_DBUS_FEATURE_NOTIF	"featureNotif"
 
 // Following values have to be lower-case!
+#define LAPSUS_FEAT_CONFIG_PREFIX	"config"
+#define LAPSUS_FEAT_INIT_PREFIX		"init"
+
 #define LAPSUS_FEAT_LED_ID_PREFIX		"led_"
 #define LAPSUS_FEAT_DISPLAY_ID_PREFIX		"display_"
 #define LAPSUS_FEAT_BACKLIGHT_ID		"backlight"

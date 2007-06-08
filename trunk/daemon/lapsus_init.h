@@ -18,44 +18,40 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef MODULES_LIST_H
-#define MODULES_LIST_H
+#ifndef LAPSUS_INIT_H
+#define LAPSUS_INIT_H
 
-#include <qptrlist.h>
-#include <qasciidict.h>
-
-#include "lapsus_config.h"
-#include "lapsus_mixer.h"
-#include "synaptics.h"
+#include <qsettings.h>
+#include <qstring.h>
 
 #include "lapsus_module.h"
+#include "modules_list.h"
 
-
-typedef QPtrListIterator<LapsusModule> LapsusModulesIterator;
-
-class LapsusModulesList
+class LapsusInit : public LapsusModule
 {
+	Q_OBJECT
+
 	public:
-		LapsusModulesList();
-		~LapsusModulesList();
+		LapsusInit(QSettings *settings, LapsusModulesList *modList);
+		virtual ~LapsusInit();
 		
-		void addModule(LapsusModule *mod);
-		void addConfig(LapsusConfig *mod);
-		void addMixer(LapsusMixer *mod);
-		void addSynaptics(LapsusSynaptics *mod);
+		void setInitValues();
 		
-		bool findModule(LapsusModule **mod, QString &id);
-		LapsusModulesIterator modulesIterator();
-	
-		uint count();
+		bool hardwareDetected();
+		QStringList featureList();
+		QString featureName(const QString &id);
+		QStringList featureArgs(const QString &id);
 		
-		LapsusConfig *config;
-		LapsusMixer *mixer;
-		LapsusSynaptics *synaptics;
+		QString featureRead(const QString &id);
+		bool featureWrite(const QString &id, const QString &nVal, bool testWrite = false);
 		
 	private:
-		QPtrList<LapsusModule> modules;
-		QAsciiDict<LapsusModule> prefixes;
+		QSettings *_settings;
+		LapsusModulesList *_modList;
+		QMap<QString, QString> _initVals;
+		
+		void readEntries();
+		void saveEntries();
 };
 
 #endif

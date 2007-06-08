@@ -210,22 +210,29 @@ QString LapsusMixer::featureRead(const QString &id)
 	return "";
 }
 
-bool LapsusMixer::featureWrite(const QString &id, const QString &nVal)
+bool LapsusMixer::featureWrite(const QString &id, const QString &nVal, bool testWrite)
 {
 	if (id == LAPSUS_FEAT_VOLUME_ID)
 	{
 		if (nVal == LAPSUS_FEAT_MUTE)
+		{
+			if (testWrite) return true;
 			return mixerSetMuted(true);
+		}
 		
 		if (nVal == LAPSUS_FEAT_UNMUTE)
+		{
+			if (testWrite) return true;
 			return mixerSetMuted(false);
-
+		}
+		
 		bool res = false;
 
 		int val = nVal.toUInt(&res);
 
 		if (!res) return false;
 
+		if (testWrite) return true;
 		return mixerSetNormVolume(val);
 	}
 

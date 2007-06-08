@@ -163,9 +163,19 @@ void LapsusPanelMain::loadConfig()
 		_cfg.writeEntry("panel_entries", QStringList());
 		_cfg.writeEntry("menu_entries", QStringList());
 
+		QString sInit = QString("%1.").arg(LAPSUS_FEAT_INIT_PREFIX);
+		QString sConf = QString("%1.").arg(LAPSUS_FEAT_CONFIG_PREFIX);
+		
 		for (QStringList::Iterator it = fL.begin(); it != fL.end(); ++it)
 		{
 			QString id = (*it).lower();
+			
+			// We don't add 'init.' or 'config.' entries to panel applet/menu
+			if (id.startsWith(sInit) || id.startsWith(sConf))
+			{
+				continue;
+			}
+			
 			QString grp;
 			QStringList args = _dbus->getFeatureArgs(id);
 

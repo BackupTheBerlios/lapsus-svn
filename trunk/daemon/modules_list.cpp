@@ -44,6 +44,12 @@ uint LapsusModulesList::count()
 	return modules.count();
 }
 
+void LapsusModulesList::addConfig(LapsusConfig *mod)
+{
+	config = mod;
+	addModule(mod);
+}
+
 void LapsusModulesList::addMixer(LapsusMixer *mod)
 {
 	mixer = mod;

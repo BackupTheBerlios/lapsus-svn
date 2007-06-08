@@ -30,6 +30,7 @@ class LapsusDaemon;
 #include "acpi_event_parser.h"
 #include "lapsus_dbus.h"
 #include "modules_list.h"
+#include "lapsus_init.h"
 
 class LapsusDaemon : public QObject, DBUSFeatureManager
 {
@@ -51,11 +52,13 @@ class LapsusDaemon : public QObject, DBUSFeatureManager
 				const QString &device, uint id, uint value);
 	
 	private:
-		LapsusModulesList _modList;
 		uint _acpiFd;
 		LapsusDBus *_dbus;
 		ACPIEventParser *_acpiParser;
+		LapsusInit *_init;
 		bool _isValid;
+		LapsusModulesList *_modList;
+		QSettings *_settings;
 		
 		bool detectHardware();
 		void doInit();

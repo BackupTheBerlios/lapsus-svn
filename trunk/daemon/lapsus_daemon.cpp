@@ -26,18 +26,29 @@
 
 LapsusDaemon::LapsusDaemon(uint acpiFd):
 	_acpiFd(acpiFd), _dbus(0), _acpiParser(0),
-	_isValid(false)
+	_init(0), _isValid(false)
 {
+	_modList = new LapsusModulesList();
+	
+	_settings = new QSettings();
+	_settings->insertSearchPath(QSettings::Unix, LAPSUSD_LIB_PATH);
+
 	doInit();
 }
 
 LapsusDaemon::~LapsusDaemon()
 {
+	if (_modList) delete _modList;
+	_modList = 0;
+	
 	if (_dbus) delete _dbus;
-	if (_acpiParser) delete _acpiParser;
-
 	_dbus = 0;
+	
+	if (_acpiParser) delete _acpiParser;
 	_acpiParser = 0;
+	
+	if (_settings) delete _settings;
+	_settings = 0;
 }
 
 bool LapsusDaemon::isValid()
@@ -47,14 +58,20 @@ bool LapsusDaemon::isValid()
 
 bool LapsusDaemon::detectHardware()
 {
-	LapsusMixer *mix = 0;
-	LapsusSynaptics *syn = 0;
+	if (!_modList) return false;
 	
-	syn = new LapsusSynaptics();
+	int hardwareMods = 0;
+	
+	LapsusConfig *conf = new LapsusConfig(_settings);
+	
+	_modList->addConfig(conf);
+	
+	LapsusSynaptics *syn = new LapsusSynaptics();
 	
 	if (syn->hardwareDetected())
 	{
-		_modList.addSynaptics(syn);
+		_modList->addSynaptics(syn);
+		++hardwareMods;
 	}
 	else
 	{
@@ -62,11 +79,12 @@ bool LapsusDaemon::detectHardware()
 	}
 	
 #ifdef HAVE_ALSA
-	mix = new LapsusAlsaMixer();
+	LapsusMixer *mix = new LapsusAlsaMixer();
 	
 	if (mix->hardwareDetected())
 	{
-		_modList.addMixer(mix);
+		_modList->addMixer(mix);
+		++hardwareMods;
 	}
 	else
 	{
@@ -77,11 +95,12 @@ bool LapsusDaemon::detectHardware()
 	LapsusModule *tmp;
 
 	// Try Asus Backend
-	tmp = new SysAsus(&_modList);
+	tmp = new SysAsus(_modList);
 
 	if (tmp->hardwareDetected())
 	{
-		_modList.addModule(tmp);
+		_modList->addModule(tmp);
+		++hardwareMods;
 	}
 	else
 	{
@@ -94,6 +113,8 @@ bool LapsusDaemon::detectHardware()
 
 	if (tmp->hardwareDetected())
 	{
+		++hardwareMods;
+		
 		printf("Detected IBM hardware\nDetected features:\n\n");
 
 		QStringList lines = tmp->featureList();
@@ -113,14 +134,20 @@ bool LapsusDaemon::detectHardware()
 			printf("Feature Value: %s\n\n", tmp->featureRead(line).ascii());
 		}
 
-		_modList.addModule(tmp);
+		_modList->addModule(tmp);
 	}
 	else
 	{
 		delete tmp;
 	}
 
-	return (_modList.count() > 0);
+	if (hardwareMods < 1) return false;
+	
+	_init = new LapsusInit(_settings, _modList);
+	
+	_modList->addModule(_init);
+	
+	return true;
 }
 
 void LapsusDaemon::doInit()
@@ -135,7 +162,7 @@ void LapsusDaemon::doInit()
 
 	if (!_dbus->isValid()) return;
 
-	LapsusModulesIterator it = _modList.modulesIterator();
+	LapsusModulesIterator it = _modList->modulesIterator();
 	
 	while (it.current() != 0)
 	{
@@ -153,12 +180,17 @@ void LapsusDaemon::doInit()
 					const QString &, uint, uint)));
 	
 	_isValid = true;
+	
+	if (_init)
+	{
+		_init->setInitValues();
+	}
 }
 
 void LapsusDaemon::acpiEvent(const QString &group, const QString &action,
 	const QString &device, uint id, uint value)
 {
-	LapsusModulesIterator it = _modList.modulesIterator();
+	LapsusModulesIterator it = _modList->modulesIterator();
 	
 	while (it.current() != 0)
 	{
@@ -176,7 +208,7 @@ QStringList LapsusDaemon::featureList()
 	
 	QStringList features;
 	
-	LapsusModulesIterator it = _modList.modulesIterator();
+	LapsusModulesIterator it = _modList->modulesIterator();
 	
 	while (it.current() != 0)
 	{
@@ -199,7 +231,7 @@ QString LapsusDaemon::featureName(const QString &id)
 	LapsusModule *mod;
 	QString modId = id.lower();
 	
-	if (_isValid && _modList.findModule(&mod, modId) && mod)
+	if (_isValid && _modList->findModule(&mod, modId) && mod)
 	{
 		return mod->featureName(modId);
 	}
@@ -212,7 +244,7 @@ QStringList LapsusDaemon::featureArgs(const QString &id)
 	LapsusModule *mod;
 	QString modId = id.lower();
 	
-	if (_isValid && _modList.findModule(&mod, modId) && mod)
+	if (_isValid && _modList->findModule(&mod, modId) && mod)
 	{
 		return mod->featureArgs(modId);
 	}
@@ -225,7 +257,7 @@ QString LapsusDaemon::featureRead(const QString &id)
 	LapsusModule *mod;
 	QString modId = id.lower();
 	
-	if (_isValid && _modList.findModule(&mod, modId) && mod)
+	if (_isValid && _modList->findModule(&mod, modId) && mod)
 	{
 		return mod->featureRead(modId);
 	}
@@ -238,7 +270,7 @@ bool LapsusDaemon::featureWrite(const QString &id, const QString &nVal)
 	LapsusModule *mod;
 	QString modId = id.lower();
 	
-	if (_isValid && _modList.findModule(&mod, modId) && mod)
+	if (_isValid && _modList->findModule(&mod, modId) && mod)
 	{
 		return mod->featureWrite(modId, nVal.lower());
 	}

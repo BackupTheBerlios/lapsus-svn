@@ -15,7 +15,7 @@ sbin_PROGRAMS = lapsusd
 
 # the application source, library search path, and link libraries
 lapsusd_SOURCES = acpi_event_parser.cpp lapsus_signal.cpp lapsus_daemon.cpp lapsus_dbus.cpp main.cpp \
-lapsus_module.cpp modules_list.cpp lapsus_mixer.cpp sys_backend.cpp \
+lapsus_init.cpp lapsus_config.cpp lapsus_module.cpp modules_list.cpp lapsus_mixer.cpp sys_backend.cpp \
 sys_asus.cpp sys_ibm.cpp synaptics.cpp
 
 

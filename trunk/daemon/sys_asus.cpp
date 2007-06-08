@@ -426,8 +426,8 @@ bool SysAsus::setBacklight(uint uVal, bool forceSignal)
 	{
 		dbusSignalFeatureChanged(LAPSUS_FEAT_BACKLIGHT_ID, QString::number(uVal));
 	}
-
-	return res;
+	
+	return true;
 }
 
 bool SysAsus::setLightSensorLevel(uint uVal, bool forceSignal)
@@ -446,29 +446,29 @@ bool SysAsus::setLightSensorLevel(uint uVal, bool forceSignal)
 		dbusSignalFeatureChanged(LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID, QString::number(uVal));
 	}
 
-	return res;
+	return true;
 }
 
-bool SysAsus::featureWrite(const QString &id, const QString &nVal)
+bool SysAsus::featureWrite(const QString &id, const QString &nVal, bool testWrite)
 {
 	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
 	{
 		bool res = false;
-
 		uint uVal = nVal.toUInt(&res);
 
 		if (!res) return false;
-
+		if (testWrite) return true;
+		
 		return setBacklight(uVal);
 	}
 	else if (id == LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID)
 	{
 		bool res = false;
-
 		uint uVal = nVal.toUInt(&res);
 
 		if (!res) return false;
-
+		if (testWrite) return true;
+		
 		return setLightSensorLevel(uVal);
 	}
 	else if (hasFeature(id))
@@ -481,16 +481,12 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 
 		uint oVal = readIdUInt(id);
 
-		if (oVal == uVal) return false;
+		if (oVal == uVal || testWrite) return true;
 
-		bool res = writeIdUInt(id, uVal);
-
-		if (res)
-		{
+		if (writeIdUInt(id, uVal))
 			dbusSignalFeatureChanged(id, nVal);
-		}
-
-		return res;
+		
+		return true;
 	}
 
 	QString disp;
@@ -523,16 +519,12 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 			sVal = oVal & ~(1 << offs);
 		}
 
-		if (sVal == oVal) return false;
+		if (sVal == oVal || testWrite) return true;
 
-		bool res = writePathUInt(ASUS_DISPLAY_PATH, sVal);
-
-		if (res)
-		{
+		if (writePathUInt(ASUS_DISPLAY_PATH, sVal))
 			dbusSignalFeatureChanged(id, nVal);
-		}
 
-		return res;
+		return true;
 	}
 
 	return false;

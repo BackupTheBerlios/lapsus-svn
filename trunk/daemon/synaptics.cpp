@@ -195,14 +195,15 @@ QString LapsusSynaptics::featureRead(const QString &id)
 	return "";
 }
 
-bool LapsusSynaptics::featureWrite(const QString &id, const QString &nVal)
+bool LapsusSynaptics::featureWrite(const QString &id, const QString &nVal, bool testWrite)
 {
 	if (id == LAPSUS_FEAT_TOUCHPAD_ID)
 	{
-		if (nVal == LAPSUS_FEAT_ON)
-			return setState(true);
+		if (testWrite) return true;
 
-		return setState(false);
+		setState(nVal == LAPSUS_FEAT_ON);
+
+		return true;
 	}
 
 	return false;

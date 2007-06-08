@@ -18,44 +18,63 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef MODULES_LIST_H
-#define MODULES_LIST_H
+#ifndef LAPSUS_CONFIG_H
+#define LAPSUS_CONFIG_H
 
+#include <qsettings.h>
+#include <qstring.h>
+#include <qstringlist.h>
 #include <qptrlist.h>
-#include <qasciidict.h>
-
-#include "lapsus_config.h"
-#include "lapsus_mixer.h"
-#include "synaptics.h"
+#include <qdict.h>
 
 #include "lapsus_module.h"
 
-
-typedef QPtrListIterator<LapsusModule> LapsusModulesIterator;
-
-class LapsusModulesList
+class LapsusConfigEntry
 {
 	public:
-		LapsusModulesList();
-		~LapsusModulesList();
+		LapsusConfigEntry()
+		{
+			entryRead = false;
+			entrySubscribed = false;
+		}
 		
-		void addModule(LapsusModule *mod);
-		void addConfig(LapsusConfig *mod);
-		void addMixer(LapsusMixer *mod);
-		void addSynaptics(LapsusSynaptics *mod);
+		~LapsusConfigEntry()
+		{
+		}
 		
-		bool findModule(LapsusModule **mod, QString &id);
-		LapsusModulesIterator modulesIterator();
-	
-		uint count();
+		QString id;
+		QStringList args;
+		QString defValue;
+		QString curValue;
+		bool entryRead;
+		bool entrySubscribed;
+};
+
+class LapsusConfig : public LapsusModule
+{
+	Q_OBJECT
+
+	public:
+		LapsusConfig(QSettings *settings);
+		virtual ~LapsusConfig();
 		
-		LapsusConfig *config;
-		LapsusMixer *mixer;
-		LapsusSynaptics *synaptics;
+		void subscribeEntry(const char *prefix, const QString &id, const QStringList &args, const QString &defValue);
+		QString getEntryValue(const char *prefix, const QString &id);
+		
+		bool hardwareDetected();
+		QStringList featureList();
+		QStringList featureArgs(const QString &id);
+		
+		QString featureRead(const QString &id);
+		bool featureWrite(const QString &id, const QString &nVal, bool testWrite = false);
 		
 	private:
-		QPtrList<LapsusModule> modules;
-		QAsciiDict<LapsusModule> prefixes;
+		QSettings *_settings;
+		QPtrList<LapsusConfigEntry> _entries;
+		QDict<LapsusConfigEntry> _ids;
+		
+		void readEntries();
+		void saveEntries();
 };
 
 #endif

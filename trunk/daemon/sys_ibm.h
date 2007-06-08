@@ -69,7 +69,7 @@ class SysIBM : public SysBackend
 		QString featureName(const QString &id);
 		QStringList featureArgs(const QString &id);
 		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
+		bool featureWrite(const QString &id, const QString &nVal, bool testWrite = false);
 		bool checkACPIEvent(const QString &group, const QString &action,
 			const QString &device, uint id, uint value);
 
