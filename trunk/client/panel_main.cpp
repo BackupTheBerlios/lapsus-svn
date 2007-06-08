@@ -191,23 +191,33 @@ void LapsusPanelMain::loadConfig()
 			}
 			else if (LapsusPanelButton::supportsArgs(args))
 			{
-				if (id == LAPSUS_FEAT_BLUETOOTH_ID
-					|| id == LAPSUS_FEAT_WIRELESS_ID)
+				int idx = id.findRev('.');
+				QString fType;
+				
+				if (idx < 1)
+				{
+					continue;
+				}
+				
+				fType = id.mid(idx+1);
+				
+				if (fType == LAPSUS_FEAT_BLUETOOTH_ID
+					|| fType == LAPSUS_FEAT_WIRELESS_ID)
 				{
 					grp = QString("panel_%1").arg(id);
 					pEntries.push_back(grp);
 				}
-				else if (id.startsWith(LAPSUS_FEAT_LED_ID_PREFIX))
+				else if (fType.startsWith(LAPSUS_FEAT_LED_ID_PREFIX))
 				{
 					grp = QString("menu_%1").arg(id);
 					mEntries.push_back(grp);
 				}
-				else if (id == "thinklight")
+				else if (fType == "thinklight")
 				{
 					grp = QString("menu_%1").arg(id);
 					mEntries.push_back(grp);
 				}
-				else if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+				else if (fType == LAPSUS_FEAT_TOUCHPAD_ID)
 				{
 					grp = QString("menu_%1").arg(id);
 					mEntries.push_back(grp);

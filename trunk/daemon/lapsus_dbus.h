@@ -33,9 +33,15 @@
 #include <dbus/qdbusconnection.h>
 #include <dbus/qdbusobject.h>
 
-class LapsusDBus;
-
-#include "lapsus_daemon.h"
+class DBUSFeatureManager
+{
+	public:
+		virtual QStringList featureList() = 0;
+		virtual QString featureName(const QString &id) = 0;
+		virtual QStringList featureArgs(const QString &id) = 0;
+		virtual QString featureRead(const QString &id) = 0;
+		virtual bool featureWrite(const QString &id, const QString &nVal) = 0;
+};
 
 class SignalToSend
 {
@@ -55,23 +61,18 @@ class LapsusDBus : public QObject, QDBusObjectBase
 	Q_OBJECT
 
 	public:
-		LapsusDBus(LapsusDaemon *daemon);
+		LapsusDBus(DBUSFeatureManager *fManager);
 		~LapsusDBus();
 		bool isValid();
 
-		void signalFeatureChanged(const QString &id, const char *val);
 		void signalFeatureChanged(const QString &id, const QString &val);
-		void signalFeatureChanged(const QString &id, const QStringList &vList);
-		
-		void signalFeatureNotif(const QString &id, const char *val);
 		void signalFeatureNotif(const QString &id, const QString &val);
-		void signalFeatureNotif(const QString &id, const QStringList &vList);
 		
 		void sendACPIEvent(const QString &group, const QString &action,
 				const QString &device, uint id, uint value);
 
 	private:
-		LapsusDaemon *_daemon;
+		DBUSFeatureManager *_featManager;
 		QDBusConnection _connection;
 		bool _isValid;
 		bool _timerSet;

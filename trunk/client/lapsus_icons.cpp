@@ -32,7 +32,14 @@ LapsusIcons::LapsusIcons(const QString &id, KConfig *cfg):
 
 	if (_cfg->hasKey("feature_id"))
 	{
-		_featureId = _cfg->readEntry("feature_id");
+		QString fId = _cfg->readEntry("feature_id");
+		
+		int idx = fId.findRev('.');
+		
+		if (idx > 0)
+		{
+			_featureType = fId.mid(idx+1);
+		}
 	}
 }
 
@@ -42,11 +49,11 @@ LapsusIcons::~LapsusIcons()
 
 int LapsusIcons::loadNewAutoIcon(int size)
 {
-	if (_featureId == LAPSUS_FEAT_BACKLIGHT_ID)
+	if (_featureType == LAPSUS_FEAT_BACKLIGHT_ID)
 		return loadNewIcon("light_bulb", "", size);
-	else if (_featureId == LAPSUS_FEAT_VOLUME_ID)
+	else if (_featureType == LAPSUS_FEAT_VOLUME_ID)
 		return loadNewIcon("speaker", "", size);
-	else if (_featureId == LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID)
+	else if (_featureType == LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID)
 		return loadNewIcon("moon", "", size);
 
 	return -1;
@@ -57,17 +64,17 @@ int LapsusIcons::loadNewAutoIcon(const QString &val, int size)
 	QString img;
 	QString desc;
 
-	if (_featureId == LAPSUS_FEAT_BLUETOOTH_ID)
+	if (_featureType == LAPSUS_FEAT_BLUETOOTH_ID)
 	{
 		if (val == LAPSUS_FEAT_ON) img = "bluetooth";
 		else if (val == LAPSUS_FEAT_OFF) img = "bluetooth_gray";
 	}
-	else if (_featureId == LAPSUS_FEAT_WIRELESS_ID)
+	else if (_featureType == LAPSUS_FEAT_WIRELESS_ID)
 	{
 		if (val == LAPSUS_FEAT_ON) img = "wifi";
 		else if (val == LAPSUS_FEAT_OFF) img = "wifi_gray";
 	}
-	else if (_featureId.startsWith(LAPSUS_FEAT_LED_ID_PREFIX))
+	else if (_featureType.startsWith(LAPSUS_FEAT_LED_ID_PREFIX))
 	{
 		if (val == LAPSUS_FEAT_ON) img = "green";
 		else if (val == LAPSUS_FEAT_OFF) img = "gray";
@@ -75,12 +82,12 @@ int LapsusIcons::loadNewAutoIcon(const QString &val, int size)
 
 		int len = strlen(LAPSUS_FEAT_LED_ID_PREFIX);
 
-		if ((int) _featureId.length() > len)
+		if ((int) _featureType.length() > len)
 		{
-			desc = _featureId.mid(len, 1).upper();
+			desc = _featureType.mid(len, 1).upper();
 		}
 	}
-	else if (_featureId == LAPSUS_FEAT_TOUCHPAD_ID)
+	else if (_featureType == LAPSUS_FEAT_TOUCHPAD_ID)
 	{
 		if (val == LAPSUS_FEAT_ON) img = "red";
 		else if (val == LAPSUS_FEAT_OFF) img = "gray";

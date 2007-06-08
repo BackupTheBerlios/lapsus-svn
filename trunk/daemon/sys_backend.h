@@ -21,55 +21,28 @@
 #ifndef SYS_BACKEND_H
 #define SYS_BACKEND_H
 
-#include <qobject.h>
 #include <qstring.h>
 #include <qstringlist.h>
 #include <qmap.h>
 
-class SysBackend;
-
-#include "lapsus_dbus.h"
-
-#include "../config.h"
-
-#ifdef HAVE_ALSA
-#include "alsa_mixer.h"
-#endif
-
-// We don't need anything else from klocale.h
-#define I18N_NOOP(x)			x
+#include "lapsus_module.h"
 
 /**
  * Generic backend for dealing with /sys interface files.
  * Provides methods for reading and writing values from/to those
  * files and dealing with id:path mappings.
  */
-class SysBackend: public QObject
+class SysBackend: public LapsusModule
 {
 	Q_OBJECT
 
 	public:
-		SysBackend();
+		SysBackend(const char *prefix);
 		virtual ~SysBackend();
 
-		virtual bool hardwareDetected() = 0;
-
-		virtual QStringList featureList() = 0;
-		virtual QStringList featureArgs(const QString &id) = 0;
-		virtual QString featureRead(const QString &id) = 0;
-		virtual bool featureWrite(const QString &id, const QString &nVal) = 0;
-		virtual QStringList featureParams(const QString &id);
 		virtual QString featureName(const QString &id);
-
-		virtual void setDBus(LapsusDBus *dbus);
-
-	protected slots:
-		virtual void acpiEvent(const QString &group, const QString &action,
-				const QString &device, uint id, uint value);
-
+		
 	protected:
-		LapsusDBus *_dbus;
-
 		bool hasFeature(const QString &id);
 		QString getFeaturePath(const QString &id);
 		QString getFeatureName(const QString &id);

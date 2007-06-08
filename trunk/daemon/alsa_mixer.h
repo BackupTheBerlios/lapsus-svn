@@ -26,6 +26,7 @@
 
 #include <alsa/asoundlib.h>
 #include "sys_backend.h"
+#include "lapsus_mixer.h"
 
 class SIDInfo
 {
@@ -66,7 +67,7 @@ class SIDInfo
  * functionality - volume control and mute switch. It will also use
  * headphones channel if found.
  */
-class LapsusAlsaMixer : public QObject
+class LapsusAlsaMixer : public LapsusMixer
 {
 	Q_OBJECT
 
@@ -74,21 +75,21 @@ class LapsusAlsaMixer : public QObject
 		LapsusAlsaMixer();
 		~LapsusAlsaMixer();
 
-		bool isValid();
+		bool hardwareDetected();
+		bool mixerIsMuted();
+		
+	protected:
+		bool toggleMuted();
+		bool setMuted(bool mState);
+		
+		int getVolume();
+		bool setVolume(int vol);
+		int getMaxVolume();
+		int getMinVolume();
+		
 		bool hasVolume();
 		bool hasMute();
-
-		int getVolume();
-		int getMaxVolume();
-		bool setVolume(int val);
-		bool isMuted();
-		bool setMuted(bool mState);
-		bool toggleMute();
-
-	signals:
-		void volumeChanged(int val);
-		void muteChanged(bool val);
-
+		
 	protected slots:
 		void alsaEvent();
 

@@ -27,6 +27,7 @@
 
 #include "sys_backend.h"
 
+#include "lapsus_mixer.h"
 #include "synaptics.h"
 
 /**
@@ -38,45 +39,33 @@ class SysAsus : public SysBackend
 	Q_OBJECT
 
 	public:
-		SysAsus();
+		SysAsus(LapsusMixer *mix, LapsusSynaptics *syn);
 		~SysAsus();
 
 		QStringList featureList();
 		QStringList featureArgs(const QString &id);
-		QStringList featureParams(const QString &id);
 		QString featureName(const QString &id);
+		
 		QString featureRead(const QString &id);
 		bool featureWrite(const QString &id, const QString &nVal);
-		bool checkACPIEvent(const QString &group, const QString &action,
-			const QString &device, uint id, uint value);
 
 		bool hardwareDetected();
 
-	protected slots:
-#ifdef HAVE_ALSA
-		void volumeChanged(int val);
-		void muteChanged(bool muted);
-#endif
-		void touchpadChanged(bool nState);
-		void acpiEvent(const QString &group, const QString &action,
+		bool handleACPIEvent(const QString &group, const QString &action,
 				const QString &device, uint id, uint value);
+
 	private:
+		LapsusMixer *_mix;
+		LapsusSynaptics *_synap;
+
 		bool _hasSwitches;
 		bool _hasBacklight;
 		bool _hasDisplay;
-		bool _hasTouchpad;
 		bool _hasLightSensor;
 		uint _maxBacklight;
 		uint _maxLightSensor;
 		int _lastBacklightHotkeySet;
-
-#ifdef HAVE_ALSA
-		bool _hasVolume;
-		LapsusAlsaMixer *_mix;
-#endif
-		LapsusSynaptics *_synap;
-		bool _notifyTouchpadChange;
-
+		
 		void detect();
 		bool setBacklight(uint nVal, bool forceSignal = false);
 		bool setLightSensorLevel(uint nVal, bool forceSignal = false);

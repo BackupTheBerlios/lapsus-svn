@@ -88,7 +88,12 @@ de.berlios.Lapsus.* arguments
 
 Where * is a command of lapsusd, and arguments are command specific.
 
-For example, to switch bluetooth on you can use this command:
+For example, to get list of known features, try:
+
+dbus-send --print-reply --system --dest=de.berlios.Lapsus /LapsusDaemon \
+de.berlios.Lapsus.listFeatures
+
+Another example: To switch bluetooth on you can use this command:
 
 dbus-send --print-reply --system --dest=de.berlios.Lapsus /LapsusDaemon \
 de.berlios.Lapsus.setFeature string:'asus_bluetooth' string:'on'

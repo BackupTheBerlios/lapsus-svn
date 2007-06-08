@@ -122,7 +122,6 @@ void LapsusDBus::initParams()
 
 	_features.clear();
 	_featureArgs.clear();
-	_featureParams.clear();
 	_featureName.clear();
 
 	if (reply.type() != QDBusMessage::ReplyMessage)
@@ -157,10 +156,9 @@ void LapsusDBus::initParams()
 
 		if (reply.type() == QDBusMessage::ReplyMessage)
 		{
-			if (reply.count() == 3
+			if (reply.count() == 2
 				&& reply[0].type() == QDBusData::String
-				&& reply[1].type() == QDBusData::List
-				&& reply[2].type() == QDBusData::List )
+				&& reply[1].type() == QDBusData::List )
 			{
 				ok = false;
 
@@ -174,19 +172,8 @@ void LapsusDBus::initParams()
 
 				if (!ok) continue;
 
-				list = reply[2].toList(&ok);
-
-				if (!ok) continue;
-
-				ok = false;
-
-				paramList = list.toStringList(&ok);
-
-				if (!ok) continue;
-
 				_features.append(id);
 				_featureArgs.insert(id, argList);
-				_featureParams.insert(id, paramList);
 				_featureName.insert(id, reply[0].toString());
 
 				getFeature(id);
@@ -220,13 +207,6 @@ QStringList LapsusDBus::getFeatureArgs(const QString &id)
 	if (!_isValid) return QStringList();
 
 	return _featureArgs[id.lower()];
-}
-
-QStringList LapsusDBus::getFeatureParams(const QString &id)
-{
-	if (!_isValid) return QStringList();
-
-	return _featureParams[id.lower()];
 }
 
 QString LapsusDBus::getFeature(const QString &id)

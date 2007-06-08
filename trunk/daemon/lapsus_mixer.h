@@ -18,54 +18,61 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef SYS_GENERIC_H
-#define SYS_GENERIC_H
+#ifndef LAPSUS_MIXER_H
+#define LAPSUS_MIXER_H
 
-#include <qobject.h>
-#include <qstringlist.h>
-#include <qstring.h>
+#include "lapsus_module.h"
 
-#include "sys_backend.h"
+#include "../config.h"
 
-#include "synaptics.h"
-
-/**
- * Generic backend, which can be used if all other backends fail to detect
- * specific hardware. For now it only tries to use AlsaMixer.
- */
-class SysGeneric : public SysBackend
+class LapsusMixer : public LapsusModule
 {
 	Q_OBJECT
 
 	public:
-		SysGeneric();
-		~SysGeneric();
+		LapsusMixer(const char *prefix);
+		virtual ~LapsusMixer();
 
-		QStringList featureList();
-		QStringList featureArgs(const QString &id);
-		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
-		bool checkACPIEvent(const QString &group, const QString &action,
-			const QString &device, uint id, uint value);
+		virtual uint mixerGetNormVolume();
+		virtual bool mixerSetNormVolume(uint val, bool hardwareTrig = false);
+		
+		virtual bool mixerIsMuted() = 0;
+		virtual bool mixerSetMuted(bool mState, bool hardwareTrig = false);
+		virtual bool mixerToggleMuted(bool hardwareTrig = false);
 
-		bool hardwareDetected();
-
-#ifdef HAVE_ALSA
-	protected slots:
-		void volumeChanged(int val);
-		void muteChanged(bool muted);
-#endif
-		void touchpadChanged(bool nState);
-
+		virtual bool mixerVolumeUp(bool hardwareTrig = false);
+		virtual bool mixerVolumeDown(bool hardwareTrig = false);
+		
+		virtual QStringList featureList();
+		virtual QStringList featureArgs(const QString &id);
+		
+		virtual QString featureRead(const QString &id);
+		virtual bool featureWrite(const QString &id, const QString &nVal);
+	
+	protected:
+		virtual bool toggleMuted() = 0;
+		virtual bool setMuted(bool mState) = 0;
+		
+		virtual int getVolume() = 0;
+		virtual bool setVolume(int vol) = 0;
+		virtual int getMaxVolume() = 0;
+		virtual int getMinVolume() = 0;
+		
+		virtual void volumeChanged(int val);
+		virtual void muteChanged(bool muted);
+	
 	private:
-		bool _hasTouchpad;
-#ifdef HAVE_ALSA
-		bool _hasVolume;
-		LapsusAlsaMixer *_mix;
-#endif
-		LapsusSynaptics *_synap;
-
-		void detect();
+		int _minVol;
+		int _maxVol;
+		bool _doSetup;
+		
+		void setupLimits();
+		uint toNorm(int vol);
+		int fromNorm(uint vol);
 };
+
+#ifdef HAVE_ALSA
+#include "alsa_mixer.h"
+#endif
 
 #endif

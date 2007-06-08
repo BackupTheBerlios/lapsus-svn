@@ -43,7 +43,7 @@ class LapsusIcons
 
 	private:
 		KConfig *_cfg;
-		QString _featureId;
+		QString _featureType;
 		QValueVector<QPixmap> _cachedIcons;
 };
 

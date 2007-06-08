@@ -75,10 +75,6 @@ class SysIBM : public SysBackend
 
 		bool hardwareDetected();
 
-	protected slots:
-		void acpiEvent(const QString &group, const QString &action,
-				const QString &device, uint id, uint value);
-
 	protected:
 		QString dbgReadPathString(const QString &path);
 		bool dbgWritePathString(const QString &path, const QString &val);

@@ -34,25 +34,19 @@
 #define ASUS_SET_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/brightness"
 #define ASUS_MAX_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/max_brightness"
 
-SysAsus::SysAsus():
+SysAsus::SysAsus(LapsusMixer *mix, LapsusSynaptics *syn):
+	SysBackend("asus"),
+	_mix(mix), _synap(syn),
 	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false),
-	_hasTouchpad(false), _hasLightSensor(false), _maxBacklight(0),
+	_hasLightSensor(false), _maxBacklight(0),
 	_maxLightSensor(7), // maxLightSensor can't be larger than 15!
-	_lastBacklightHotkeySet(-1),
-#ifdef HAVE_ALSA
-	_hasVolume(false), _mix(0),
-#endif
-	_synap(0), _notifyTouchpadChange(false)
+	_lastBacklightHotkeySet(-1)
 {
 	detect();
 }
 
 SysAsus::~SysAsus()
 {
-#ifdef HAVE_ALSA
-	if (_mix) delete _mix;
-#endif
-	if (_synap) delete _synap;
 }
 
 void SysAsus::detect()
@@ -166,94 +160,7 @@ void SysAsus::detect()
 		}
 	}
 
-	// If we still don't have any hardware detected,
-	// don't try to open AlsaMixer. ALSA is available
-	// on most systems, so all of them would be detected as
-	// Asus laptops only because they have ALSA installed.
-	// That is wrong. We want to try to run AlsaMixer only
-	// if we alreayd know that we are running on Asus Laptop.
-
-	// We also don't want to detect Synaptics client, as it is
-	// probably present on most laptops.
-
 	if (!hardwareDetected()) return;
-
-#ifdef HAVE_ALSA
-
-	_mix = new LapsusAlsaMixer();
-
-	if (_mix->isValid())
-	{
-		_hasVolume = true;
-
-		connect(_mix, SIGNAL(volumeChanged(int)),
-			this, SLOT(volumeChanged(int)));
-
-		connect(_mix, SIGNAL(muteChanged(bool)),
-			this, SLOT(muteChanged(bool)));
-	}
-	else
-	{
-		delete _mix;
-		_mix = 0;
-	}
-#endif
-
-	_synap = new LapsusSynaptics();
-
-	if (_synap->isValid())
-	{
-		_hasTouchpad = true;
-
-		connect(_synap, SIGNAL(stateChanged(bool)),
-			this, SLOT(touchpadChanged(bool)));
-	}
-	else
-	{
-		delete _synap;
-		_synap = 0;
-	}
-}
-
-#ifdef HAVE_ALSA
-void SysAsus::volumeChanged(int val)
-{
-	if (_dbus)
-	{
-		QStringList args;
-		
-		args.append(QString::number(val));
-		
-		if (_mix->isMuted())
-			args.append(LAPSUS_FEAT_MUTE);
-		
-		_dbus->signalFeatureChanged(LAPSUS_FEAT_VOLUME_ID, args);
-	}
-}
-
-void SysAsus::muteChanged(bool muted)
-{
-	if (_dbus)
-		_dbus->signalFeatureChanged(LAPSUS_FEAT_VOLUME_ID,
-				muted?LAPSUS_FEAT_MUTE:LAPSUS_FEAT_UNMUTE);
-}
-#endif
-
-void SysAsus::touchpadChanged(bool nState)
-{
-	if (_dbus)
-	{
-		_dbus->signalFeatureChanged(LAPSUS_FEAT_TOUCHPAD_ID,
-			nState?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
-
-		if (_notifyTouchpadChange)
-		{
-			_dbus->signalFeatureNotif(LAPSUS_FEAT_TOUCHPAD_ID,
-				nState?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
-		}
-	}
-
-	_notifyTouchpadChange = false;
 }
 
 bool SysAsus::hardwareDetected()
@@ -286,18 +193,6 @@ QStringList SysAsus::featureList()
 		ret.append(LAPSUS_FEAT_DISPLAY_ID_PREFIX LAPSUS_FEAT_DISPLAY_DVI);
 	}
 
-#ifdef HAVE_ALSA
-	if (_hasVolume)
-	{
-		ret.append(LAPSUS_FEAT_VOLUME_ID);
-	}
-#endif
-
-	if (_hasTouchpad)
-	{
-		ret.append(LAPSUS_FEAT_TOUCHPAD_ID);
-	}
-
 	if (_hasLightSensor)
 	{
 		ret.append(LAPSUS_FEAT_LIGHT_SENSOR_ID);
@@ -318,25 +213,6 @@ QStringList SysAsus::featureArgs(const QString &id)
 			ret.append(QString("0:%1").arg(QString::number(_maxBacklight)));
 		}
 	}
-#ifdef HAVE_ALSA
-	else if (id == LAPSUS_FEAT_VOLUME_ID)
-	{
-		if (_mix)
-		{
-			if (_mix->isValid())
-			{
-				ret.append(QString("0:%1").arg(QString::number(_mix->getMaxVolume())));
-				ret.append(LAPSUS_FEAT_MUTE);
-				ret.append(LAPSUS_FEAT_UNMUTE);
-			}
-		}
-	}
-#endif
-	else if (id == LAPSUS_FEAT_TOUCHPAD_ID)
-	{
-		ret.append(LAPSUS_FEAT_ON);
-		ret.append(LAPSUS_FEAT_OFF);
-	}
 	else if (id == LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID)
 	{
 		if (_maxLightSensor > 0)
@@ -353,33 +229,6 @@ QStringList SysAsus::featureArgs(const QString &id)
 	return ret;
 }
 
-QStringList SysAsus::featureParams(const QString &id)
-{
-	QStringList ret;
-
-	if (id == LAPSUS_FEAT_BACKLIGHT_ID
-		|| id == LAPSUS_FEAT_TOUCHPAD_ID
-		|| id == LAPSUS_FEAT_LIGHT_SENSOR_ID
-		|| id == LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID)
-	{
-		ret.append(LAPSUS_FEAT_PARAM_NOTIF);
-	}
-#ifdef HAVE_ALSA
-	else if (id == LAPSUS_FEAT_VOLUME_ID)
-	{
-		if (_mix)
-		{
-			if (_mix->isValid())
-			{
-				ret.append(LAPSUS_FEAT_PARAM_NOTIF);
-			}
-		}
-	}
-#endif
-
-	return ret;
-}
-
 QString SysAsus::featureName(const QString &id)
 {
 	if (id == LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID)
@@ -390,81 +239,41 @@ QString SysAsus::featureName(const QString &id)
 	return SysBackend::featureName(id);
 }
 
-void SysAsus::acpiEvent(const QString &group, const QString &action,
-	const QString &device, uint id, uint value)
+bool SysAsus::handleACPIEvent(const QString &group, const QString &action,
+		const QString &device, uint id, uint)
 {
 	if (group != "hotkey" || action != "hotkey" || device != "ATKD")
-	{
-		if (_dbus)
-			_dbus->sendACPIEvent(group, action, device, id, value);
-		return;
-	}
+		return false;
 
-#ifdef HAVE_ALSA
-
-	if (_hasVolume && _mix)
+	if (_mix)
 	{
 		if (id == 0x32)
 		{
-			bool muted = _mix->isMuted();
-
-			_mix->toggleMute();
-
-			if (muted != _mix->isMuted())
-			{
-				// Reveresed, muted is old value
-				if (muted)
-				{
-					_dbus->signalFeatureNotif(LAPSUS_FEAT_VOLUME_ID,
-								LAPSUS_FEAT_UNMUTE);
-				}
-				else
-				{
-					_dbus->signalFeatureNotif(LAPSUS_FEAT_VOLUME_ID,
-								LAPSUS_FEAT_MUTE);
-				}
-			}
+			_mix->mixerToggleMuted(true);
+			
+			return true;
 		}
-		else if (id == 0x31 || id == 0x30)
+		else if (id == 0x31)
 		{
-			int val = _mix->getVolume();
-			int mVal = _mix->getMaxVolume();
-
-			if (id == 0x30)
-			{
-				val += 5;
-				
-				// VolumeUp also unmutes the mixer.
-				if (_mix->isMuted())
-					_mix->toggleMute();
-			}
-			else
-			{
-				val -= 5;
-			}
-
-			if (val < 0) val = 0;
-			if (val > mVal) val = mVal;
-
-			if (_mix->setVolume(val) && _dbus)
-			{
-				QStringList args;
-				
-				args.append(QString::number(val));
-				
-				if (_mix->isMuted())
-				{
-					args.append(LAPSUS_FEAT_MUTE);
-				}
-				
-				_dbus->signalFeatureNotif(LAPSUS_FEAT_VOLUME_ID, args);
-			}
-
-			return;
+			_mix->mixerVolumeDown(true);
+			
+			return true;
+		}
+		else if (id == 0x30)
+		{
+			_mix->mixerVolumeUp(true);
+			
+			return true;
 		}
 	}
-#endif
 
+	if (_synap && id == 0x6b)
+	{
+		_synap->toggleState(true);
+
+		return true;
+	}
+	
 	// if a LightSensor is available and enabled, the brightness button controls
 	// its sensitivity level instead of directly controlling the backlight
 	if (_hasLightSensor && featureRead(LAPSUS_FEAT_LIGHT_SENSOR_ID) == LAPSUS_FEAT_ON)
@@ -492,14 +301,10 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 			setLightSensorLevel(nVal, true);
 
 			// Same as with brightness - we wan't OSD even if it didn't modify the value.
-			if (_dbus)
-			{
-				_dbus->signalFeatureNotif(
-					LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID,
+			dbusSignalFeatureNotif(LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID,
 					QString::number(nVal));
-			}
 	
-			return;
+			return true;
 		}
 	}
 	// Works only when LightSensor is disabled
@@ -536,24 +341,11 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 			
 			// We also want to show OSD even if we haven't modified the brightness
 			// Hotkey has been pressed, so we want to show OSD.
-			if (_dbus)
-			{
-				_dbus->signalFeatureNotif(
-					LAPSUS_FEAT_BACKLIGHT_ID,
+			dbusSignalFeatureNotif(LAPSUS_FEAT_BACKLIGHT_ID,
 					QString::number(nVal));
-			}
 			
-			return;
+			return true;
 		}
-	}
-
-	if (_hasTouchpad && id == 0x6b && _synap)
-	{
-		_notifyTouchpadChange = true;
-
-		_synap->toggleState();
-
-		return;
 	}
 
 	if (_hasLightSensor && id == 0x7a)
@@ -563,19 +355,17 @@ void SysAsus::acpiEvent(const QString &group, const QString &action,
 		if (featureRead(LAPSUS_FEAT_LIGHT_SENSOR_ID) == nVal)
 			nVal = LAPSUS_FEAT_OFF;
 		
-		if (featureWrite(LAPSUS_FEAT_LIGHT_SENSOR_ID, nVal) && _dbus)
+		if (featureWrite(LAPSUS_FEAT_LIGHT_SENSOR_ID, nVal))
 		{
-			_dbus->signalFeatureNotif(LAPSUS_FEAT_LIGHT_SENSOR_ID,
+			dbusSignalFeatureNotif(LAPSUS_FEAT_LIGHT_SENSOR_ID,
 					nVal);
 		}
 
-		return;
+		return true;
 	}
 
 	// Unknown hotkey. Just send is as a normal ACPI event.
-
-	if (_dbus)
-		_dbus->sendACPIEvent(group, action, device, id, value);
+	return false;
 }
 
 QString SysAsus::featureRead(const QString &id)
@@ -583,29 +373,6 @@ QString SysAsus::featureRead(const QString &id)
 	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
 	{
 		return readPathString(ASUS_GET_BACKLIGHT_PATH);
-	}
-#ifdef HAVE_ALSA
-	else if (id == LAPSUS_FEAT_VOLUME_ID)
-	{
-		if (!_mix) return "";
-
-		if (_mix->isMuted())
-		{
-			return QString("%1,%2")
-				.arg(QString::number(_mix->getVolume()))
-				.arg(LAPSUS_FEAT_MUTE);
-		}
-		
-		return QString::number(_mix->getVolume());
-	}
-#endif
-	else if (id == LAPSUS_FEAT_TOUCHPAD_ID)
-	{
-		if (!_synap) return "";
-
-		if (_synap->getState()) return LAPSUS_FEAT_ON;
-
-		return LAPSUS_FEAT_OFF;
 	}
 	else if (id == LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID)
 	{
@@ -655,9 +422,9 @@ bool SysAsus::setBacklight(uint uVal, bool forceSignal)
 
 	if (oVal != uVal) res = writePathUInt(ASUS_SET_BACKLIGHT_PATH, uVal);
 
-	if (_dbus && (res || forceSignal))
+	if (res || forceSignal)
 	{
-		_dbus->signalFeatureChanged(LAPSUS_FEAT_BACKLIGHT_ID, QString::number(uVal));
+		dbusSignalFeatureChanged(LAPSUS_FEAT_BACKLIGHT_ID, QString::number(uVal));
 	}
 
 	return res;
@@ -674,9 +441,9 @@ bool SysAsus::setLightSensorLevel(uint uVal, bool forceSignal)
 
 	if (oVal != uVal) res = writePathUInt(ASUS_LS_LEVEL_PATH, uVal);
 
-	if (_dbus && (res || forceSignal))
+	if (res || forceSignal)
 	{
-		_dbus->signalFeatureChanged(LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID, QString::number(uVal));
+		dbusSignalFeatureChanged(LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID, QString::number(uVal));
 	}
 
 	return res;
@@ -693,34 +460,6 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 		if (!res) return false;
 
 		return setBacklight(uVal);
-	}
-#ifdef HAVE_ALSA
-	else if (id == LAPSUS_FEAT_VOLUME_ID)
-	{
-		if (!_mix) return false;
-
-		if (nVal == LAPSUS_FEAT_MUTE) return _mix->setMuted(true);
-		if (nVal == LAPSUS_FEAT_UNMUTE) return _mix->setMuted(false);
-
-		bool res = false;
-
-		int val = nVal.toInt(&res);
-
-		if (!res) return false;
-
-		return _mix->setVolume(val);
-	}
-#endif
-	else if (id == LAPSUS_FEAT_TOUCHPAD_ID)
-	{
-		if (!_synap) return false;
-
-		_notifyTouchpadChange = false;
-
-		if (nVal == LAPSUS_FEAT_ON)
-			return _synap->setState(true);
-
-		return _synap->setState(false);
 	}
 	else if (id == LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID)
 	{
@@ -746,9 +485,9 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 
 		bool res = writeIdUInt(id, uVal);
 
-		if (res && _dbus)
+		if (res)
 		{
-			_dbus->signalFeatureChanged(id, nVal);
+			dbusSignalFeatureChanged(id, nVal);
 		}
 
 		return res;
@@ -788,9 +527,9 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 
 		bool res = writePathUInt(ASUS_DISPLAY_PATH, sVal);
 
-		if (res && _dbus)
+		if (res)
 		{
-			_dbus->signalFeatureChanged(id, nVal);
+			dbusSignalFeatureChanged(id, nVal);
 		}
 
 		return res;

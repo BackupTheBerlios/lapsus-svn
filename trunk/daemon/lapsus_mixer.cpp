@@ -1,0 +1,260 @@
+/***************************************************************************
+ *   Copyright (C) 2007 by Jakub Schmidtke                                 *
+ *   sjakub@users.berlios.de                                               *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
+ ***************************************************************************/
+
+#include "lapsus_mixer.h"
+#include "lapsus.h"
+
+LapsusMixer::LapsusMixer(const char *prefix):
+	LapsusModule(prefix), _doSetup(true)
+{
+}
+
+LapsusMixer::~LapsusMixer()
+{
+}
+
+void LapsusMixer::setupLimits()
+{
+	_minVol = getMinVolume();
+	_maxVol = getMaxVolume();
+	_doSetup = false;
+}
+
+uint LapsusMixer::toNorm(int vol)
+{
+	if (_doSetup) setupLimits();
+	
+	int ret = ((vol - _minVol)*100)/(_maxVol - _minVol);
+
+	if (ret < 0) return 0;
+	
+	return ret;
+}
+
+int LapsusMixer::fromNorm(uint vol)
+{
+	if (_doSetup) setupLimits();
+	
+	return (vol*(_maxVol - _minVol))/100;
+}
+
+uint LapsusMixer::mixerGetNormVolume()
+{
+	return toNorm(getVolume());
+}
+
+bool LapsusMixer::mixerSetNormVolume(uint val, bool hardwareTrig)
+{
+	bool ret = setVolume(fromNorm(val));
+
+	if (hardwareTrig && ret && _dbus)
+	{
+		QStringList args;
+		
+		args.append(QString::number(val));
+		
+		if (mixerIsMuted())
+		{
+			args.append(LAPSUS_FEAT_MUTE);
+		}
+		
+		dbusSignalFeatureNotif(LAPSUS_FEAT_VOLUME_ID, args);
+	}
+	
+	return ret;
+}
+
+bool LapsusMixer::mixerSetMuted(bool mState, bool hardwareTrig)
+{
+	bool muted = mixerIsMuted();
+	bool ret = setMuted(mState);
+
+	if (hardwareTrig && muted != mixerIsMuted())
+	{
+		// Reveresed, muted is old value
+		if (muted)
+		{
+			dbusSignalFeatureNotif(LAPSUS_FEAT_VOLUME_ID,
+				LAPSUS_FEAT_UNMUTE);
+		}
+		else
+		{
+			dbusSignalFeatureNotif(LAPSUS_FEAT_VOLUME_ID,
+				LAPSUS_FEAT_MUTE);
+		}
+	}
+	
+	return ret;
+}
+
+bool LapsusMixer::mixerToggleMuted(bool hardwareTrig)
+{
+	bool muted = mixerIsMuted();
+	bool ret = toggleMuted();
+
+	if (hardwareTrig && muted != mixerIsMuted())
+	{
+		// Reveresed, muted is old value
+		if (muted)
+		{
+			dbusSignalFeatureNotif(LAPSUS_FEAT_VOLUME_ID,
+				LAPSUS_FEAT_UNMUTE);
+		}
+		else
+		{
+			dbusSignalFeatureNotif(LAPSUS_FEAT_VOLUME_ID,
+				LAPSUS_FEAT_MUTE);
+		}
+	}
+	
+	return ret;
+}
+
+bool LapsusMixer::mixerVolumeUp(bool hardwareTrig)
+{
+	uint vol = mixerGetNormVolume() + 10;
+
+	if (vol > 100) vol = 100;
+
+	if (mixerIsMuted()) mixerToggleMuted();
+
+	bool ret = mixerSetNormVolume(vol);
+
+	if (hardwareTrig && _dbus)
+	{
+		QStringList args;
+		
+		args.append(QString::number(vol));
+		
+		dbusSignalFeatureNotif(LAPSUS_FEAT_VOLUME_ID, args);
+	}
+
+	return ret;
+}
+
+bool LapsusMixer::mixerVolumeDown(bool hardwareTrig)
+{
+	int vol = mixerGetNormVolume() - 10;
+
+	if (vol < 0) vol = 0;
+
+	bool ret = mixerSetNormVolume(vol);
+
+	if (hardwareTrig && _dbus)
+	{
+		QStringList args;
+		
+		args.append(QString::number(vol));
+		
+		if (mixerIsMuted())
+			args.append(LAPSUS_FEAT_MUTE);
+
+		dbusSignalFeatureNotif(LAPSUS_FEAT_VOLUME_ID, args);
+	}
+
+	return ret;
+}
+
+void LapsusMixer::volumeChanged(int val)
+{
+	if (_dbus)
+	{
+		QStringList args;
+		
+		args.append(QString::number(toNorm(val)));
+		
+		if (mixerIsMuted())
+			args.append(LAPSUS_FEAT_MUTE);
+		
+		dbusSignalFeatureChanged(LAPSUS_FEAT_VOLUME_ID, args);
+	}
+}
+
+void LapsusMixer::muteChanged(bool muted)
+{
+	dbusSignalFeatureChanged(LAPSUS_FEAT_VOLUME_ID,
+			muted?LAPSUS_FEAT_MUTE:LAPSUS_FEAT_UNMUTE);
+}
+
+QString LapsusMixer::featureRead(const QString &id)
+{
+	if (id == LAPSUS_FEAT_VOLUME_ID)
+	{
+		if (mixerIsMuted())
+		{
+			return QString("%1,%2")
+				.arg(QString::number(mixerGetNormVolume()))
+				.arg(LAPSUS_FEAT_MUTE);
+		}
+		
+		return QString::number(mixerGetNormVolume());
+	}
+	
+	return "";
+}
+
+bool LapsusMixer::featureWrite(const QString &id, const QString &nVal)
+{
+	if (id == LAPSUS_FEAT_VOLUME_ID)
+	{
+		if (nVal == LAPSUS_FEAT_MUTE)
+			return mixerSetMuted(true);
+		
+		if (nVal == LAPSUS_FEAT_UNMUTE)
+			return mixerSetMuted(false);
+
+		bool res = false;
+
+		int val = nVal.toUInt(&res);
+
+		if (!res) return false;
+
+		return mixerSetNormVolume(val);
+	}
+
+	return false;
+}
+
+QStringList LapsusMixer::featureArgs(const QString &id)
+{
+	QStringList ret;
+
+	if (id == LAPSUS_FEAT_VOLUME_ID)
+	{
+		ret.append(QString("0:100"));
+		ret.append(LAPSUS_FEAT_MUTE);
+		ret.append(LAPSUS_FEAT_UNMUTE);
+	}
+
+	return ret;
+}
+
+QStringList LapsusMixer::featureList()
+{
+	QStringList ret;
+
+	ret.append(LAPSUS_FEAT_VOLUME_ID);
+
+	return ret;
+}
+
+#ifdef HAVE_ALSA
+#include "alsa_mixer.cpp"
+#endif

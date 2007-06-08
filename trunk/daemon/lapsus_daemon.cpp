@@ -23,10 +23,9 @@
 
 #include "sys_asus.h"
 #include "sys_ibm.h"
-#include "sys_generic.h"
 
 LapsusDaemon::LapsusDaemon(uint acpiFd):
-	_acpiFd(acpiFd), _backend(0), _dbus(0), _acpiParser(0),
+	_acpiFd(acpiFd), _dbus(0), _acpiParser(0),
 	_isValid(false)
 {
 	doInit();
@@ -34,11 +33,11 @@ LapsusDaemon::LapsusDaemon(uint acpiFd):
 
 LapsusDaemon::~LapsusDaemon()
 {
-	if (_backend) delete _backend;
+#warning clean modules
+
 	if (_dbus) delete _dbus;
 	if (_acpiParser) delete _acpiParser;
 
-	_backend = 0;
 	_dbus = 0;
 	_acpiParser = 0;
 }
@@ -48,22 +47,60 @@ bool LapsusDaemon::isValid()
 	return _isValid;
 }
 
+void LapsusDaemon::addModule(LapsusModule *mod)
+{
+	if (!mod) return;
+	
+	modules.append(mod);
+	prefixes.insert(mod->modulePrefix(), mod);
+}
+
 bool LapsusDaemon::detectHardware()
 {
-	SysBackend *tmp;
+	LapsusMixer *mix = 0;
+	LapsusSynaptics *syn = 0;
+	
+	syn = new LapsusSynaptics();
+	
+	if (syn->hardwareDetected())
+	{
+		addModule(syn);
+	}
+	else
+	{
+		delete syn;
+		syn = 0;
+	}
+	
+#ifdef HAVE_ALSA
+	mix = new LapsusAlsaMixer();
+	
+	if (mix->hardwareDetected())
+	{
+		addModule(mix);
+	}
+	else
+	{
+		delete mix;
+		mix = 0;
+	}
+#endif
+	
+	LapsusModule *tmp;
 
 	// Try Asus Backend
-	tmp = new SysAsus();
+	tmp = new SysAsus(mix, syn);
 
 	if (tmp->hardwareDetected())
 	{
-		_backend = tmp;
-		return true;
+		addModule(tmp);
+	}
+	else
+	{
+		delete tmp;
 	}
 
-	delete tmp;
-
-	// Try any other backends supported
+	// Try IBM Backend
 
 	tmp = new SysIBM();
 
@@ -88,24 +125,14 @@ bool LapsusDaemon::detectHardware()
 			printf("Feature Value: %s\n\n", tmp->featureRead(line).ascii());
 		}
 
-		_backend = tmp;
-		return true;
+		addModule(tmp);
 	}
-
-	delete tmp;
-
-	// Try Generic Backend
-	tmp = new SysGeneric();
-
-	if (tmp->hardwareDetected())
+	else
 	{
-		_backend = tmp;
-		return true;
+		delete tmp;
 	}
 
-	delete tmp;
-
-	return false;
+	return (modules.count() > 0);
 }
 
 void LapsusDaemon::doInit()
@@ -120,63 +147,126 @@ void LapsusDaemon::doInit()
 
 	if (!_dbus->isValid()) return;
 
-	_backend->setDBus(_dbus);
+	LapsusModule *mod;
+	
+	for (mod = modules.first(); mod; mod = modules.next())
+	{
+		mod->setDBus(_dbus);
+	}
+	
 	_acpiParser = new ACPIEventParser(_acpiFd);
-
+	
 	connect(_acpiParser,
 		SIGNAL(acpiEvent(const QString &, const QString &,
 					const QString &, uint, uint)),
-		_backend,
+		this,
 		SLOT(acpiEvent(const QString &, const QString &,
 					const QString &, uint, uint)));
-
+	
 	_isValid = true;
+}
+
+void LapsusDaemon::acpiEvent(const QString &group, const QString &action,
+	const QString &device, uint id, uint value)
+{
+	LapsusModule *mod;
+	
+	for (mod = modules.first(); mod; mod = modules.next())
+	{
+		if (mod->handleACPIEvent(group, action, device, id, value))
+			return;
+	}
+	
+	if (_dbus) _dbus->sendACPIEvent(group, action, device, id, value);
 }
 
 QStringList LapsusDaemon::featureList()
 {
 	if (!_isValid) return QStringList();
+	
+	QStringList features;
+	LapsusModule *mod;
+	
+	for (mod = modules.first(); mod; mod = modules.next())
+	{
+		QStringList ft = mod->featureList();
+		const char * prefix = mod->modulePrefix();
+		
+		for ( QStringList::Iterator it = ft.begin(); it != ft.end(); ++it )
+		{
+			features.append(QString("%1.%2").arg(prefix).arg(*it));
+		}
+	}
+	
+	return features;
+}
 
-	// TODO Add generic features - for example cpufreq control
-	return _backend->featureList();
+bool LapsusDaemon::findModule(LapsusModule **mod, QString &id)
+{
+	int idx = id.find('.');
+	
+	if (idx < 1) return false;
+	
+	QString pref = id.left(idx);
+	
+	if ( (*mod = prefixes.find(pref.ascii())) == 0) return false;
+	
+	id = id.mid(idx+1);
+	
+	if (id.length() < 1) return false;
+	
+	return true;
 }
 
 QString LapsusDaemon::featureName(const QString &id)
 {
-	if (!_isValid) return QString();
-
-	// TODO Check other features - for example cpufreq control
-	return _backend->featureName(id.lower());
+	LapsusModule *mod;
+	QString modId = id.lower();
+	
+	if (_isValid && findModule(&mod, modId) && mod)
+	{
+		return mod->featureName(modId);
+	}
+	
+	return QString();
+	
 }
 
 QStringList LapsusDaemon::featureArgs(const QString &id)
 {
-	if (!_isValid) return QStringList();
+	LapsusModule *mod;
+	QString modId = id.lower();
+	
+	if (_isValid && findModule(&mod, modId) && mod)
+	{
+		return mod->featureArgs(modId);
+	}
 
-	// TODO Add generic features - for example cpufreq control
-	return _backend->featureArgs(id.lower());
-}
-
-QStringList LapsusDaemon::featureParams(const QString &id)
-{
-	if (!_isValid) return QStringList();
-
-	// TODO Add generic features - for example cpufreq control
-	return _backend->featureParams(id.lower());
+	return QStringList();
 }
 
 QString LapsusDaemon::featureRead(const QString &id)
 {
-	if (!_isValid) return QString();
-
-	// TODO Check other features
-	return _backend->featureRead(id.lower());
+	LapsusModule *mod;
+	QString modId = id.lower();
+	
+	if (_isValid && findModule(&mod, modId) && mod)
+	{
+		return mod->featureRead(modId);
+	}
+	
+	return QString();
 }
 
 bool LapsusDaemon::featureWrite(const QString &id, const QString &nVal)
 {
-	if (!_isValid) return false;
-
-	// TODO Check other features
-	return _backend->featureWrite(id.lower(), nVal.lower());
+	LapsusModule *mod;
+	QString modId = id.lower();
+	
+	if (_isValid && findModule(&mod, modId) && mod)
+	{
+		return mod->featureWrite(modId, nVal.lower());
+	}
+	
+	return false;
 }

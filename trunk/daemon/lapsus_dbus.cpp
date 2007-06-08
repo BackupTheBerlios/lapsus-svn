@@ -34,8 +34,8 @@
 
 #define qPrintable(str)         (str.ascii())
 
-LapsusDBus::LapsusDBus(LapsusDaemon *daemon):
-	_daemon(daemon), _isValid(false),
+LapsusDBus::LapsusDBus(DBUSFeatureManager *fManager):
+	_featManager(fManager), _isValid(false),
 	_timerSet(false)
 {
 	doInit();
@@ -83,16 +83,6 @@ void LapsusDBus::doInit()
 	return;
 }
 
-void LapsusDBus::signalFeatureChanged(const QString &id, const char *val)
-{
-	signalFeatureChanged(id, QString(val));
-}
-
-void LapsusDBus::signalFeatureChanged(const QString &id, const QStringList &vList)
-{
-	signalFeatureChanged(id, vList.join(","));
-}
-
 void LapsusDBus::signalFeatureChanged(const QString &id, const QString &val)
 {
 	QValueList<QDBusData> params;
@@ -101,16 +91,6 @@ void LapsusDBus::signalFeatureChanged(const QString &id, const QString &val)
 	params.append(QDBusData::fromString(val));
 
 	safeSendSignal(LAPSUS_DBUS_FEATURE_CHANGED, params);
-}
-
-void LapsusDBus::signalFeatureNotif(const QString &id, const char *val)
-{
-	signalFeatureNotif(id, QString(val));
-}
-
-void LapsusDBus::signalFeatureNotif(const QString &id, const QStringList &vList)
-{
-	signalFeatureNotif(id, vList.join(","));
 }
 
 void LapsusDBus::signalFeatureNotif(const QString &id, const QString &val)
@@ -181,7 +161,7 @@ bool LapsusDBus::sendSignal(const QString &sigName,
 bool LapsusDBus::returnDBusError(const QString &str1, const QString &str2,
 					const QDBusMessage& message)
 {
-	if (!_isValid || !_daemon) return false;
+	if (!_isValid || !_featManager) return false;
 
 	QDBusError error(str1, str2);
 	QDBusMessage reply = QDBusMessage::methodError(message, error);
@@ -194,7 +174,7 @@ bool LapsusDBus::returnDBusError(const QString &str1, const QString &str2,
 // QT3 DBus message handler:
 bool LapsusDBus::handleMethodCall(const QDBusMessage& message)
 {
-	if (!_isValid || !_daemon) return false;
+	if (!_isValid || !_featManager) return false;
 	if (message.interface() != LAPSUS_INTERFACE) return false;
 	if (message.type() != QDBusMessage::MethodCallMessage) return false;
 
@@ -209,7 +189,7 @@ bool LapsusDBus::handleMethodCall(const QDBusMessage& message)
 
 		QDBusMessage reply = QDBusMessage::methodReply(message);
 
-		reply << QDBusData::fromList(_daemon->featureList());
+		reply << QDBusData::fromList(_featManager->featureList());
 
 		_connection.send(reply);
 
@@ -232,13 +212,12 @@ bool LapsusDBus::handleMethodCall(const QDBusMessage& message)
 		{
 			QString id = message[0].toString();
 
-			reply << QDBusData::fromString(_daemon->featureName(id));
-			reply << QDBusData::fromList(_daemon->featureArgs(id));
-			reply << QDBusData::fromList(_daemon->featureParams(id));
+			reply << QDBusData::fromString(_featManager->featureName(id));
+			reply << QDBusData::fromList(_featManager->featureArgs(id));
 		}
 		else
 		{
-			reply << QDBusData::fromString(_daemon->featureRead(message[0].toString()));
+			reply << QDBusData::fromString(_featManager->featureRead(message[0].toString()));
 		}
 
 		_connection.send(reply);
@@ -260,7 +239,7 @@ bool LapsusDBus::handleMethodCall(const QDBusMessage& message)
 		QDBusMessage reply = QDBusMessage::methodReply(message);
 
 		reply << QDBusData::fromBool(
-				_daemon->featureWrite(
+				_featManager->featureWrite(
 					message[0].toString(),
 					message[1].toString()));
 

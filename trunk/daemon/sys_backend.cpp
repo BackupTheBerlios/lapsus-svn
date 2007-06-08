@@ -34,28 +34,12 @@
 
 #define qPrintable(str)         (str.ascii())
 
-#ifdef HAVE_ALSA
-#include "alsa_mixer.cpp"
-#endif
-
-SysBackend::SysBackend() : _dbus(0)
+SysBackend::SysBackend(const char *prefix): LapsusModule(prefix)
 {
 }
 
 SysBackend::~SysBackend()
 {
-}
-
-void SysBackend::setDBus(LapsusDBus *dbus)
-{
-	_dbus = dbus;
-}
-
-void SysBackend::acpiEvent(const QString &group, const QString &action,
-	const QString &device, uint id, uint value)
-{
-	if (_dbus)
-		_dbus->sendACPIEvent(group, action, device, id, value);
 }
 
 bool SysBackend::hasFeature(const QString &id)
@@ -71,11 +55,6 @@ QString SysBackend::getFeaturePath(const QString &id)
 QString SysBackend::getFeatureName(const QString &id)
 {
 	return _featureNames[id];
-}
-
-QStringList SysBackend::featureParams(const QString &)
-{
-	return QStringList();
 }
 
 void SysBackend::setFeature(const QString &id, const QString &path, const QString &name)
@@ -94,12 +73,6 @@ QString SysBackend::featureName(const QString &id)
 			return name;
 	}
 
-	if (id == LAPSUS_FEAT_BLUETOOTH_ID) return I18N_NOOP("Bluetooth adapter");
-	if (id == LAPSUS_FEAT_WIRELESS_ID) return I18N_NOOP("Wireless radio");
-	if (id == LAPSUS_FEAT_BACKLIGHT_ID) return I18N_NOOP("LCD Backlight");
-	if (id == LAPSUS_FEAT_VOLUME_ID) return I18N_NOOP("Volume");
-	if (id == LAPSUS_FEAT_TOUCHPAD_ID) return I18N_NOOP("Touchpad");
-
 	QString disp;
 
 #if 0
@@ -114,7 +87,7 @@ QString SysBackend::featureName(const QString &id)
 		return QString("%1 Display").arg(disp.upper());
 	}
 
-	return "";
+	return LapsusModule::featureName(id);
 }
 
 bool SysBackend::isDisplayFeature(const QString &id)

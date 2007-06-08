@@ -19,9 +19,11 @@
  ***************************************************************************/
 
 #include "synaptics.h"
+#include "lapsus.h"
 
-LapsusSynaptics::LapsusSynaptics(): _procGet(0), _procSet(0),
-	_isValid(false), _isOn(false)
+LapsusSynaptics::LapsusSynaptics(): LapsusModule("synaptics"),
+	 _procGet(0), _procSet(0),
+	_isValid(false), _isOn(false), _notifyChange(false)
 {
 	_isValid = runGetProc();
 }
@@ -30,13 +32,15 @@ LapsusSynaptics::~LapsusSynaptics()
 {
 }
 
-bool LapsusSynaptics::isValid()
+bool LapsusSynaptics::hardwareDetected()
 {
 	return _isValid;
 }
 
-bool LapsusSynaptics::setState(bool nState)
+bool LapsusSynaptics::setState(bool nState, bool hardwareTrig)
 {
+	if (hardwareTrig) _notifyChange = true;
+	
 	return runSetProc(nState);
 }
 
@@ -45,8 +49,10 @@ bool LapsusSynaptics::getState()
 	return _isOn;
 }
 
-bool LapsusSynaptics::toggleState()
+bool LapsusSynaptics::toggleState(bool hardwareTrig)
 {
+	if (hardwareTrig) _notifyChange = true;
+	
 	return setState(!_isOn);
 }
 
@@ -91,7 +97,7 @@ void LapsusSynaptics::getProcessExited()
 	{
 		_isOn = nVal;
 
-		emit stateChanged(_isOn);
+		stateChanged(_isOn);
 	}
 }
 
@@ -154,4 +160,64 @@ bool LapsusSynaptics::runSetProc(bool nState)
 	}
 
 	return true;
+}
+
+QStringList LapsusSynaptics::featureList()
+{
+	QStringList ret;
+	ret.append(LAPSUS_FEAT_TOUCHPAD_ID);
+	return ret;
+}
+
+QStringList LapsusSynaptics::featureArgs(const QString &id)
+{
+	QStringList ret;
+
+	if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+	{
+		ret.append(LAPSUS_FEAT_ON);
+		ret.append(LAPSUS_FEAT_OFF);
+	}
+
+	return ret;
+}
+
+QString LapsusSynaptics::featureRead(const QString &id)
+{
+	if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+	{
+		if (getState()) return LAPSUS_FEAT_ON;
+
+		return LAPSUS_FEAT_OFF;
+	}
+
+
+	return "";
+}
+
+bool LapsusSynaptics::featureWrite(const QString &id, const QString &nVal)
+{
+	if (id == LAPSUS_FEAT_TOUCHPAD_ID)
+	{
+		if (nVal == LAPSUS_FEAT_ON)
+			return setState(true);
+
+		return setState(false);
+	}
+
+	return false;
+}
+
+void LapsusSynaptics::stateChanged(bool nState)
+{
+	dbusSignalFeatureChanged(LAPSUS_FEAT_TOUCHPAD_ID,
+		nState?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
+
+	if (_notifyChange)
+	{
+		dbusSignalFeatureNotif(LAPSUS_FEAT_TOUCHPAD_ID,
+			nState?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
+	}
+
+	_notifyChange = false;
 }

@@ -18,63 +18,53 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-
-#ifndef LAPSUS_DBUS_H
-#define LAPSUS_DBUS_H
+#ifndef LAPSUS_MODULE_H
+#define LAPSUS_MODULE_H
 
 #include <qobject.h>
 #include <qstring.h>
 #include <qstringlist.h>
-#include <qmap.h>
 
-// Qt DBUS includes
-#include <dbus/qdbusdatalist.h>
-#include <dbus/qdbuserror.h>
-#include <dbus/qdbusmessage.h>
-#include <dbus/qdbusconnection.h>
-#include <dbus/qdbusobject.h>
-#include <dbus/qdbusproxy.h>
+#include "lapsus_dbus.h"
 
-class LapsusDBus : public QObject
+// We don't need anything else from klocale.h
+#define I18N_NOOP(x)			x
+
+class LapsusModule: public QObject
 {
 	Q_OBJECT
+
 	public:
-		LapsusDBus();
-		~LapsusDBus();
+		LapsusModule(const char *prefix);
+		virtual ~LapsusModule();
 
-		bool isValid();
+		virtual bool hardwareDetected() = 0;
 
-		QStringList listFeatures();
-		QString getFeatureName(const QString &id);
-		QStringList getFeatureArgs(const QString &id);
-		QString getFeature(const QString &id);
+		virtual const char * modulePrefix();
+		virtual QStringList featureList() = 0;
+		virtual QStringList featureArgs(const QString &id) = 0;
+		
+		virtual QString featureRead(const QString &id) = 0;
+		virtual bool featureWrite(const QString &id, const QString &nVal) = 0;
+		
+		virtual QString featureName(const QString &id);
 
+		virtual void setDBus(LapsusDBus *dbus);
+		
+		virtual bool handleACPIEvent(const QString &group, const QString &action,
+				const QString &device, uint id, uint value);
+
+		virtual void dbusSignalFeatureChanged(const QString &id, const char *val);
+		virtual void dbusSignalFeatureChanged(const QString &id, const QString &val);
+		virtual void dbusSignalFeatureChanged(const QString &id, const QStringList &vList);
+		
+		virtual void dbusSignalFeatureNotif(const QString &id, const char *val);
+		virtual void dbusSignalFeatureNotif(const QString &id, const QString &val);
+		virtual void dbusSignalFeatureNotif(const QString &id, const QStringList &vList);
+		
 	protected:
-		void timerEvent( QTimerEvent * );
-
-	private:
-		QDBusConnection _conn;
-		QDBusProxy *_proxy;
-		bool _isValid;
-		QStringList _features;
-		QMap<QString, QString> _featureVal;
-		QMap<QString, QString> _featureName;
-		QMap<QString, QStringList> _featureArgs;
-		int _timerId;
-
-		void connError();
-		bool restartDBus();
-		void initParams();
-		void checkFeature(const QString &id);
-
-	public slots:
-		void handleDBusSignal(const QDBusMessage &message);
-		bool setFeature(const QString &id, const QString &val);
-
-	signals:
-		void featureChanged(const QString &id, const QString &val);
-		void featureNotif(const QString &id, const QString &val);
-		void stateChanged(bool state);
+		LapsusDBus *_dbus;
+		const char * _modulePrefix;
 };
 
 #endif

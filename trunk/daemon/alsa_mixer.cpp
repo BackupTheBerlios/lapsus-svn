@@ -163,7 +163,8 @@ bool SIDInfo::setEmulMute(bool mute)
 	}
 }
 
-LapsusAlsaMixer::LapsusAlsaMixer(): _handle(0), _count(0), _fds(0), _sns(0),
+LapsusAlsaMixer::LapsusAlsaMixer(): LapsusMixer("alsa"),
+	_handle(0), _count(0), _fds(0), _sns(0),
 	_curVolume(0), _curMute(false), _globalMax(0)
 {
 	for (int i = 0; i < ID_LAST; ++i)
@@ -313,7 +314,7 @@ bool LapsusAlsaMixer::init()
 	// are not yet connected to anything - this method is called from constructor
 	// only.
 	getVolume();
-	isMuted();
+	mixerIsMuted();
 
 	return true;
 }
@@ -326,10 +327,10 @@ void LapsusAlsaMixer::alsaEvent()
 
 	// Those functions will emit any signals needed
 	getVolume();
-	isMuted();
+	mixerIsMuted();
 }
 
-bool LapsusAlsaMixer::isValid()
+bool LapsusAlsaMixer::hardwareDetected()
 {
 	return _isValid;
 }
@@ -365,13 +366,18 @@ int LapsusAlsaMixer::getVolume()
 			if (v != _curVolume)
 			{
 				_curVolume = v;
-				emit volumeChanged((int) v);
+				volumeChanged((int) v);
 			}
 
 			return (int) v;
 		}
 	}
 
+	return 0;
+}
+
+int LapsusAlsaMixer::getMinVolume()
+{
 	return 0;
 }
 
@@ -394,7 +400,7 @@ bool LapsusAlsaMixer::setVolume(int val)
 	return false;
 }
 
-bool LapsusAlsaMixer::isMuted()
+bool LapsusAlsaMixer::mixerIsMuted()
 {
 	for (int i = 0; i < ID_LAST; ++i)
 	{
@@ -405,7 +411,7 @@ bool LapsusAlsaMixer::isMuted()
 			if (ret != _curMute)
 			{
 			 	_curMute = ret;
-			 	emit muteChanged(ret);
+			 	muteChanged(ret);
 			}
 
 			return ret;
@@ -443,9 +449,7 @@ bool LapsusAlsaMixer::setMuted(bool mState)
 	return false;
 }
 
-bool LapsusAlsaMixer::toggleMute()
+bool LapsusAlsaMixer::toggleMuted()
 {
 	return setMuted(!_curMute);
 }
-
-

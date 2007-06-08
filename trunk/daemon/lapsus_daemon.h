@@ -24,14 +24,16 @@
 #include <qobject.h>
 #include <qstring.h>
 #include <qstringlist.h>
+#include <qptrlist.h>
+#include <qasciidict.h>
 
 class LapsusDaemon;
 
 #include "acpi_event_parser.h"
 #include "lapsus_dbus.h"
-#include "sys_backend.h"
+#include "lapsus_module.h"
 
-class LapsusDaemon : public QObject
+class LapsusDaemon : public QObject, DBUSFeatureManager
 {
 	Q_OBJECT
 
@@ -43,17 +45,24 @@ class LapsusDaemon : public QObject
 		QStringList featureList();
 		QString featureName(const QString &id);
 		QStringList featureArgs(const QString &id);
-		QStringList featureParams(const QString &id);
 		QString featureRead(const QString &id);
 		bool featureWrite(const QString &id, const QString &nVal);
 
+	protected slots:
+		void acpiEvent(const QString &group, const QString &action,
+				const QString &device, uint id, uint value);
+	
 	private:
+		QPtrList<LapsusModule> modules;
+		QAsciiDict<LapsusModule> prefixes;
+		
 		uint _acpiFd;
-		SysBackend *_backend;
 		LapsusDBus *_dbus;
 		ACPIEventParser *_acpiParser;
 		bool _isValid;
-
+		
+		void addModule(LapsusModule *mod);
+		bool findModule(LapsusModule **mod, QString &id);
 		bool detectHardware();
 		void doInit();
 };

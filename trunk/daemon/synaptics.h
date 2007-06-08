@@ -24,9 +24,9 @@
 #include <qobject.h>
 #include <qprocess.h>
 
-#include "sys_backend.h"
+#include "lapsus_module.h"
 
-class LapsusSynaptics : public QObject
+class LapsusSynaptics : public LapsusModule
 {
 	Q_OBJECT
 
@@ -34,13 +34,18 @@ class LapsusSynaptics : public QObject
 		LapsusSynaptics();
 		~LapsusSynaptics();
 
-		bool isValid();
-
+		bool hardwareDetected();
+		
+		QStringList featureList();
+		QStringList featureArgs(const QString &id);
+		QString featureRead(const QString &id);
+		bool featureWrite(const QString &id, const QString &nVal);
+		
 		bool getState();
-		bool setState(bool nState);
-		bool toggleState();
+		bool setState(bool nState, bool hardwareTrig = false);
+		bool toggleState(bool hardwareTrig = false);
 
-	signals:
+	protected:
 		void stateChanged(bool nState);
 
 	protected slots:
@@ -54,6 +59,7 @@ class LapsusSynaptics : public QObject
 		bool _isValid;
 		bool _isOn;
 		QString _dataRead;
+		bool _notifyChange;
 
 		bool runGetProc();
 		bool runSetProc(bool nState);
