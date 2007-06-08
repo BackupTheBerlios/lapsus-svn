@@ -27,8 +27,7 @@
 
 #include "sys_backend.h"
 
-#include "lapsus_mixer.h"
-#include "synaptics.h"
+#include "modules_list.h"
 
 /**
  * Backend, which controls asus-laptop's kernel module /sys interface
@@ -39,7 +38,7 @@ class SysAsus : public SysBackend
 	Q_OBJECT
 
 	public:
-		SysAsus(LapsusMixer *mix, LapsusSynaptics *syn);
+		SysAsus(LapsusModulesList *modList);
 		~SysAsus();
 
 		QStringList featureList();
@@ -55,8 +54,7 @@ class SysAsus : public SysBackend
 				const QString &device, uint id, uint value);
 
 	private:
-		LapsusMixer *_mix;
-		LapsusSynaptics *_synap;
+		LapsusModulesList *_modList;
 
 		bool _hasSwitches;
 		bool _hasBacklight;

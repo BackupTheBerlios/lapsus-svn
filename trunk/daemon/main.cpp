@@ -22,6 +22,7 @@
 
 #include "lapsus.h"
 #include "lapsus_daemon.h"
+#include "lapsus_signal.h"
 #include "acpi_event_parser.h"
 
 #include <stdio.h>
@@ -49,7 +50,6 @@
 #define DAEMON_ERR		0
 
 #define qPrintable(str)         (str.ascii())
-
 
 static bool doDaemonize = true;
 static int child_stat = 0;
@@ -362,5 +362,7 @@ int run_child(int acpi_fd, int argc, char *argv[])
 		kill(my_parent, SIGUSR1);
 	}
 
+	LapsusSignal lapSig;
+	
 	return app.exec();
 }

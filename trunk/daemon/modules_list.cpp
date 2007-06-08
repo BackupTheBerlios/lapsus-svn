@@ -18,47 +18,70 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_DAEMON_H
-#define LAPSUS_DAEMON_H
-
-#include <qobject.h>
-#include <qstring.h>
-#include <qstringlist.h>
-
-class LapsusDaemon;
-
-#include "acpi_event_parser.h"
-#include "lapsus_dbus.h"
 #include "modules_list.h"
 
-class LapsusDaemon : public QObject, DBUSFeatureManager
+LapsusModulesList::LapsusModulesList()
 {
-	Q_OBJECT
+	mixer = 0;
+	synaptics = 0;
+}
 
-	public:
-		LapsusDaemon(uint acpiFd);
-		~LapsusDaemon();
-		bool isValid();
-
-		QStringList featureList();
-		QString featureName(const QString &id);
-		QStringList featureArgs(const QString &id);
-		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
-
-	protected slots:
-		void acpiEvent(const QString &group, const QString &action,
-				const QString &device, uint id, uint value);
+LapsusModulesList::~LapsusModulesList()
+{
+	LapsusModule *mod;
 	
-	private:
-		LapsusModulesList _modList;
-		uint _acpiFd;
-		LapsusDBus *_dbus;
-		ACPIEventParser *_acpiParser;
-		bool _isValid;
-		
-		bool detectHardware();
-		void doInit();
-};
+	for (mod = modules.first(); mod; mod = modules.next())
+	{
+		delete mod;
+	}
+	
+	modules.clear();
+	prefixes.clear();
+}
 
-#endif
+uint LapsusModulesList::count()
+{
+	return modules.count();
+}
+
+void LapsusModulesList::addMixer(LapsusMixer *mod)
+{
+	mixer = mod;
+	addModule(mod);
+}
+
+void LapsusModulesList::addSynaptics(LapsusSynaptics *mod)
+{
+	synaptics = mod;
+	addModule(mod);
+}
+
+void LapsusModulesList::addModule(LapsusModule *mod)
+{
+	if (!mod) return;
+	
+	modules.append(mod);
+	prefixes.insert(mod->modulePrefix(), mod);
+}
+
+bool LapsusModulesList::findModule(LapsusModule **mod, QString &id)
+{
+	int idx = id.find('.');
+	
+	if (idx < 1) return false;
+	
+	QString pref = id.left(idx);
+	
+	if ( (*mod = prefixes.find(pref.ascii())) == 0) return false;
+	
+	id = id.mid(idx+1);
+	
+	if (id.length() < 1) return false;
+	
+	return true;
+}
+
+LapsusModulesIterator LapsusModulesList::modulesIterator()
+{
+	return QPtrListIterator<LapsusModule>( modules );
+}

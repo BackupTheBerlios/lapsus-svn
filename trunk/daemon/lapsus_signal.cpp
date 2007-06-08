@@ -18,47 +18,45 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_DAEMON_H
-#define LAPSUS_DAEMON_H
+#include "lapsus_signal.h"
 
-#include <qobject.h>
-#include <qstring.h>
-#include <qstringlist.h>
+#include <signal.h>
 
-class LapsusDaemon;
+#include <qapplication.h>
 
-#include "acpi_event_parser.h"
-#include "lapsus_dbus.h"
-#include "modules_list.h"
+volatile sig_atomic_t signalReceived = 0;
 
-class LapsusDaemon : public QObject, DBUSFeatureManager
+void unixSignalHandler(int)
 {
-	Q_OBJECT
+	signalReceived = 1;
+}
 
-	public:
-		LapsusDaemon(uint acpiFd);
-		~LapsusDaemon();
-		bool isValid();
-
-		QStringList featureList();
-		QString featureName(const QString &id);
-		QStringList featureArgs(const QString &id);
-		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
-
-	protected slots:
-		void acpiEvent(const QString &group, const QString &action,
-				const QString &device, uint id, uint value);
+LapsusSignal::LapsusSignal()
+{
+	startedExit = false;
 	
-	private:
-		LapsusModulesList _modList;
-		uint _acpiFd;
-		LapsusDBus *_dbus;
-		ACPIEventParser *_acpiParser;
-		bool _isValid;
-		
-		bool detectHardware();
-		void doInit();
-};
+	signal(SIGINT, unixSignalHandler);
+	signal(SIGTERM, unixSignalHandler);
+	signal(SIGQUIT, unixSignalHandler);
+	
+	_timer =  new QTimer( this );
+	
+	connect( _timer, SIGNAL(timeout()), this, SLOT(timeout()));
+	
+	// 1 sec interval
+        _timer->start( 1000, false );
+}
 
-#endif
+LapsusSignal::~LapsusSignal()
+{
+}
+
+void LapsusSignal::timeout()
+{
+	if (signalReceived && !startedExit)
+	{
+		startedExit = true;
+		
+		QApplication::exit(0);
+	}
+}

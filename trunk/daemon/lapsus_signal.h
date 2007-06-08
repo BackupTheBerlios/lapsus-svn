@@ -18,47 +18,26 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_DAEMON_H
-#define LAPSUS_DAEMON_H
+#ifndef LAPSUS_SIGNAL_H
+#define LAPSUS_SIGNAL_H
 
 #include <qobject.h>
-#include <qstring.h>
-#include <qstringlist.h>
+#include <qtimer.h>
 
-class LapsusDaemon;
-
-#include "acpi_event_parser.h"
-#include "lapsus_dbus.h"
-#include "modules_list.h"
-
-class LapsusDaemon : public QObject, DBUSFeatureManager
+class LapsusSignal : public QObject
 {
 	Q_OBJECT
 
 	public:
-		LapsusDaemon(uint acpiFd);
-		~LapsusDaemon();
-		bool isValid();
-
-		QStringList featureList();
-		QString featureName(const QString &id);
-		QStringList featureArgs(const QString &id);
-		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
+		LapsusSignal();
+		~LapsusSignal();
 
 	protected slots:
-		void acpiEvent(const QString &group, const QString &action,
-				const QString &device, uint id, uint value);
+		void timeout();
 	
 	private:
-		LapsusModulesList _modList;
-		uint _acpiFd;
-		LapsusDBus *_dbus;
-		ACPIEventParser *_acpiParser;
-		bool _isValid;
-		
-		bool detectHardware();
-		void doInit();
+		QTimer *_timer;
+		bool startedExit;
 };
 
 #endif

@@ -18,47 +18,41 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_DAEMON_H
-#define LAPSUS_DAEMON_H
+#ifndef MODULES_LIST_H
+#define MODULES_LIST_H
 
-#include <qobject.h>
-#include <qstring.h>
-#include <qstringlist.h>
+#include <qptrlist.h>
+#include <qasciidict.h>
 
-class LapsusDaemon;
+#include "lapsus_mixer.h"
+#include "synaptics.h"
 
-#include "acpi_event_parser.h"
-#include "lapsus_dbus.h"
-#include "modules_list.h"
+#include "lapsus_module.h"
 
-class LapsusDaemon : public QObject, DBUSFeatureManager
+
+typedef QPtrListIterator<LapsusModule> LapsusModulesIterator;
+
+class LapsusModulesList
 {
-	Q_OBJECT
-
 	public:
-		LapsusDaemon(uint acpiFd);
-		~LapsusDaemon();
-		bool isValid();
-
-		QStringList featureList();
-		QString featureName(const QString &id);
-		QStringList featureArgs(const QString &id);
-		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal);
-
-	protected slots:
-		void acpiEvent(const QString &group, const QString &action,
-				const QString &device, uint id, uint value);
-	
-	private:
-		LapsusModulesList _modList;
-		uint _acpiFd;
-		LapsusDBus *_dbus;
-		ACPIEventParser *_acpiParser;
-		bool _isValid;
+		LapsusModulesList();
+		~LapsusModulesList();
 		
-		bool detectHardware();
-		void doInit();
+		void addModule(LapsusModule *mod);
+		void addMixer(LapsusMixer *mod);
+		void addSynaptics(LapsusSynaptics *mod);
+		
+		bool findModule(LapsusModule **mod, QString &id);
+		LapsusModulesIterator modulesIterator();
+	
+		uint count();
+		
+		LapsusMixer *mixer;
+		LapsusSynaptics *synaptics;
+		
+	private:
+		QPtrList<LapsusModule> modules;
+		QAsciiDict<LapsusModule> prefixes;
 };
 
 #endif

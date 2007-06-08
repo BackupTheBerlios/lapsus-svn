@@ -34,9 +34,9 @@
 #define ASUS_SET_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/brightness"
 #define ASUS_MAX_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/max_brightness"
 
-SysAsus::SysAsus(LapsusMixer *mix, LapsusSynaptics *syn):
+SysAsus::SysAsus(LapsusModulesList *modList):
 	SysBackend("asus"),
-	_mix(mix), _synap(syn),
+	_modList(modList),
 	_hasSwitches(false), _hasBacklight(false), _hasDisplay(false),
 	_hasLightSensor(false), _maxBacklight(0),
 	_maxLightSensor(7), // maxLightSensor can't be larger than 15!
@@ -245,31 +245,31 @@ bool SysAsus::handleACPIEvent(const QString &group, const QString &action,
 	if (group != "hotkey" || action != "hotkey" || device != "ATKD")
 		return false;
 
-	if (_mix)
+	if (_modList->mixer)
 	{
 		if (id == 0x32)
 		{
-			_mix->mixerToggleMuted(true);
+			_modList->mixer->mixerToggleMuted(true);
 			
 			return true;
 		}
 		else if (id == 0x31)
 		{
-			_mix->mixerVolumeDown(true);
+			_modList->mixer->mixerVolumeDown(true);
 			
 			return true;
 		}
 		else if (id == 0x30)
 		{
-			_mix->mixerVolumeUp(true);
+			_modList->mixer->mixerVolumeUp(true);
 			
 			return true;
 		}
 	}
 
-	if (_synap && id == 0x6b)
+	if (_modList->synaptics && id == 0x6b)
 	{
-		_synap->toggleState(true);
+		_modList->synaptics->toggleState(true);
 
 		return true;
 	}
