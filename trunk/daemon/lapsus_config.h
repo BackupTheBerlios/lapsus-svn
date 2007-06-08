@@ -43,6 +43,7 @@ class LapsusConfigEntry
 		}
 		
 		QString id;
+		QString name;
 		QStringList args;
 		QString defValue;
 		QString curValue;
@@ -58,11 +59,13 @@ class LapsusConfig : public LapsusModule
 		LapsusConfig(QSettings *settings);
 		virtual ~LapsusConfig();
 		
-		void subscribeEntry(const char *prefix, const QString &id, const QStringList &args, const QString &defValue);
+		void subscribeEntry(const char *prefix, const QString &id, const char *name,
+			const QStringList &args, const QString &defValue);
 		QString getEntryValue(const char *prefix, const QString &id);
 		
 		bool hardwareDetected();
 		QStringList featureList();
+		QString featureName(const QString &id);
 		QStringList featureArgs(const QString &id);
 		
 		QString featureRead(const QString &id);
@@ -75,6 +78,7 @@ class LapsusConfig : public LapsusModule
 		
 		void readEntries();
 		void saveEntries();
+		bool checkArg(const QString &val, const QStringList &args);
 };
 
 #endif

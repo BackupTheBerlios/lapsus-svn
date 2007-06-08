@@ -34,6 +34,9 @@
 #define ASUS_SET_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/brightness"
 #define ASUS_MAX_BACKLIGHT_PATH		"/sys/class/backlight/asus-laptop/max_brightness"
 
+#define ASUS_CONF_BACKLIGHT_HK_CIRC	"backlight_hotkey_circular"
+#define ASUS_CONF_LIGHT_SENSOR_HK_CIRC	"lightsensor_hotkey_circular"
+
 SysAsus::SysAsus(LapsusModulesList *modList):
 	SysBackend("asus"),
 	_modList(modList),
@@ -129,6 +132,22 @@ void SysAsus::detect()
 		setFeature(LAPSUS_FEAT_LIGHT_SENSOR_ID, ASUS_LS_SWITCH_PATH, I18N_NOOP("Light Sensor"));
 		
 		_hasLightSensor = true;
+		
+		if (_modList && _modList->config)
+		{
+			QStringList list;
+			
+			list.append(LAPSUS_FEAT_ON);
+			list.append(LAPSUS_FEAT_OFF);
+			
+			_modList->config->subscribeEntry(
+				_modulePrefix,
+				ASUS_CONF_LIGHT_SENSOR_HK_CIRC,
+				I18N_NOOP("Controls if HotKey controlled LightSensor level list is circular"),
+				list,
+				LAPSUS_FEAT_ON);
+				
+		}
 	}
 
 	path = ASUS_GET_BACKLIGHT_PATH;
@@ -152,6 +171,22 @@ void SysAsus::detect()
 					_maxBacklight = 15;
 				
 				_hasBacklight = true;
+				
+				if (_modList && _modList->config)
+				{
+					QStringList list;
+					
+					list.append(LAPSUS_FEAT_ON);
+					list.append(LAPSUS_FEAT_OFF);
+					
+					_modList->config->subscribeEntry(
+						_modulePrefix,
+						ASUS_CONF_BACKLIGHT_HK_CIRC,
+						I18N_NOOP("Controls if HotKey controlled brightness level list is circular"),
+						list,
+						LAPSUS_FEAT_ON);
+						
+				}
 			}
 			else
 			{
@@ -287,14 +322,19 @@ bool SysAsus::handleACPIEvent(const QString &group, const QString &action,
 			if (id < 0x20) nVal = id - 0x10;
 			else nVal = id - 0x20;
 	
-			// UP: 0->1->...->max->0->1->...
-			// DOWN: max->max-1->...->1->0->max->max-1->...
-			// In case one of the buttons (up/down) doesn't work we
-			// are still able to choose any of possible values
-			if (nVal == 0 && oVal == nVal)
-				nVal = _maxLightSensor;
-			else if (nVal == (int) _maxLightSensor && oVal == nVal)
-				nVal = 0;
+			if (!_modList || !_modList->config
+			|| _modList->config->getEntryValue(_modulePrefix,
+					ASUS_CONF_LIGHT_SENSOR_HK_CIRC) == LAPSUS_FEAT_ON)
+			{
+				// UP: 0->1->...->max->0->1->...
+				// DOWN: max->max-1->...->1->0->max->max-1->...
+				// In case one of the buttons (up/down) doesn't work we
+				// are still able to choose any of possible values
+				if (nVal == 0 && oVal == nVal)
+					nVal = _maxLightSensor;
+				else if (nVal == (int) _maxLightSensor && oVal == nVal)
+					nVal = 0;
+			}
 	
 			// We force the method to send a signal with current value - the same reason
 			// why we do that with brightness.
@@ -322,14 +362,19 @@ bool SysAsus::handleACPIEvent(const QString &group, const QString &action,
 			if (id < 0x20) nVal = id - 0x10;
 			else nVal = id - 0x20;
 	
-			// UP: 0->1->...->max->0->1->...
-			// DOWN: max->max-1->...->1->0->max->max-1->...
-			// In case one of the buttons (up/down) doesn't work we
-			// are still able to choose any of possible values
-			if (nVal == 0 && _lastBacklightHotkeySet == nVal)
-				nVal = _maxBacklight;
-			else if (nVal == (int) _maxBacklight && _lastBacklightHotkeySet == nVal)
-				nVal = 0;
+			if (!_modList || !_modList->config
+			|| _modList->config->getEntryValue(_modulePrefix,
+					ASUS_CONF_BACKLIGHT_HK_CIRC) == LAPSUS_FEAT_ON)
+			{
+				// UP: 0->1->...->max->0->1->...
+				// DOWN: max->max-1->...->1->0->max->max-1->...
+				// In case one of the buttons (up/down) doesn't work we
+				// are still able to choose any of possible values
+				if (nVal == 0 && _lastBacklightHotkeySet == nVal)
+					nVal = _maxBacklight;
+				else if (nVal == (int) _maxBacklight && _lastBacklightHotkeySet == nVal)
+					nVal = 0;
+			}
 	
 			// Backlight is changed by a hotkey - no risk of infinite loop
 			// of signals - we force setBacklight to emit a signal with
@@ -481,10 +526,19 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal, bool testWrit
 
 		uint oVal = readIdUInt(id);
 
-		if (oVal == uVal || testWrite) return true;
-
+		if (testWrite) return true;
+		
 		if (writeIdUInt(id, uVal))
-			dbusSignalFeatureChanged(id, nVal);
+		{
+			/*
+			 * We perform write even if it is already set to desired value.
+			 * Sometimes old status might not reflect real hardware state.
+			 * This way we make sure it is set to correct state.
+			 * But we don't want to send info if we don't think it has changed...
+			 */
+			if (oVal != uVal)
+				dbusSignalFeatureChanged(id, nVal);
+		}
 		
 		return true;
 	}

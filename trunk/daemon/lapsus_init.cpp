@@ -120,7 +120,7 @@ QString LapsusInit::featureName(const QString &id)
 	return QString();
 }
 
-bool LapsusInit::featureWrite(const QString &id, const QString &nVal, bool testWrite)
+bool LapsusInit::featureWrite(const QString &id, const QString &nVal, bool)
 {
 	if (nVal.length() < 1)
 	{

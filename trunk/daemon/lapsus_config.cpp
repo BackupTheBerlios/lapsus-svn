@@ -72,8 +72,6 @@ void LapsusConfig::saveEntries()
 {
 	if (!_settings) return;
 	
-	LapsusConfigEntry *ent;
-	
 	_settings->resetGroup();
 	
 	QStringList keys = _settings->entryList(LAPSUSD_CONFIG_GROUP);
@@ -84,6 +82,8 @@ void LapsusConfig::saveEntries()
 	{
 		_settings->removeEntry(*it);
 	}
+	
+	LapsusConfigEntry *ent;
 	
 	for (ent = _entries.first(); ent; ent = _entries.next())
 	{
@@ -104,7 +104,8 @@ void LapsusConfig::saveEntries()
 	_settings->endGroup();
 }
 
-void LapsusConfig::subscribeEntry(const char *prefix, const QString &id, const QStringList &args, const QString &defValue)
+void LapsusConfig::subscribeEntry(const char *prefix, const QString &id, const char *name,
+			const QStringList &args, const QString &defValue)
 {
 	QString str = QString("%1.%2").arg(prefix).arg(id);
 	
@@ -124,6 +125,7 @@ void LapsusConfig::subscribeEntry(const char *prefix, const QString &id, const Q
 	ent->entrySubscribed = true;
 	
 	/* Those are not saved in configuration file */
+	ent->name = name;
 	ent->args = args;
 	ent->defValue = defValue;
 }
@@ -141,22 +143,88 @@ QString LapsusConfig::getEntryValue(const char *prefix, const QString &id)
 
 QString LapsusConfig::featureRead(const QString &id)
 {
-	return "";
+	LapsusConfigEntry *ent = _ids.find(id);
+	
+	if (ent == 0) return QString();
+	
+	return ent->curValue;
 }
 
-bool LapsusConfig::featureWrite(const QString &id, const QString &nVal, bool testWrite)
+QString LapsusConfig::featureName(const QString &id)
 {
+	LapsusConfigEntry *ent = _ids.find(id);
+	
+	if (ent == 0) return QString();
+	
+	return ent->name;
+}
+
+bool LapsusConfig::checkArg(const QString &val, const QStringList &args)
+{
+	int minV, maxV;
+	int intVal;
+	bool isInt = false;
+	
+	intVal = val.toInt(&isInt);
+	
+	for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it )
+	{
+		if (val == *it) return true;
+		
+		if (isInt)
+		{
+			QStringList list = QStringList::split(':', *it);
+	
+			if (list.size() == 2)
+			{
+				minV = list[0].toInt();
+				maxV = list[1].toInt();
+	
+				if ( minV <= intVal && intVal <= maxV) return true;
+			}
+		}
+	}
+	
 	return false;
+}
+
+bool LapsusConfig::featureWrite(const QString &id, const QString &nVal, bool)
+{
+	LapsusConfigEntry *ent = _ids.find(id);
+	
+	if (ent == 0
+		|| ent->args.count() < 1
+		|| !checkArg(nVal, ent->args))
+	{
+		return false;
+	}
+	
+	ent->curValue = nVal;
+	
+	return true;
 }
 
 QStringList LapsusConfig::featureArgs(const QString &id)
 {
-	return QStringList();
+	LapsusConfigEntry *ent = _ids.find(id);
+	
+	if (ent == 0) return QStringList();
+	
+	return ent->args;
 }
 
 QStringList LapsusConfig::featureList()
 {
-	return QStringList();
+	QStringList ret;
+	
+	LapsusConfigEntry *ent;
+	
+	for (ent = _entries.first(); ent; ent = _entries.next())
+	{
+		if (ent->entrySubscribed) ret.append(ent->id);
+	}
+	
+	return ret;
 }
 
 bool LapsusConfig::hardwareDetected()
