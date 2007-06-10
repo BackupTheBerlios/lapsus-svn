@@ -390,12 +390,12 @@ QString SysIBM::featureRead(const QString &id)
 	return "";
 }
 
-bool SysIBM::featureWrite(const QString &id, const QString &nVal, bool testWrite)
+bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 {
 	QString oVal = featureRead(id);
 
-	printf("Feature Write: '%s'\nOld value was: '%s'\nNew value is: '%s' [Test: %d]\n\n",
-		id.ascii(), oVal.ascii(), nVal.ascii(), testWrite);
+	printf("Feature Write: '%s'\nOld value was: '%s'\nNew value is: '%s'\n\n",
+		id.ascii(), oVal.ascii(), nVal.ascii());
 
 	if (oVal.length() < 1) return false;
 
@@ -410,7 +410,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, bool testWrite
 
 		QString lvl = QString::number(n);
 
-		if (oVal == lvl || testWrite) return true;
+		if (oVal == lvl) return true;
 
 		if (dbgWritePathString(IBM_BACKLIGHT_PATH, QString("level %1").arg(lvl)))
 			dbusSignalFeatureChanged(id, lvl);
@@ -429,7 +429,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, bool testWrite
 
 		QString lvl = QString::number(n);
 
-		if (oVal == lvl || testWrite) return true;
+		if (oVal == lvl) return true;
 
 		if (dbgWritePathString(IBM_VOLUME_PATH, QString("level %1").arg(lvl)))
 			dbusSignalFeatureChanged(id, lvl);
@@ -439,8 +439,6 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, bool testWrite
 
 	if (id == IBM_LIGHT_ID)
 	{
-		if (testWrite) return true;
-		
 		bool val;
 
 		if (nVal == LAPSUS_FEAT_ON) val = true;
@@ -457,8 +455,6 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, bool testWrite
 
 	if (id == LAPSUS_FEAT_BLUETOOTH_ID)
 	{
-		if (testWrite) return true;
-		
 		bool val;
 
 		if (nVal == LAPSUS_FEAT_ON) val = true;
@@ -477,8 +473,6 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, bool testWrite
 
 	if (isDisplayFeature(id, tmp))
 	{
-		if (testWrite) return true;
-		
 		bool val, res = false;
 
 		if (nVal == LAPSUS_FEAT_ON) val = true;
@@ -497,8 +491,6 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal, bool testWrite
 
 	if (isLEDFeature(id, tmp))
 	{
-		if (testWrite) return true;
-		
 		int val;
 
 		if (nVal == LAPSUS_FEAT_ON) val = 2;

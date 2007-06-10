@@ -46,7 +46,7 @@ class SysAsus : public SysBackend
 		QString featureName(const QString &id);
 		
 		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal, bool testWrite = false);
+		bool featureWrite(const QString &id, const QString &nVal);
 
 		bool hardwareDetected();
 

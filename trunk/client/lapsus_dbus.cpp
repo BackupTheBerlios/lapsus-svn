@@ -25,8 +25,13 @@
 
 #define TIMER_INTERVAL				2000
 
+LapsusDBus* LapsusDBus::globalDBusObject = 0;
+int LapsusDBus::dbusRefs = 0;
+
 LapsusDBus::LapsusDBus() : _proxy(0), _isValid(false), _timerId(0)
 {
+	printf("DBus constructed\n");
+	
 	restartDBus();
 
 	if (!_isValid)
@@ -37,9 +42,42 @@ LapsusDBus::LapsusDBus() : _proxy(0), _isValid(false), _timerId(0)
 
 LapsusDBus::~LapsusDBus()
 {
+	printf("DBus destructed\n");
+	
 	if (_proxy)
 	{
 		delete _proxy;
+	}
+}
+
+LapsusDBus* LapsusDBus::get()
+{
+	if (!globalDBusObject)
+	{
+		create();
+	}
+	
+	return globalDBusObject;
+}
+
+void LapsusDBus::create()
+{
+	if (!globalDBusObject)
+	{
+		globalDBusObject = new LapsusDBus();
+	}
+	
+	++dbusRefs;
+}
+
+void LapsusDBus::remove()
+{
+	--dbusRefs;
+	
+	if (dbusRefs < 1 && globalDBusObject)
+	{
+		delete globalDBusObject;
+		globalDBusObject = 0;
 	}
 }
 

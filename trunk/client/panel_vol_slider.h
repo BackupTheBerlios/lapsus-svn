@@ -30,7 +30,7 @@ class LapsusPanelVolSlider : public LapsusPanelSlider
 	public:
 		LapsusPanelVolSlider(const QString &id,
 			Qt::Orientation orient, QWidget *parent,
-			LapsusDBus *dbus, KConfig *cfg);
+			KConfig *cfg);
 		~LapsusPanelVolSlider();
 
 		virtual bool eventFilter( QObject* obj, QEvent* e );

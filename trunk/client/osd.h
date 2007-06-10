@@ -48,9 +48,6 @@ class LapsusOSD : public QWidget
 		int screen() const { return _screen; }
 		const QPoint& position() const { return _position; }
 
-		void readSettings( KConfigBase* );
-		void saveSettings( KConfigBase* );
-
 	public slots:
 		void setScreen( int );
 		void setText( const QString& );
@@ -63,6 +60,8 @@ class LapsusOSD : public QWidget
 		*/
 		void setPosition( const QPoint& );
 
+		void setDraggingEnabled(bool drag);
+		
 		void show();
 
 	protected:
@@ -90,6 +89,7 @@ class LapsusOSD : public QWidget
 		QPoint _dragOffset;
 		int _screen;
 		QPoint _position;
+		bool _draggingEnabled;
 };
 
 #endif

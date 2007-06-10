@@ -26,6 +26,9 @@
 #include <kpanelapplet.h>
 #include <kactioncollection.h>
 #include <kpopupmenu.h>
+#include <kaboutdata.h>
+#include <kaboutapplication.h>
+#include <kbugreport.h>
 
 #include "panel_main.h"
 
@@ -53,9 +56,11 @@ class LapsusApplet : public KPanelApplet
 	private:
 		QBoxLayout *_layout;
 		LapsusPanelMain *_mainWidget;
-		LapsusDBus _dbus;
 		Qt::Orientation _orientation;
-
+		KAboutApplication *_aboutDlg;
+		KBugReport *_bugDlg;
+		KAboutData _aboutData;
+		
 		void changeOrientation(Qt::Orientation orientation);
 };
 

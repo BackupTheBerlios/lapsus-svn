@@ -23,11 +23,13 @@
 #include <qtooltip.h>
 
 #include "lapsus.h"
+#include "lapsus_dbus.h"
+
 #include "panel_slider.h"
 
 LapsusPanelSlider::LapsusPanelSlider( const QString &id,
-	Qt::Orientation orientation, QWidget *parent, LapsusDBus *dbus, KConfig *cfg) :
-		LapsusPanelWidget(id, orientation, parent, dbus, cfg),
+	Qt::Orientation orientation, QWidget *parent, KConfig *cfg) :
+		LapsusPanelWidget(id, orientation, parent, cfg),
 		_layout(0), _slider(0), _iconLabel(0),
 		_hasDBus(false), _isValid(false), _dontSendChange(false)
 {
@@ -49,9 +51,9 @@ LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 	{
 		_featureId = _cfg->readEntry("feature_id");
 
-		sliderTip = _dbus->getFeatureName(_featureId);
+		sliderTip = LapsusDBus::get()->getFeatureName(_featureId);
 
-		QStringList list = _dbus->getFeatureArgs(_featureId);
+		QStringList list = LapsusDBus::get()->getFeatureArgs(_featureId);
 
 		int minV, maxV;
 
@@ -65,7 +67,7 @@ LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 			maxSlider = maxV;
 		}
 
-		sliderVal = _dbus->getFeature(_featureId).toInt();
+		sliderVal = LapsusDBus::get()->getFeature(_featureId).toInt();
 	}
 
 	int idx = loadNewAutoIcon(10);
@@ -109,10 +111,10 @@ LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 	connect ( _slider, SIGNAL(valueChanged(int)),
 			this, SLOT(sliderValueChanged(int)) );
 
-	connect ( _dbus, SIGNAL(stateChanged(bool)),
+	connect ( LapsusDBus::get(), SIGNAL(stateChanged(bool)),
 			this, SLOT(dbusStateChanged(bool)) );
 
-	connect(_dbus, SIGNAL(featureChanged(const QString &, const QString &)),
+	connect( LapsusDBus::get(), SIGNAL(featureChanged(const QString &, const QString &)),
 			this, SLOT(featureChanged(const QString &, const QString &)));
 
 	_layout->add(_slider);
@@ -165,9 +167,9 @@ bool LapsusPanelSlider::supportsArgs(const QStringList & args)
 
 void LapsusPanelSlider::sliderValueChanged(int nValue)
 {
-	if (!_dbus || !_hasDBus || _dontSendChange) return;
+	if (!_hasDBus || _dontSendChange) return;
 
-	_dbus->setFeature(_featureId, QString::number(nValue));
+	LapsusDBus::get()->setFeature(_featureId, QString::number(nValue));
 }
 
 void LapsusPanelSlider::featureChanged(const QString &id, const QString &val)

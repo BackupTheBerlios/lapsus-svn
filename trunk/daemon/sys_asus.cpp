@@ -494,7 +494,7 @@ bool SysAsus::setLightSensorLevel(uint uVal, bool forceSignal)
 	return true;
 }
 
-bool SysAsus::featureWrite(const QString &id, const QString &nVal, bool testWrite)
+bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 {
 	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
 	{
@@ -502,7 +502,6 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal, bool testWrit
 		uint uVal = nVal.toUInt(&res);
 
 		if (!res) return false;
-		if (testWrite) return true;
 		
 		return setBacklight(uVal);
 	}
@@ -512,7 +511,6 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal, bool testWrit
 		uint uVal = nVal.toUInt(&res);
 
 		if (!res) return false;
-		if (testWrite) return true;
 		
 		return setLightSensorLevel(uVal);
 	}
@@ -526,8 +524,6 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal, bool testWrit
 
 		uint oVal = readIdUInt(id);
 
-		if (testWrite) return true;
-		
 		if (writeIdUInt(id, uVal))
 		{
 			/*
@@ -573,7 +569,7 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal, bool testWrit
 			sVal = oVal & ~(1 << offs);
 		}
 
-		if (sVal == oVal || testWrite) return true;
+		if (sVal == oVal) return true;
 
 		if (writePathUInt(ASUS_DISPLAY_PATH, sVal))
 			dbusSignalFeatureChanged(id, nVal);

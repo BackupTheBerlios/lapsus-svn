@@ -26,16 +26,16 @@
 #include <kactioncollection.h>
 #include <kpopupmenu.h>
 
-#include "lapsus_dbus.h"
 #include "flowlayout.h"
 #include "osd.h"
+#include "conf_dialog.h"
 
 class LapsusPanelMain : public QWidget
 {
 	Q_OBJECT
 
 	public:
-		LapsusPanelMain(QWidget *parent, LapsusDBus *dbus,
+		LapsusPanelMain(QWidget *parent,
 			Qt::Orientation orientation);
 
 		virtual ~LapsusPanelMain();
@@ -50,8 +50,6 @@ class LapsusPanelMain : public QWidget
 		void appletPreferences();
 
 	protected:
-		LapsusDBus *_dbus;
-
 		void mousePressEvent( QMouseEvent * );
 		void timerEvent( QTimerEvent * );
 
@@ -71,6 +69,7 @@ class LapsusPanelMain : public QWidget
 		Qt::Orientation _orientation;
 		LapsusOSD* _osd;
 		int _osdTimer;
+		LapsusConfDialog *_confDlg;
 
 		void saveConfig();
 		void loadConfig();

@@ -39,7 +39,7 @@ class LapsusSynaptics : public LapsusModule
 		QStringList featureList();
 		QStringList featureArgs(const QString &id);
 		QString featureRead(const QString &id);
-		bool featureWrite(const QString &id, const QString &nVal, bool testWrite = false);
+		bool featureWrite(const QString &id, const QString &nVal);
 		
 		bool getState();
 		bool setState(bool nState, bool hardwareTrig = false);

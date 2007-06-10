@@ -33,7 +33,7 @@ class LapsusPanelButton : public LapsusPanelWidget
 	public:
 		LapsusPanelButton(const QString &id,
 			Qt::Orientation orientation, QWidget *parent,
-			LapsusDBus *dbus, KConfig *cfg);
+			KConfig *cfg);
 		~LapsusPanelButton();
 
 		QSize sizeHint() const;

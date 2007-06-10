@@ -18,68 +18,40 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "panel_widget.h"
-#include "panel_slider.h"
-#include "panel_vol_slider.h"
-#include "panel_button.h"
-#include "lapsus_dbus.h"
+#include <qtabwidget.h>
+#include <qlistbox.h>
+#include <klocale.h>
+#include <kactionselector.h>
 
-LapsusPanelWidget::LapsusPanelWidget( const QString &id,
-			Qt::Orientation orientation, QWidget *parent,
-			KConfig *cfg):
-	QWidget( parent, id ), LapsusIcons(id, cfg),
-	_cfg(cfg), _panelOrientation( orientation ), _id( id )
+#include "lapsus_conf.h"
+
+LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
+	LapsusConfBase(parent), _osd(0), _cfg(cfg)
 {
-	setBackgroundMode(X11ParentRelative);
+	connect( tabsConf, SIGNAL( currentChanged(QWidget *) ), this, SLOT( tabChanged(QWidget *) ) );
+	
+	
 }
 
-LapsusPanelWidget::~LapsusPanelWidget()
+LapsusConf::~LapsusConf()
 {
 }
 
-LapsusPanelWidget* LapsusPanelWidget::newAppletwidget(
-	const QString &id, Qt::Orientation orientation,
-	QWidget *parent, KConfig *cfg)
+void LapsusConf::tabChanged(QWidget *tab)
 {
-	if (id.length() < 1) return 0;
-
-	cfg->setGroup(id.lower());
-
-	if (!cfg->hasKey("widget_type")
-		|| !cfg->hasKey("feature_id"))
+	if (tab == OSDPage)
 	{
-		return 0;
+		if (!_osd)
+		{
+			_osd = new LapsusOSD(this);
+			_osd->setText(i18n("Drag OSD to desired position"));
+			_osd->setDraggingEnabled(true);
+		}
+	
+		_osd->show();
 	}
-
-	QString wType = cfg->readEntry("widget_type");
-	QString fId = cfg->readEntry("feature_id");
-
-	if (fId.length() < 1
-		|| LapsusDBus::get()->getFeatureName(fId).length() < 1
-		|| LapsusDBus::get()->getFeatureArgs(fId).size() < 1)
+	else
 	{
-		return 0;
+		if (_osd) _osd->hide();
 	}
-
-	if (wType == "vol_slider")
-	{
-		return new LapsusPanelVolSlider(id.lower(), orientation,
-				parent, cfg);
-	}
-	else if (wType == "slider")
-	{
-		return new LapsusPanelSlider(id.lower(), orientation,
-				parent, cfg);
-	}
-	else if (wType == "button")
-	{
-		return new LapsusPanelButton(id.lower(), orientation,
-				parent, cfg);
-	}
-
-	return 0;
-}
-
-void LapsusPanelWidget::resizeEvent( QResizeEvent * )
-{
 }

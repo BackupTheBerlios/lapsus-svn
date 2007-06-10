@@ -28,7 +28,6 @@
 #include <kaction.h>
 #include <kconfig.h>
 
-#include "lapsus_dbus.h"
 #include "lapsus_icons.h"
 
 class LapsusActionButton : public KAction, protected LapsusIcons
@@ -36,12 +35,11 @@ class LapsusActionButton : public KAction, protected LapsusIcons
 	Q_OBJECT
 
 	public:
-		LapsusActionButton(const QString &id, LapsusDBus *dbus, KConfig *cfg,
+		LapsusActionButton(const QString &id, KConfig *cfg,
 			QObject *parent = 0, const KShortcut &cut = KShortcut());
 		virtual ~LapsusActionButton();
 
 	private:
-		LapsusDBus *_dbus;
 		KConfig *_cfg;
 		QString _id;
 		QString _name;

@@ -45,7 +45,7 @@ class LapsusModule: public QObject
 		virtual QStringList featureArgs(const QString &id) = 0;
 		
 		virtual QString featureRead(const QString &id) = 0;
-		virtual bool featureWrite(const QString &id, const QString &nVal, bool testWrite = false) = 0;
+		virtual bool featureWrite(const QString &id, const QString &nVal) = 0;
 		
 		virtual QString featureName(const QString &id);
 

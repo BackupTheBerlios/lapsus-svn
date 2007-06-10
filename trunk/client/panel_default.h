@@ -32,7 +32,7 @@ class LapsusPanelDefault : public LapsusPanelWidget
 	public:
 		LapsusPanelDefault(const QString &id,
 			Qt::Orientation orientation, QWidget *parent,
-			LapsusDBus *dbus, KConfig *cfg);
+			KConfig *cfg);
 		~LapsusPanelDefault();
 
 		QSize sizeHint() const;

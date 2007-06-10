@@ -26,7 +26,6 @@
 #include <qlayout.h>
 #include <qwidget.h>
 
-#include "lapsus_dbus.h"
 #include "lapsus_icons.h"
 
 class LapsusPanelWidget : public QWidget, protected LapsusIcons
@@ -36,16 +35,15 @@ class LapsusPanelWidget : public QWidget, protected LapsusIcons
 	public:
 		LapsusPanelWidget(const QString &id,
 			Qt::Orientation orientation, QWidget *parent,
-			LapsusDBus *dbus, KConfig *cfg);
+			KConfig *cfg);
 
 		virtual ~LapsusPanelWidget();
 
 		static LapsusPanelWidget* newAppletwidget(
 			const QString &id, Qt::Orientation orientation,
-			QWidget *parent, LapsusDBus *dbus, KConfig *cfg);
+			QWidget *parent, KConfig *cfg);
 
 	protected:
-		LapsusDBus *_dbus;
 		KConfig *_cfg;
 		Qt::Orientation _panelOrientation;
 		QString _id;

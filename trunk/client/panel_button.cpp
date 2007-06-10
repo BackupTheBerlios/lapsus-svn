@@ -23,11 +23,13 @@
 #include <qtooltip.h>
 
 #include "lapsus.h"
+#include "lapsus_dbus.h"
+
 #include "panel_button.h"
 
 LapsusPanelButton::LapsusPanelButton( const QString &id,
-	Qt::Orientation orientation, QWidget *parent, LapsusDBus *dbus, KConfig *cfg) :
-		LapsusPanelWidget(id, orientation, parent, dbus, cfg),
+	Qt::Orientation orientation, QWidget *parent, KConfig *cfg) :
+		LapsusPanelWidget(id, orientation, parent, cfg),
 		_layout(0), _iconLabel(0), _hasDBus(false), _isValid(false)
 {
 	_layout = new QHBoxLayout( this );
@@ -41,9 +43,9 @@ LapsusPanelButton::LapsusPanelButton( const QString &id,
 	{
 		_featureId = _cfg->readEntry("feature_id");
 
-		tip = _dbus->getFeatureName(_featureId);
+		tip = LapsusDBus::get()->getFeatureName(_featureId);
 
-		_vals = _dbus->getFeatureArgs(_featureId);
+		_vals = LapsusDBus::get()->getFeatureArgs(_featureId);
 
 		if (_vals.size() > 1)
 		{
@@ -58,7 +60,7 @@ LapsusPanelButton::LapsusPanelButton( const QString &id,
 			}
 		}
 
-		_curVal = _dbus->getFeature(_featureId);
+		_curVal = LapsusDBus::get()->getFeature(_featureId);
 	}
 
 	setBackgroundMode(X11ParentRelative);
@@ -79,10 +81,10 @@ LapsusPanelButton::LapsusPanelButton( const QString &id,
 
 	checkCurVal();
 
-	connect ( _dbus, SIGNAL(stateChanged(bool)),
+	connect ( LapsusDBus::get(), SIGNAL(stateChanged(bool)),
 			this, SLOT(dbusStateChanged(bool)) );
 
-	connect(_dbus, SIGNAL(featureChanged(const QString &, const QString &)),
+	connect( LapsusDBus::get(), SIGNAL(featureChanged(const QString &, const QString &)),
 			this, SLOT(featureChanged(const QString &, const QString &)));
 
 	_layout->activate();
@@ -194,7 +196,7 @@ bool LapsusPanelButton::eventFilter( QObject* obj, QEvent* e )
 			else
 				nVal = *it;
 
-			_dbus->setFeature(_featureId, nVal);
+			LapsusDBus::get()->setFeature(_featureId, nVal);
 		}
 	}
 

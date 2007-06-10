@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "lapsus_init.h"
+#include "lapsus_validator.h"
 #include "lapsus.h"
 
 #define LAPSUSD_INIT_GROUP			"/lapsusd/init"
@@ -120,7 +121,7 @@ QString LapsusInit::featureName(const QString &id)
 	return QString();
 }
 
-bool LapsusInit::featureWrite(const QString &id, const QString &nVal, bool)
+bool LapsusInit::featureWrite(const QString &id, const QString &nVal)
 {
 	if (nVal.length() < 1)
 	{
@@ -136,8 +137,7 @@ bool LapsusInit::featureWrite(const QString &id, const QString &nVal, bool)
 			
 			if (_modList->findModule(&mod, modId) && mod)
 			{
-				/* Test write. Some modules may respect test flag, some may not ;) */
-				if (mod->featureWrite(modId, nVal, true))
+				if (LapsusValidator(mod->featureArgs(modId)).isValid(nVal))
 				{
 					_initVals[id] = nVal;
 					return true;

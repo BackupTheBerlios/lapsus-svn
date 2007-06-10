@@ -21,11 +21,13 @@
 #include <qwidget.h>
 
 #include "lapsus.h"
+#include "lapsus_dbus.h"
+
 #include "panel_vol_slider.h"
 
 LapsusPanelVolSlider::LapsusPanelVolSlider( const QString &id,
-	Qt::Orientation orient, QWidget *parent, LapsusDBus *dbus, KConfig *cfg) :
-		LapsusPanelSlider(id, orient, parent, dbus, cfg)
+	Qt::Orientation orient, QWidget *parent, KConfig *cfg) :
+		LapsusPanelSlider(id, orient, parent, cfg)
 {
 }
 
@@ -97,11 +99,11 @@ bool LapsusPanelVolSlider::eventFilter( QObject* obj, QEvent* e )
 
 		if (qme->button() == Qt::MidButton)
 		{
-			if (_dbus && _hasDBus)
+			if (_hasDBus)
 			{
 				_slider->setGray(!_slider->gray());
 				
-				_dbus->setFeature(_featureId, (_slider->gray())?LAPSUS_FEAT_MUTE:LAPSUS_FEAT_UNMUTE);
+				LapsusDBus::get()->setFeature(_featureId, (_slider->gray())?LAPSUS_FEAT_MUTE:LAPSUS_FEAT_UNMUTE);
 			}
 			
 			return true;

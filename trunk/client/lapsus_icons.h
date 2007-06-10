@@ -27,8 +27,6 @@
 
 #include <kconfig.h>
 
-#include "lapsus_dbus.h"
-
 class LapsusIcons
 {
 	public:

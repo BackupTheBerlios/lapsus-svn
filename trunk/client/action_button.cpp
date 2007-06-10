@@ -19,13 +19,14 @@
  ***************************************************************************/
 
 #include "lapsus.h"
+#include "lapsus_dbus.h"
 
 #include "action_button.h"
 
-LapsusActionButton::LapsusActionButton(const QString &id, LapsusDBus *dbus, KConfig *cfg,
+LapsusActionButton::LapsusActionButton(const QString &id, KConfig *cfg,
 			QObject *parent, const KShortcut &cut):
 	KAction(id, cut, 0, 0, parent, id), LapsusIcons(id, cfg),
-	_dbus(dbus),_cfg(cfg), _id(id), _hasDBus(false), _isValid(false)
+	_cfg(cfg), _id(id), _hasDBus(false), _isValid(false)
 {
 	_cfg->setGroup(id);
 
@@ -33,14 +34,14 @@ LapsusActionButton::LapsusActionButton(const QString &id, LapsusDBus *dbus, KCon
 	{
 		_featureId = _cfg->readEntry("feature_id");
 
-		_name = _dbus->getFeatureName(_featureId);
+		_name = LapsusDBus::get()->getFeatureName(_featureId);
 
 		if (_name.length() > 0)
 		{
 			setToolTip(_name);
 		}
 
-		_vals = _dbus->getFeatureArgs(_featureId);
+		_vals = LapsusDBus::get()->getFeatureArgs(_featureId);
 
 		if (_vals.size() > 1)
 		{
@@ -55,15 +56,15 @@ LapsusActionButton::LapsusActionButton(const QString &id, LapsusDBus *dbus, KCon
 			}
 		}
 
-		_curVal = _dbus->getFeature(_featureId);
+		_curVal = LapsusDBus::get()->getFeature(_featureId);
 	}
 
 	checkCurVal();
 
-	connect ( _dbus, SIGNAL(stateChanged(bool)),
+	connect ( LapsusDBus::get(), SIGNAL(stateChanged(bool)),
 			this, SLOT(dbusStateChanged(bool)) );
 
-	connect(_dbus, SIGNAL(featureChanged(const QString &, const QString &)),
+	connect( LapsusDBus::get(), SIGNAL(featureChanged(const QString &, const QString &)),
 			this, SLOT(featureChanged(const QString &, const QString &)));
 
 	connect(this, SIGNAL(activated()),
@@ -121,5 +122,5 @@ void LapsusActionButton::actionClicked()
 	else
 		nVal = *it;
 
-	_dbus->setFeature(_featureId, nVal);
+	LapsusDBus::get()->setFeature(_featureId, nVal);
 }

@@ -49,6 +49,10 @@ class LapsusDBus : public QObject
 		QStringList getFeatureArgs(const QString &id);
 		QString getFeature(const QString &id);
 
+		static LapsusDBus* get();
+		static void create();
+		static void remove();
+		
 	protected:
 		void timerEvent( QTimerEvent * );
 
@@ -61,7 +65,10 @@ class LapsusDBus : public QObject
 		QMap<QString, QString> _featureName;
 		QMap<QString, QStringList> _featureArgs;
 		int _timerId;
-
+		
+		static int dbusRefs;
+		static LapsusDBus* globalDBusObject;
+		
 		void connError();
 		bool restartDBus();
 		void initParams();

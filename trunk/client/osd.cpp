@@ -47,7 +47,8 @@ LapsusOSD::LapsusOSD( QWidget* parent, const char* name )
 				WStyle_Customize | WX11BypassWM |
 				WStyle_StaysOnTop ),
 	_dirty(true), _dragging(false), _screen(0),
-	_position(s_outerMargin, s_outerMargin)
+	_position(s_outerMargin, s_outerMargin),
+	_draggingEnabled(false)
 {
 	setFocusPolicy( NoFocus );
 	setBackgroundMode( NoBackground );
@@ -204,25 +205,30 @@ void LapsusOSD::paintEvent( QPaintEvent* )
 
 void LapsusOSD::mousePressEvent( QMouseEvent* e )
 {
-	/*
-	// TODO Don't allow for this now. Later it should be possible
-	// to drag, but only during configuration - just like Amarok does.
-	_dragOffset = e->pos();
-
-	if( e->button() == LeftButton && !_dragging )
+	if (_draggingEnabled)
 	{
-		grabMouse( KCursor::sizeAllCursor() );
-		_dragging = true;
+		_dragOffset = e->pos();
+		
+		if( e->button() == LeftButton && !_dragging )
+		{
+			grabMouse( KCursor::sizeAllCursor() );
+			_dragging = true;
+		}
+		/*
+		else if( e->button() == RightButton )
+		{
+			KPopupMenu m;
+			if( m.insertItem( i18n("Hide OSD") ) == m.exec( e->globalPos() ) )
+				hide();
+		}
+		*/
 	}
-	else if( e->button() == RightButton )
-	{
-		KPopupMenu m;
-		if( m.insertItem( i18n("Hide OSD") ) == m.exec( e->globalPos() ) )
-			hide();
-	}
-	*/
 }
 
+void LapsusOSD::setDraggingEnabled(bool drag)
+{
+	_draggingEnabled = drag;
+}
 
 void LapsusOSD::mouseReleaseEvent( QMouseEvent* )
 {
@@ -232,7 +238,6 @@ void LapsusOSD::mouseReleaseEvent( QMouseEvent* )
 		releaseMouse();
 	}
 }
-
 
 void LapsusOSD::mouseMoveEvent( QMouseEvent* e )
 {
@@ -279,27 +284,4 @@ QPoint LapsusOSD::fixupPosition( const QPoint& pp )
 	p += screen.topLeft();
 
 	return p;
-}
-
-void LapsusOSD::readSettings( KConfigBase* c )
-{
-	QString oldGroup = c->group();
-	c->setGroup( "applet_osd" );
-
-	setPosition( c->readPointEntry( "position", 0 ) );
-	setScreen( c->readNumEntry( "screen", 0 ) );
-
-	c->setGroup( oldGroup );
-}
-
-
-void LapsusOSD::saveSettings( KConfigBase* c )
-{
-	QString oldGroup = c->group();
-	c->setGroup( "applet_osd" );
-
-	c->writeEntry( "position", _position );
-	c->writeEntry( "screen", _screen );
-
-	c->setGroup( oldGroup );
 }

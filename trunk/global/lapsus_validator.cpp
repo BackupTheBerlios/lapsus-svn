@@ -18,68 +18,41 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "panel_widget.h"
-#include "panel_slider.h"
-#include "panel_vol_slider.h"
-#include "panel_button.h"
-#include "lapsus_dbus.h"
+#include "lapsus_validator.h"
 
-LapsusPanelWidget::LapsusPanelWidget( const QString &id,
-			Qt::Orientation orientation, QWidget *parent,
-			KConfig *cfg):
-	QWidget( parent, id ), LapsusIcons(id, cfg),
-	_cfg(cfg), _panelOrientation( orientation ), _id( id )
-{
-	setBackgroundMode(X11ParentRelative);
-}
-
-LapsusPanelWidget::~LapsusPanelWidget()
+LapsusValidator::LapsusValidator(const QStringList &validArgs): _valid(validArgs)
 {
 }
 
-LapsusPanelWidget* LapsusPanelWidget::newAppletwidget(
-	const QString &id, Qt::Orientation orientation,
-	QWidget *parent, KConfig *cfg)
+LapsusValidator::~LapsusValidator()
 {
-	if (id.length() < 1) return 0;
-
-	cfg->setGroup(id.lower());
-
-	if (!cfg->hasKey("widget_type")
-		|| !cfg->hasKey("feature_id"))
-	{
-		return 0;
-	}
-
-	QString wType = cfg->readEntry("widget_type");
-	QString fId = cfg->readEntry("feature_id");
-
-	if (fId.length() < 1
-		|| LapsusDBus::get()->getFeatureName(fId).length() < 1
-		|| LapsusDBus::get()->getFeatureArgs(fId).size() < 1)
-	{
-		return 0;
-	}
-
-	if (wType == "vol_slider")
-	{
-		return new LapsusPanelVolSlider(id.lower(), orientation,
-				parent, cfg);
-	}
-	else if (wType == "slider")
-	{
-		return new LapsusPanelSlider(id.lower(), orientation,
-				parent, cfg);
-	}
-	else if (wType == "button")
-	{
-		return new LapsusPanelButton(id.lower(), orientation,
-				parent, cfg);
-	}
-
-	return 0;
 }
 
-void LapsusPanelWidget::resizeEvent( QResizeEvent * )
+bool LapsusValidator::isValid(const QString &str)
 {
+	if (_valid.count() < 1) return false;
+	
+	bool isInt = false;
+	int intVal = str.toInt(&isInt);
+	int minV, maxV;
+
+	for (QStringList::ConstIterator it = _valid.begin(); it != _valid.end(); ++it )
+	{
+		if (str == *it) return true;
+		
+		if (isInt && (*it).contains(':'))
+		{
+			QStringList list = QStringList::split(':', *it);
+	
+			if (list.size() == 2)
+			{
+				minV = list[0].toInt();
+				maxV = list[1].toInt();
+	
+				if ( minV <= intVal && intVal <= maxV) return true;
+			}
+		}
+	}
+	
+	return false;
 }

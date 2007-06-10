@@ -18,68 +18,24 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "panel_widget.h"
-#include "panel_slider.h"
-#include "panel_vol_slider.h"
-#include "panel_button.h"
-#include "lapsus_dbus.h"
+#ifndef LAPSUS_CONF_DIALOG_H
+#define LAPSUS_CONF_DIALOG_H
 
-LapsusPanelWidget::LapsusPanelWidget( const QString &id,
-			Qt::Orientation orientation, QWidget *parent,
-			KConfig *cfg):
-	QWidget( parent, id ), LapsusIcons(id, cfg),
-	_cfg(cfg), _panelOrientation( orientation ), _id( id )
+#include <kdialog.h>
+
+#include "lapsus_conf.h"
+
+class LapsusConfDialog : public KDialog
 {
-	setBackgroundMode(X11ParentRelative);
-}
+	Q_OBJECT
 
-LapsusPanelWidget::~LapsusPanelWidget()
-{
-}
+	public:
+		LapsusConfDialog(QWidget *parent,
+			KConfig *cfg);
+		~LapsusConfDialog();
+	
+	private:
+		LapsusConf* _conf;
+};
 
-LapsusPanelWidget* LapsusPanelWidget::newAppletwidget(
-	const QString &id, Qt::Orientation orientation,
-	QWidget *parent, KConfig *cfg)
-{
-	if (id.length() < 1) return 0;
-
-	cfg->setGroup(id.lower());
-
-	if (!cfg->hasKey("widget_type")
-		|| !cfg->hasKey("feature_id"))
-	{
-		return 0;
-	}
-
-	QString wType = cfg->readEntry("widget_type");
-	QString fId = cfg->readEntry("feature_id");
-
-	if (fId.length() < 1
-		|| LapsusDBus::get()->getFeatureName(fId).length() < 1
-		|| LapsusDBus::get()->getFeatureArgs(fId).size() < 1)
-	{
-		return 0;
-	}
-
-	if (wType == "vol_slider")
-	{
-		return new LapsusPanelVolSlider(id.lower(), orientation,
-				parent, cfg);
-	}
-	else if (wType == "slider")
-	{
-		return new LapsusPanelSlider(id.lower(), orientation,
-				parent, cfg);
-	}
-	else if (wType == "button")
-	{
-		return new LapsusPanelButton(id.lower(), orientation,
-				parent, cfg);
-	}
-
-	return 0;
-}
-
-void LapsusPanelWidget::resizeEvent( QResizeEvent * )
-{
-}
+#endif

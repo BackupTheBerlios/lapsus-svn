@@ -47,7 +47,7 @@ class LapsusMixer : public LapsusModule
 		virtual QStringList featureArgs(const QString &id);
 		
 		virtual QString featureRead(const QString &id);
-		virtual bool featureWrite(const QString &id, const QString &nVal, bool testWrite = false);
+		virtual bool featureWrite(const QString &id, const QString &nVal);
 	
 	protected:
 		virtual bool toggleMuted() = 0;

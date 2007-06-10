@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "lapsus_config.h"
+#include "lapsus_validator.h"
 #include "lapsus.h"
 
 #define LAPSUSD_CONFIG_GROUP			"/lapsusd/config"
@@ -159,42 +160,16 @@ QString LapsusConfig::featureName(const QString &id)
 	return ent->name;
 }
 
-bool LapsusConfig::checkArg(const QString &val, const QStringList &args)
-{
-	int minV, maxV;
-	int intVal;
-	bool isInt = false;
-	
-	intVal = val.toInt(&isInt);
-	
-	for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it )
-	{
-		if (val == *it) return true;
-		
-		if (isInt)
-		{
-			QStringList list = QStringList::split(':', *it);
-	
-			if (list.size() == 2)
-			{
-				minV = list[0].toInt();
-				maxV = list[1].toInt();
-	
-				if ( minV <= intVal && intVal <= maxV) return true;
-			}
-		}
-	}
-	
-	return false;
-}
-
-bool LapsusConfig::featureWrite(const QString &id, const QString &nVal, bool)
+bool LapsusConfig::featureWrite(const QString &id, const QString &nVal)
 {
 	LapsusConfigEntry *ent = _ids.find(id);
 	
-	if (ent == 0
-		|| ent->args.count() < 1
-		|| !checkArg(nVal, ent->args))
+	if (ent == 0 || ent->args.count() < 1)
+	{
+		return false;
+	}
+	
+	if (!LapsusValidator(ent->args).isValid(nVal))
 	{
 		return false;
 	}

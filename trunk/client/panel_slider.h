@@ -33,7 +33,7 @@ class LapsusPanelSlider : public LapsusPanelWidget
 	public:
 		LapsusPanelSlider(const QString &id,
 			Qt::Orientation orientation, QWidget *parent,
-			LapsusDBus *dbus, KConfig *cfg);
+			KConfig *cfg);
 		~LapsusPanelSlider();
 
 		QSize sizeHint() const;
