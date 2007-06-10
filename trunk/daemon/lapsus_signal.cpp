@@ -22,41 +22,62 @@
 
 #include <signal.h>
 
+#include <qevent.h>
 #include <qapplication.h>
 
-volatile sig_atomic_t signalReceived = 0;
+#define SIGNAL_EVENT_ID		(QEvent::User + 15)
+
+bool LapsusSignal::alreadyCreated = false;
+
+static LapsusSignal *signalObj = 0;
+static QEvent *eventToSend = 0;
+
+volatile static sig_atomic_t signalReceived = 0;
 
 void unixSignalHandler(int)
 {
-	signalReceived = 1;
+	if (!signalReceived && signalObj != 0 && eventToSend != 0)
+	{
+		signalReceived = 1;
+		
+		QApplication::postEvent(signalObj, eventToSend);
+		
+		signalObj = 0;
+		eventToSend = 0;
+	}
 }
 
 LapsusSignal::LapsusSignal()
 {
-	startedExit = false;
-	
-	signal(SIGINT, unixSignalHandler);
-	signal(SIGTERM, unixSignalHandler);
-	signal(SIGQUIT, unixSignalHandler);
-	
-	_timer =  new QTimer( this );
-	
-	connect( _timer, SIGNAL(timeout()), this, SLOT(timeout()));
-	
-	// 1 sec interval
-        _timer->start( 1000, false );
+	if (!alreadyCreated)
+	{
+		alreadyCreated = true;
+		
+		if (!signalObj)
+		{
+			signalObj = this;
+		}
+		
+		if (!eventToSend)
+		{
+			eventToSend = new QCustomEvent(SIGNAL_EVENT_ID);
+		}
+		
+		signal(SIGINT, unixSignalHandler);
+		signal(SIGTERM, unixSignalHandler);
+		signal(SIGQUIT, unixSignalHandler);
+	}
 }
 
 LapsusSignal::~LapsusSignal()
 {
 }
 
-void LapsusSignal::timeout()
+void LapsusSignal::customEvent(QCustomEvent * e)
 {
-	if (signalReceived && !startedExit)
+	if (!startedExit && e->type() == SIGNAL_EVENT_ID )
 	{
 		startedExit = true;
-		
 		QApplication::exit(0);
 	}
 }

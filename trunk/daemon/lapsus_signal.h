@@ -22,6 +22,7 @@
 #define LAPSUS_SIGNAL_H
 
 #include <qobject.h>
+#include <qevent.h>
 #include <qtimer.h>
 
 class LapsusSignal : public QObject
@@ -32,11 +33,11 @@ class LapsusSignal : public QObject
 		LapsusSignal();
 		~LapsusSignal();
 
-	protected slots:
-		void timeout();
+	protected:
+		void customEvent(QCustomEvent * e);
 	
 	private:
-		QTimer *_timer;
+		static bool alreadyCreated;
 		bool startedExit;
 };
 

@@ -45,9 +45,10 @@
 #define DAEMON_NAME		"lapsusd"
 #define LOCK_FILE		("/var/lock/" DAEMON_NAME )
 
-#define DAEMON_START_CHILD	2
-#define DAEMON_OK		1
-#define DAEMON_ERR		0
+#define DAEMON_START_CHILD	3
+#define DAEMON_OK		2
+#define DAEMON_ERR		1
+#define DAEMON_CHLD_ERR		0
 
 #define qPrintable(str)         (str.ascii())
 
@@ -182,7 +183,7 @@ static int daemonize()
 
 	if (!lock())
 	{
-		return DAEMON_ERR;
+		return DAEMON_CHLD_ERR;
 	}
 
 	/* At this point we are executing as the child process */
@@ -206,7 +207,7 @@ static int daemonize()
 	{
 		fprintf(stderr, "Unable to create a new session, code = %d (%s)\n",
 			errno, strerror(errno) );
-		return 0;
+		return DAEMON_CHLD_ERR;
 	}
 
 	/* Change the current working directory.  This prevents the current
@@ -215,7 +216,7 @@ static int daemonize()
 	{
 		fprintf(stderr, "Unable to change directory to /, code = %d (%s)\n",
 			errno, strerror(errno) );
-		return DAEMON_ERR;
+		return DAEMON_CHLD_ERR;
 	}
 
 	return DAEMON_START_CHILD;
@@ -303,19 +304,32 @@ int main( int argc, char *argv[] )
 	if ( (acpi_fd = get_acpi_fd()) < 0)
 		return EXIT_FAILURE;
 
-	if (doDaemonize)
-		d_stat = daemonize();
-
 	if (!doDaemonize)
 	{
-		int c_stat = run_child(acpi_fd, argc, argv);
-
-		close(acpi_fd);
-		unlock();
+		int c_stat = EXIT_FAILURE;
+		
+		if (lock())
+		{
+			c_stat = run_child(acpi_fd, argc, argv);
+			close(acpi_fd);
+			unlock();
+		}
+		else
+		{
+			close(acpi_fd);
+		}
+		
+		if (c_stat != EXIT_SUCCESS)
+		{
+			fprintf(stderr, "Error runing " DAEMON_NAME " daemon!\n");
+		}
+		
 		return c_stat;
-
 	}
-	else if (d_stat == DAEMON_START_CHILD)
+	
+	d_stat = daemonize();
+	
+	if (d_stat == DAEMON_START_CHILD)
 	{
 		int c_stat = 0;
 
@@ -330,13 +344,19 @@ int main( int argc, char *argv[] )
 		syslog( LOG_NOTICE, "terminated" );
 		return c_stat;
 	}
-	else if (d_stat == DAEMON_ERR)
+	else if (d_stat == DAEMON_ERR || d_stat == DAEMON_CHLD_ERR)
 	{
 		close(acpi_fd);
-		fprintf(stderr, "Error runing " DAEMON_NAME " daemon!\n");
+		
+		// Only parent shows the error message
+		if (d_stat == DAEMON_ERR)
+			fprintf(stderr, "Error runing " DAEMON_NAME " daemon!\n");
+		
 		return EXIT_FAILURE;
 	}
-
+	
+	// DAEMON_OK
+	
 	close(acpi_fd);
 	return EXIT_SUCCESS;
 }
@@ -362,6 +382,8 @@ int run_child(int acpi_fd, int argc, char *argv[])
 		kill(my_parent, SIGUSR1);
 	}
 
+	// Create an object (only one!) waiting for unix signals
+	// so the application can be exited gracefully.
 	LapsusSignal lapSig;
 	
 	return app.exec();
