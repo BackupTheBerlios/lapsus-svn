@@ -125,7 +125,11 @@ bool LapsusInit::featureWrite(const QString &id, const QString &nVal)
 {
 	if (nVal.length() < 1)
 	{
+		if (_initVals.contains(id))
+			dbusSignalFeatureChanged(id, nVal);
+		
 		_initVals.remove(id);
+		
 		return true;
 	}
 	else
@@ -139,7 +143,11 @@ bool LapsusInit::featureWrite(const QString &id, const QString &nVal)
 			{
 				if (LapsusValidator(mod->featureArgs(modId)).isValid(nVal))
 				{
+					if (_initVals[id] != nVal)
+						dbusSignalFeatureChanged(id, nVal);
+					
 					_initVals[id] = nVal;
+					
 					return true;
 				}
 			}

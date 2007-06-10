@@ -164,7 +164,29 @@ bool LapsusConfig::featureWrite(const QString &id, const QString &nVal)
 {
 	LapsusConfigEntry *ent = _ids.find(id);
 	
-	if (ent == 0 || ent->args.count() < 1)
+	if (ent == 0) return false;
+	
+	if (nVal.length() == 0)
+	{
+		if (ent->defValue.length() < 1)
+		{
+			dbusSignalFeatureChanged(id, nVal);
+			
+			_entries.removeRef(ent);
+			_ids.remove(id);
+		}
+		else
+		{
+			if (ent->curValue != ent->defValue)
+				dbusSignalFeatureChanged(id, ent->defValue);
+			
+			ent->curValue = ent->defValue;
+		}
+		
+		return true;
+	}
+	
+	if (ent->args.count() < 1)
 	{
 		return false;
 	}
@@ -173,6 +195,9 @@ bool LapsusConfig::featureWrite(const QString &id, const QString &nVal)
 	{
 		return false;
 	}
+	
+	if (ent->curValue != nVal)
+		dbusSignalFeatureChanged(id, nVal);
 	
 	ent->curValue = nVal;
 	

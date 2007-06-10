@@ -74,6 +74,17 @@ LapsusApplet::~LapsusApplet()
 	if (_aboutDlg) delete _aboutDlg;
 	if (_bugDlg) delete _bugDlg;
 	
+	/*
+	 * It would be removed anyway, but we want to make sure
+	 * that when DBus object is removed there is nothing using it
+	 * anymore.
+	 */
+	if (_mainWidget)
+	{
+		_layout->remove(_mainWidget);
+		delete _mainWidget;
+	}
+	
 	LapsusDBus::remove();
 }
 
