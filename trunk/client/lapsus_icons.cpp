@@ -25,21 +25,17 @@
 #include "lapsus.h"
 #include "lapsus_icons.h"
 
-LapsusIcons::LapsusIcons(const QString &id, KConfig *cfg):
-	_cfg(cfg)
+LapsusIcons::LapsusIcons(LapsusFeature* feat): _feature(feat)
 {
-	_cfg->setGroup(id);
-
-	if (_cfg->hasKey("feature_id"))
+	if (!feat) return;
+	
+	QString fId = feat->getFeatureDBusID();
+	
+	int idx = fId.findRev('.');
+	
+	if (idx > 0)
 	{
-		QString fId = _cfg->readEntry("feature_id");
-		
-		int idx = fId.findRev('.');
-		
-		if (idx > 0)
-		{
-			_featureType = fId.mid(idx+1);
-		}
+		_featureType = fId.mid(idx+1);
 	}
 }
 

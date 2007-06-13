@@ -63,7 +63,7 @@ void LapsusConfig::readEntries()
 		ent->entryRead = true;
 		
 		_entries.append(ent);
-		_ids.insert(ent->id, ent);
+		_ids.replace(ent->id, ent);
 	}
 	
 	_settings->endGroup();
@@ -120,7 +120,7 @@ void LapsusConfig::subscribeEntry(const char *prefix, const QString &id, const c
 		ent->curValue = defValue;
 		
 		_entries.append(ent);
-		_ids.insert(str, ent);
+		_ids.replace(str, ent);
 	}
 	
 	ent->entrySubscribed = true;
@@ -170,20 +170,21 @@ bool LapsusConfig::featureWrite(const QString &id, const QString &nVal)
 	{
 		if (ent->defValue.length() < 1)
 		{
-			dbusSignalFeatureChanged(id, nVal);
+			dbusSignalFeatureUpdate(id, nVal);
 			
 			_entries.removeRef(ent);
 			_ids.remove(id);
-		}
-		else
-		{
-			if (ent->curValue != ent->defValue)
-				dbusSignalFeatureChanged(id, ent->defValue);
 			
+			return true;
+		}
+		else if (ent->curValue != ent->defValue)
+		{
+			dbusSignalFeatureUpdate(id, ent->defValue);
 			ent->curValue = ent->defValue;
+			return true;
 		}
 		
-		return true;
+		return false;
 	}
 	
 	if (ent->args.count() < 1)
@@ -197,11 +198,13 @@ bool LapsusConfig::featureWrite(const QString &id, const QString &nVal)
 	}
 	
 	if (ent->curValue != nVal)
-		dbusSignalFeatureChanged(id, nVal);
+	{
+		dbusSignalFeatureUpdate(id, nVal);
+		ent->curValue = nVal;
+		return true;
+	}
 	
-	ent->curValue = nVal;
-	
-	return true;
+	return false;
 }
 
 QStringList LapsusConfig::featureArgs(const QString &id)

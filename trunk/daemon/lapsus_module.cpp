@@ -57,25 +57,25 @@ QString LapsusModule::featureName(const QString &id)
 	return "";
 }
 
-void LapsusModule::dbusSignalFeatureChanged(const QString &id, const char *val)
+void LapsusModule::dbusSignalFeatureUpdate(const QString &id, const char *val)
 {
 	if (!_dbus) return;
 	
-	dbusSignalFeatureChanged(id, QString(val));
+	dbusSignalFeatureUpdate(id, QString(val));
 }
 
-void LapsusModule::dbusSignalFeatureChanged(const QString &id, const QStringList &vList)
+void LapsusModule::dbusSignalFeatureUpdate(const QString &id, const QStringList &vList)
 {
 	if (!_dbus) return;
 	
-	dbusSignalFeatureChanged(id, vList.join(","));
+	dbusSignalFeatureUpdate(id, vList.join(","));
 }
 
-void LapsusModule::dbusSignalFeatureChanged(const QString &id, const QString &val)
+void LapsusModule::dbusSignalFeatureUpdate(const QString &id, const QString &val)
 {
 	if (!_dbus) return;
 	
-	_dbus->signalFeatureChanged(QString("%1.%2").arg(_modulePrefix).arg(id), val);
+	_dbus->signalFeatureUpdate(QString("%1.%2").arg(_modulePrefix).arg(id), val);
 }
 
 void LapsusModule::dbusSignalFeatureNotif(const QString &id, const char *val)

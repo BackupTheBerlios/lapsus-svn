@@ -28,9 +28,18 @@
 LapsusDBus* LapsusDBus::globalDBusObject = 0;
 int LapsusDBus::dbusRefs = 0;
 
-LapsusDBus::LapsusDBus() : _proxy(0), _isValid(false), _timerId(0)
+DBusFeature::DBusFeature(const QString &fName, const QStringList &fArgList):
+	name(fName), argList(fArgList), blockSet(false)
 {
-	printf("DBus constructed\n");
+}
+
+DBusFeature::~DBusFeature()
+{
+}
+
+LapsusDBus::LapsusDBus(): _proxyDBus(0), _timerId(0), _isValid(false)
+{
+	_features.setAutoDelete(true);
 	
 	restartDBus();
 
@@ -42,11 +51,10 @@ LapsusDBus::LapsusDBus() : _proxy(0), _isValid(false), _timerId(0)
 
 LapsusDBus::~LapsusDBus()
 {
-	printf("DBus destructed\n");
-	
-	if (_proxy)
+	if (_proxyDBus)
 	{
-		delete _proxy;
+		delete _proxyDBus;
+		_proxyDBus = 0;
 	}
 }
 
@@ -88,24 +96,26 @@ bool LapsusDBus::isValid()
 
 bool LapsusDBus::restartDBus()
 {
-	if (!_conn.isConnected())
+	if (!_connDBus.isConnected())
 	{
 		// TODO - Check why this doesn't work if dbus system is restarted...
 		// Probably QDBusConnection doesn't let for that.
 		// Is that a problem if it does not go up after dbus restart?
 		// Does other KDE application are able to reconnect after dbus restart?
 
-		_conn = QDBusConnection::addConnection(QDBusConnection::SystemBus);
+		_connDBus = QDBusConnection::addConnection(QDBusConnection::SystemBus);
 	}
 
-	if (_conn.isConnected())
+	if (_connDBus.isConnected())
 	{
-		_proxy = new QDBusProxy(_conn);
-		_proxy->setService(LAPSUS_SERVICE_NAME);
-		_proxy->setPath(LAPSUS_OBJECT_PATH);
-		_proxy->setInterface(LAPSUS_INTERFACE);
+		if (_proxyDBus) delete _proxyDBus;
+		
+		_proxyDBus = new QDBusProxy(_connDBus);
+		_proxyDBus->setService(LAPSUS_SERVICE_NAME);
+		_proxyDBus->setPath(LAPSUS_OBJECT_PATH);
+		_proxyDBus->setInterface(LAPSUS_INTERFACE);
 
-		connect(_proxy, SIGNAL(dbusSignal(const QDBusMessage&)),
+		connect(_proxyDBus, SIGNAL(dbusSignal(const QDBusMessage&)),
 			this, SLOT(handleDBusSignal(const QDBusMessage&)));
 
 		initParams();
@@ -124,17 +134,13 @@ void LapsusDBus::connError()
 
 	if (_timerId)
 	{
+		// We want the signal to be emited only when _isValid is true,
+		// but during the signal it should be already false
 		if (_isValid)
 		{
-			// We want _isValid to be false when the signal is emited,
-			// but we want the signal to be emited only when _isValid
-			// was true
 			_isValid = false;
-			emit stateChanged(false);
-		}
-		else
-		{
-			_isValid = false;
+			
+			emit dbusStateUpdate(false);
 		}
 	}
 }
@@ -148,19 +154,53 @@ void LapsusDBus::timerEvent( QTimerEvent * e)
 			killTimer(_timerId);
 			_timerId = 0;
 
-			emit stateChanged(true);
+			emit dbusStateUpdate(true);
 		}
 	}
+}
+
+bool LapsusDBus::updateFeatureInfo(const QString &fId)
+{
+	QValueList<QDBusData> params;
+
+	params.append(QDBusData::fromString(fId));
+
+	QDBusMessage reply = _proxyDBus->sendWithReply(LAPSUS_DBUS_GET_FEATURE_INFO, params);
+
+	if (reply.type() == QDBusMessage::ReplyMessage
+		&& reply.count() == 2
+		&& reply[0].type() == QDBusData::String
+		&& reply[1].type() == QDBusData::List )
+	{
+		bool ok = false;
+
+		QDBusDataList list = reply[1].toList(&ok);
+
+		if (!ok) return false;
+
+		ok = false;
+
+		QStringList argList = list.toStringList(&ok);
+
+		if (!ok) return false;
+
+		_featureList.remove(fId);
+		_featureList.append(fId);
+		_features.replace(fId, new DBusFeature(reply[0].toString(), argList));
+		
+		return true;
+	}
+	
+	return false;
 }
 
 void LapsusDBus::initParams()
 {
 	QValueList<QDBusData> params;
-	QDBusMessage reply = _proxy->sendWithReply(LAPSUS_DBUS_LIST_FEATURES, params);
+	QDBusMessage reply = _proxyDBus->sendWithReply(LAPSUS_DBUS_LIST_FEATURES, params);
 
+	_featureList.clear();
 	_features.clear();
-	_featureArgs.clear();
-	_featureName.clear();
 
 	if (reply.type() != QDBusMessage::ReplyMessage)
 		return;
@@ -180,134 +220,140 @@ void LapsusDBus::initParams()
 
 	if (!ok) return;
 
-	QStringList argList, paramList;
+	_isValid = true;
 
 	for (QStringList::iterator it = tmpFeatures.begin(); it != tmpFeatures.end(); ++it)
 	{
-		QString id = *it;
-
-		params.clear();
-
-		params.append(QDBusData::fromString(id));
-
-		reply = _proxy->sendWithReply(LAPSUS_DBUS_GET_FEATURE_INFO, params);
-
-		if (reply.type() == QDBusMessage::ReplyMessage)
-		{
-			if (reply.count() == 2
-				&& reply[0].type() == QDBusData::String
-				&& reply[1].type() == QDBusData::List )
-			{
-				ok = false;
-
-				list = reply[1].toList(&ok);
-
-				if (!ok) continue;
-
-				ok = false;
-
-				argList = list.toStringList(&ok);
-
-				if (!ok) continue;
-
-				_features.append(id);
-				_featureArgs.insert(id, argList);
-				_featureName.insert(id, reply[0].toString());
-
-				getFeature(id);
-			}
-		}
+		if (updateFeatureInfo(*it))
+			updateFeatureValue(*it);
 	}
-
-	_isValid = true;
 }
 
 QStringList LapsusDBus::listFeatures()
 {
 	if (!_isValid) return QStringList();
 
-	return _features;
+	return _featureList;
+}
+
+DBusFeature* LapsusDBus::getDBusFeature(const QString &id)
+{
+	if (!_isValid) return 0;
+	
+	return _features.find(id.lower());
 }
 
 QString LapsusDBus::getFeatureName(const QString &id)
 {
-	if (!_isValid) return QString();
-
-	QString str = _featureName[id.lower()];
-
-	if (str.length() > 0) return i18n(str);
-
-	return str;
+	DBusFeature *feat = getDBusFeature(id);
+	
+	if (!feat || feat->name.length() < 1) return QString();
+	
+	return i18n(feat->name);
 }
 
 QStringList LapsusDBus::getFeatureArgs(const QString &id)
 {
-	if (!_isValid) return QStringList();
-
-	return _featureArgs[id.lower()];
+	DBusFeature *feat = getDBusFeature(id);
+	
+	if (!feat || feat->name.length() < 1) return QStringList();
+	
+	return feat->argList;
 }
 
-QString LapsusDBus::getFeature(const QString &id)
+QString LapsusDBus::getFeatureValue(const QString &id)
 {
-	if (!_isValid) return QString();
+	DBusFeature *feat = getDBusFeature(id);
+	
+	if (!feat) return QString();
+	
+	return feat->value;
+}
+
+bool LapsusDBus::updateFeatureValue(const QString &id)
+{
+	if (!_isValid) return false;
 
 	QString lId = id.lower();
 
-	if (!_features.contains(lId))
-		return QString();
+	DBusFeature *feat = getDBusFeature(lId);
 
-	if (!_featureVal.contains(lId))
-	{
-		QValueList<QDBusData> params;
-
-		params.append(QDBusData::fromString(lId));
-
-		QDBusMessage reply = _proxy->sendWithReply(LAPSUS_DBUS_GET_FEATURE, params);
-
-		if (reply.type() != QDBusMessage::ReplyMessage)
-			return QString();
-
-		if (reply.count() != 1 || reply[0].type() != QDBusData::String)
-			return QString();
-
-		QString str = reply[0].toString();
-
-		_featureVal.insert(lId, str);
-
-		return str;
-	}
-
-	return _featureVal[lId];
-}
-
-void LapsusDBus::checkFeature(const QString &id)
-{
-	if (!_isValid) return;
-
-	QString lId = id.lower();
-
-	if (!_features.contains(lId))
-		return;
-
+	if (!feat) return false;
+	
 	QValueList<QDBusData> params;
 
 	params.append(QDBusData::fromString(lId));
 
-	QDBusMessage reply = _proxy->sendWithReply(LAPSUS_DBUS_GET_FEATURE, params);
+	QDBusMessage reply = _proxyDBus->sendWithReply(LAPSUS_DBUS_GET_FEATURE, params);
 
 	if (reply.type() != QDBusMessage::ReplyMessage)
-		return;
+		return false;
 
 	if (reply.count() != 1 || reply[0].type() != QDBusData::String)
-		return;
+		return false;
 
 	QString str = reply[0].toString();
 
-	if (!_featureVal.contains(lId) || _featureVal[lId] != str)
+	if (feat->value != str)
 	{
-		_featureVal.insert(lId, str);
-		emit featureChanged(lId, str);
+		feat->value = str;
+		feat->blockSet = true;
+		
+		emit dbusFeatureUpdate(lId, str, false);
+		
+		feat->blockSet = false;
 	}
+	
+	return true;
+}
+
+void LapsusDBus::handleDBusSignal(const QDBusMessage &message)
+{
+	if (message.interface() != LAPSUS_INTERFACE) return;
+
+	if (message.type() != QDBusMessage::SignalMessage) return;
+
+	if (message.member() == LAPSUS_DBUS_FEATURE_UPDATE
+		|| message.member() == LAPSUS_DBUS_FEATURE_NOTIF)
+	{
+		if (message.count() != 2
+			|| message[0].type() != QDBusData::String
+			|| message[1].type() != QDBusData::String)
+		{
+			return;
+		}
+
+		QString lId = message[0].toString().lower();
+		QString sVal = message[1].toString();
+		
+		DBusFeature *feat = getDBusFeature(lId);
+		
+		if (!feat)
+		{
+			updateFeatureInfo(lId);
+			feat = getDBusFeature(lId);
+			
+			if (!feat) return;
+		}
+		
+		if (message.member() == LAPSUS_DBUS_FEATURE_UPDATE)
+		{
+			feat->value = sVal;
+			feat->blockSet = true;
+			
+			emit dbusFeatureUpdate(lId, sVal, false);
+			
+			feat->blockSet = false;
+		}
+		else
+		{
+			emit dbusFeatureUpdate(lId, sVal, true);
+		}
+
+		return;
+	}
+
+	// TODO - ACPI Events
 }
 
 bool LapsusDBus::setFeature(const QString &id, const QString &val)
@@ -316,24 +362,22 @@ bool LapsusDBus::setFeature(const QString &id, const QString &val)
 
 	QString lId = id.lower();
 
-	if (!_features.contains(lId))
-		return false;
+	DBusFeature *feat = getDBusFeature(lId);
 
-	if (_featureVal.contains(lId) && _featureVal[lId] == val)
-		return true;
+	if (!feat || feat->blockSet) return false;
 
 	QValueList<QDBusData> params;
 
 	params.append(QDBusData::fromString(lId));
 	params.append(QDBusData::fromString(val));
 
-	QDBusMessage reply = _proxy->sendWithReply(LAPSUS_DBUS_SET_FEATURE, params);
+	QDBusMessage reply = _proxyDBus->sendWithReply(LAPSUS_DBUS_SET_FEATURE, params);
 
 	if (reply.type() != QDBusMessage::ReplyMessage)
 	{
-		if (_conn.isConnected())
+		if (_connDBus.isConnected())
 		{
-			QDBusError err = _proxy->lastError();
+			QDBusError err = _proxyDBus->lastError();
 			QDBusError::ErrorType type = err.type();
 
 			// TODO Check other types of errors that may happen.
@@ -363,42 +407,7 @@ bool LapsusDBus::setFeature(const QString &id, const QString &val)
 
 	// If res = false it is possible that the value written
 	// was already set - check this.
-	if (!res) checkFeature(id);
+	if (!res) updateFeatureValue(id);
 
 	return res;
-}
-
-void LapsusDBus::handleDBusSignal(const QDBusMessage &message)
-{
-	if (message.interface() != LAPSUS_INTERFACE) return;
-
-	if (message.type() != QDBusMessage::SignalMessage) return;
-
-	if (message.member() == LAPSUS_DBUS_FEATURE_CHANGED
-		|| message.member() == LAPSUS_DBUS_FEATURE_NOTIF)
-	{
-		if (message.count() != 2
-			|| message[0].type() != QDBusData::String
-			|| message[1].type() != QDBusData::String)
-		{
-			return;
-		}
-
-		QString sName = message[0].toString();
-		QString sVal = message[1].toString();
-
-		if (message.member() == LAPSUS_DBUS_FEATURE_CHANGED)
-		{
-			_featureVal.insert(sName, sVal);
-			emit featureChanged(sName, sVal);
-		}
-		else
-		{
-			emit featureNotif(sName, sVal);
-		}
-
-		return;
-	}
-
-	// TODO - ACPI Events
 }

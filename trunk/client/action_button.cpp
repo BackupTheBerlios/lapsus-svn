@@ -23,49 +23,33 @@
 
 #include "action_button.h"
 
-LapsusActionButton::LapsusActionButton(const QString &id, KConfig *cfg,
-			QObject *parent, const KShortcut &cut):
-	KAction(id, cut, 0, 0, parent, id), LapsusIcons(id, cfg),
-	_cfg(cfg), _id(id), _hasDBus(false), _isValid(false)
+LapsusActionButton::LapsusActionButton(const QString &confID,
+		KActionCollection *parent, LapsusSwitch *feat):
+	KAction(confID, 0, 0, 0, parent, confID), LapsusIcons(feat),
+	_switchFeat(feat)
 {
-	_cfg->setGroup(id);
+	if (!feat || !feat->isValid()) return;
+	
+	_name = feat->getFeatureName();
 
-	if (_cfg->hasKey("feature_id"))
+	if (_name.length() > 0) setToolTip(_name);
+	
+	QStringList args = _switchFeat->getSwitchAllValues();
+	
+	for (QStringList::Iterator it = args.begin(); it != args.end(); ++it)
 	{
-		_featureId = _cfg->readEntry("feature_id");
+		int icon = loadNewAutoIcon(*it, 16);
 
-		_name = LapsusDBus::get()->getFeatureName(_featureId);
-
-		if (_name.length() > 0)
+		if (icon >= 0)
 		{
-			setToolTip(_name);
+			_icons.insert(*it, icon);
 		}
-
-		_vals = LapsusDBus::get()->getFeatureArgs(_featureId);
-
-		if (_vals.size() > 1)
-		{
-			_isValid = true;
-			_hasDBus = true;
-
-			for (QStringList::Iterator it = _vals.begin(); it != _vals.end(); ++it)
-			{
-				int icon = loadNewAutoIcon(*it, 16);
-
-				if (icon >= 0) _icons.insert(*it, icon);
-			}
-		}
-
-		_curVal = LapsusDBus::get()->getFeature(_featureId);
 	}
-
-	checkCurVal();
-
-	connect ( LapsusDBus::get(), SIGNAL(stateChanged(bool)),
-			this, SLOT(dbusStateChanged(bool)) );
-
-	connect( LapsusDBus::get(), SIGNAL(featureChanged(const QString &, const QString &)),
-			this, SLOT(featureChanged(const QString &, const QString &)));
+	
+	buttonUpdate(feat->getSwitchValue());
+	
+	connect( feat, SIGNAL(switchUpdate(const QString &)),
+			this, SLOT(buttonUpdate(const QString &)));
 
 	connect(this, SIGNAL(activated()),
 		this, SLOT(actionClicked()));
@@ -75,11 +59,11 @@ LapsusActionButton::~LapsusActionButton()
 {
 }
 
-void LapsusActionButton::checkCurVal()
+void LapsusActionButton::buttonUpdate(const QString &val)
 {
-	if (_icons.contains(_curVal))
+	if (_icons.contains(val))
 	{
-		int icon = _icons[_curVal];
+		int icon = _icons[val];
 
 		if (icon >= 0)
 		{
@@ -89,38 +73,43 @@ void LapsusActionButton::checkCurVal()
 		}
 	}
 
-	setText(QString("%1: %2").arg(_name).arg(_curVal.upper()));
-}
-
-void LapsusActionButton::featureChanged(const QString &id, const QString &val)
-{
-	if (id == _featureId)
-	{
-		_curVal = val;
-		checkCurVal();
-	}
-}
-
-void LapsusActionButton::dbusStateChanged(bool state)
-{
-	_hasDBus = state;
-	checkCurVal();
+	setText(QString("%1: %2").arg(_name).arg(val.upper()));
 }
 
 void LapsusActionButton::actionClicked()
 {
-	if (!_isValid || !_hasDBus)
+	if (!_switchFeat || !_switchFeat->isValid() || !_switchFeat->hasDBus() )
 		return;
-
-	QStringList::Iterator it = _vals.find(_curVal);
+	
+	QStringList args = _switchFeat->getSwitchAllValues();
+	QString curVal = _switchFeat->getSwitchValue();
+	
+	QStringList::Iterator it = args.find(curVal);
 	QString nVal;
 
-	if (it != _vals.end()) ++it;
+	if (it != args.end()) ++it;
 
-	if (it == _vals.end())
-		nVal = *(_vals.begin());
+	if (it == args.end())
+		nVal = *(args.begin());
 	else
 		nVal = *it;
 
-	LapsusDBus::get()->setFeature(_featureId, nVal);
+	_switchFeat->setSwitchValue(nVal);
+}
+
+bool LapsusActionButton::addNewActionButton(const QString &confID, KConfig *cfg, KActionCollection *parent)
+{
+	if (LapsusSwitch::readFeatureType(confID, cfg) != LapsusSwitch::featureType()) return false;
+	
+	LapsusSwitch *feat = new LapsusSwitch(cfg, confID);
+	
+	if (feat->isValid())
+	{
+		new LapsusActionButton(confID, parent, feat);
+		return true;
+	}
+	
+	delete feat;
+	
+	return false;
 }

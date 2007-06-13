@@ -18,48 +18,40 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_PANEL_SLIDER_H
-#define LAPSUS_PANEL_SLIDER_H
+#ifndef LAPSUS_SWITCH_H
+#define LAPSUS_SWITCH_H
 
-#include <qlabel.h>
+#include "lapsus_feature.h"
 
-#include "ksmallslider.h"
-#include "panel_widget.h"
-#include "lapsus_slider.h"
-
-class LapsusPanelSlider : public LapsusPanelWidget
+class LapsusSwitch : public LapsusFeature
 {
 	Q_OBJECT
 
 	public:
-		LapsusPanelSlider(Qt::Orientation orientation, QWidget *parent,
-			LapsusSlider *sliderFeat);
-		~LapsusPanelSlider();
+		LapsusSwitch(KConfig *cfg, const QString &idConf, const char *idDBus = 0);
+		virtual ~LapsusSwitch();
 
-		QSize sizeHint() const;
-		QSize minimumSize() const;
-		QSizePolicy sizePolicy() const;
-
-		virtual bool eventFilter( QObject* obj, QEvent* e );
+		virtual bool saveFeature();
 		
-		static LapsusPanelSlider* newPanelWidget(const QString &confID,
-			Qt::Orientation orientation, QWidget *parent, KConfig *cfg);
+		QString getSwitchValue();
+		QStringList getSwitchAllValues();
+		
+		static bool supportsArgs(const QStringList & args);
+		static bool addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
+		static const char *featureType();
 		
 	signals:
-		void rightButtonPressed();
-
-	protected:
-		void resizeEvent( QResizeEvent * );
-		void wheelEvent( QWheelEvent * );
-
+		void switchUpdate(const QString &val);
+		void switchNotif(const QString & val);
+		
+	public slots:
+		virtual void setSwitchValue(const QString &val);
+	
 	protected slots:
-		virtual void dbusStateUpdate(bool state);
-
-	protected:
-		QBoxLayout* _layout;
-		KSmallSlider* _slider;
-		QLabel* _iconLabel;
-		LapsusSlider* _sliderFeature;
+		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
+		
+	private:
+		QString _val;
 };
 
 #endif

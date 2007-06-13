@@ -30,18 +30,18 @@ LapsusModulesList::~LapsusModulesList()
 {
 	LapsusModule *mod;
 	
-	for (mod = modules.first(); mod; mod = modules.next())
+	for (mod = _modules.first(); mod; mod = _modules.next())
 	{
 		delete mod;
 	}
 	
-	modules.clear();
-	prefixes.clear();
+	_modules.clear();
+	_prefixes.clear();
 }
 
 uint LapsusModulesList::count()
 {
-	return modules.count();
+	return _modules.count();
 }
 
 void LapsusModulesList::addConfig(LapsusConfig *mod)
@@ -66,8 +66,8 @@ void LapsusModulesList::addModule(LapsusModule *mod)
 {
 	if (!mod) return;
 	
-	modules.append(mod);
-	prefixes.insert(mod->modulePrefix(), mod);
+	_modules.append(mod);
+	_prefixes.replace(mod->modulePrefix(), mod);
 }
 
 bool LapsusModulesList::findModule(LapsusModule **mod, QString &id)
@@ -78,7 +78,7 @@ bool LapsusModulesList::findModule(LapsusModule **mod, QString &id)
 	
 	QString pref = id.left(idx);
 	
-	if ( (*mod = prefixes.find(pref.ascii())) == 0) return false;
+	if ( (*mod = _prefixes.find(pref.ascii())) == 0) return false;
 	
 	id = id.mid(idx+1);
 	
@@ -89,5 +89,5 @@ bool LapsusModulesList::findModule(LapsusModule **mod, QString &id)
 
 LapsusModulesIterator LapsusModulesList::modulesIterator()
 {
-	return QPtrListIterator<LapsusModule>( modules );
+	return QPtrListIterator<LapsusModule>( _modules );
 }

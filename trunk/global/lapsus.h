@@ -40,7 +40,7 @@
 #define LAPSUS_DBUS_SET_FEATURE		"setFeature"
 
 #define LAPSUS_DBUS_ACPI_EVENT		"acpiEvent"
-#define LAPSUS_DBUS_FEATURE_CHANGED	"featureChanged"
+#define LAPSUS_DBUS_FEATURE_UPDATE	"featureUpdate"
 #define LAPSUS_DBUS_FEATURE_NOTIF	"featureNotif"
 
 // Following values have to be lower-case!

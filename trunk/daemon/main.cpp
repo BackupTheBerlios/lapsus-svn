@@ -190,12 +190,12 @@ static int daemonize()
 	my_parent = getppid();
 
 	/* Cancel certain signals */
-	signal(SIGCHLD,SIG_DFL); /* A child process dies */
-	signal(SIGTSTP,SIG_IGN); /* Various TTY signals */
-	signal(SIGTTOU,SIG_IGN);
-	signal(SIGTTIN,SIG_IGN);
-	signal(SIGHUP, SIG_IGN); /* Ignore hangup signal */
-	signal(SIGTERM,SIG_DFL); /* Die on SIGTERM */
+	signal(SIGCHLD, SIG_DFL); /* A child process dies */
+	signal(SIGTSTP, SIG_IGN); /* Various TTY signals */
+	signal(SIGTTOU, SIG_IGN);
+	signal(SIGTTIN, SIG_IGN);
+	signal(SIGHUP,  SIG_IGN); /* Ignore hangup signal */
+	signal(SIGTERM, SIG_DFL); /* Die on SIGTERM */
 
 	/* Change the file mode mask */
 	umask(0);

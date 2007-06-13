@@ -18,48 +18,57 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_PANEL_SLIDER_H
-#define LAPSUS_PANEL_SLIDER_H
+#ifndef LAPSUS_FEATURE_H
+#define LAPSUS_FEATURE_H
 
-#include <qlabel.h>
+#include <kconfig.h>
 
-#include "ksmallslider.h"
-#include "panel_widget.h"
-#include "lapsus_slider.h"
+#include <qstring.h>
+#include <qstringlist.h>
 
-class LapsusPanelSlider : public LapsusPanelWidget
+#include "lapsus_validator.h"
+
+#define LAPSUS_CONF_WIDGET_TYPE		"widget_type"
+#define LAPSUS_CONF_FEATURE_ID		"feature_id"
+
+class LapsusFeature : public QObject
 {
 	Q_OBJECT
 
 	public:
-		LapsusPanelSlider(Qt::Orientation orientation, QWidget *parent,
-			LapsusSlider *sliderFeat);
-		~LapsusPanelSlider();
+		LapsusFeature(KConfig *cfg, const QString &idConf, const char *idDBus = 0);
+		virtual ~LapsusFeature();
 
-		QSize sizeHint() const;
-		QSize minimumSize() const;
-		QSizePolicy sizePolicy() const;
-
-		virtual bool eventFilter( QObject* obj, QEvent* e );
+		bool setFeatureValue(const QString &nVal);
+		QString getFeatureValue();
+		QString getFeatureName();
+		QStringList getFeatureArgs();
+		void updateFeatureValue();
 		
-		static LapsusPanelSlider* newPanelWidget(const QString &confID,
-			Qt::Orientation orientation, QWidget *parent, KConfig *cfg);
+		QString getFeatureConfID();
+		QString getFeatureDBusID();
 		
-	signals:
-		void rightButtonPressed();
-
-	protected:
-		void resizeEvent( QResizeEvent * );
-		void wheelEvent( QWheelEvent * );
-
+		bool isArgValid(const QString &arg);
+	
+		bool isValid();
+		bool hasDBus();
+		
+		virtual bool saveFeature();
+		
+		static QString readFeatureType(const QString &confID, KConfig *cfg);
+		
 	protected slots:
 		virtual void dbusStateUpdate(bool state);
-
+		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif) = 0;
+		
 	protected:
-		QBoxLayout* _layout;
-		KSmallSlider* _slider;
-		QLabel* _iconLabel;
-		LapsusSlider* _sliderFeature;
+		KConfig* _cfg;
+		LapsusValidator* _validator;
+		QString _featDBusID;
+		QString _featConfID;
+		bool _hasDBus;
+		bool _isValid;
+		bool _blockSendSet;
 };
 
 #endif

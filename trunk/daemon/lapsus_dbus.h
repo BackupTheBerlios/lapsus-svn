@@ -65,7 +65,7 @@ class LapsusDBus : public QObject, QDBusObjectBase
 		~LapsusDBus();
 		bool isValid();
 
-		void signalFeatureChanged(const QString &id, const QString &val);
+		void signalFeatureUpdate(const QString &id, const QString &val);
 		void signalFeatureNotif(const QString &id, const QString &val);
 		
 		void sendACPIEvent(const QString &group, const QString &action,

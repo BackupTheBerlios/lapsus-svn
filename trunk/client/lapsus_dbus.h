@@ -18,14 +18,13 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-
 #ifndef LAPSUS_DBUS_H
 #define LAPSUS_DBUS_H
 
 #include <qobject.h>
 #include <qstring.h>
 #include <qstringlist.h>
-#include <qmap.h>
+#include <qdict.h>
 
 // Qt DBUS includes
 #include <dbus/qdbusdatalist.h>
@@ -34,6 +33,19 @@
 #include <dbus/qdbusconnection.h>
 #include <dbus/qdbusobject.h>
 #include <dbus/qdbusproxy.h>
+
+class DBusFeature
+{
+	public:
+		
+		DBusFeature(const QString &fName, const QStringList &fArgList);
+		~DBusFeature();
+		
+		QString name;
+		QString value;
+		QStringList argList;
+		bool blockSet;
+};
 
 class LapsusDBus : public QObject
 {
@@ -47,24 +59,34 @@ class LapsusDBus : public QObject
 		QStringList listFeatures();
 		QString getFeatureName(const QString &id);
 		QStringList getFeatureArgs(const QString &id);
-		QString getFeature(const QString &id);
+		QString getFeatureValue(const QString &id);
+		bool updateFeatureInfo(const QString &id);
+		bool updateFeatureValue(const QString &id);
 
 		static LapsusDBus* get();
 		static void create();
 		static void remove();
 		
+	signals:
+		void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
+		void dbusStateUpdate(bool state);
+	
+	public slots:
+		bool setFeature(const QString &id, const QString &val);
+	
 	protected:
 		void timerEvent( QTimerEvent * );
 
+	protected slots:
+		void handleDBusSignal(const QDBusMessage &message);
+	
 	private:
-		QDBusConnection _conn;
-		QDBusProxy *_proxy;
-		bool _isValid;
-		QStringList _features;
-		QMap<QString, QString> _featureVal;
-		QMap<QString, QString> _featureName;
-		QMap<QString, QStringList> _featureArgs;
+		QDBusConnection _connDBus;
+		QDBusProxy* _proxyDBus;
+		QStringList _featureList;
+		QDict<DBusFeature> _features;
 		int _timerId;
+		bool _isValid;
 		
 		static int dbusRefs;
 		static LapsusDBus* globalDBusObject;
@@ -72,16 +94,8 @@ class LapsusDBus : public QObject
 		void connError();
 		bool restartDBus();
 		void initParams();
-		void checkFeature(const QString &id);
 
-	public slots:
-		void handleDBusSignal(const QDBusMessage &message);
-		bool setFeature(const QString &id, const QString &val);
-
-	signals:
-		void featureChanged(const QString &id, const QString &val);
-		void featureNotif(const QString &id, const QString &val);
-		void stateChanged(bool state);
+		DBusFeature *getDBusFeature(const QString &id);
 };
 
 #endif

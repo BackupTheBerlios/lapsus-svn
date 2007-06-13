@@ -27,6 +27,7 @@
 class LapsusValidator
 {
 	public:
+		LapsusValidator();
 		LapsusValidator(const QStringList &validArgs);
 		~LapsusValidator();
 	

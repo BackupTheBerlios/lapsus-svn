@@ -54,8 +54,8 @@ class LapsusModulesList
 		LapsusSynaptics *synaptics;
 		
 	private:
-		QPtrList<LapsusModule> modules;
-		QAsciiDict<LapsusModule> prefixes;
+		QPtrList<LapsusModule> _modules;
+		QAsciiDict<LapsusModule> _prefixes;
 };
 
 #endif

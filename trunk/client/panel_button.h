@@ -25,15 +25,15 @@
 
 #include "ksmallslider.h"
 #include "panel_widget.h"
+#include "lapsus_switch.h"
 
 class LapsusPanelButton : public LapsusPanelWidget
 {
 	Q_OBJECT
 
 	public:
-		LapsusPanelButton(const QString &id,
-			Qt::Orientation orientation, QWidget *parent,
-			KConfig *cfg);
+		LapsusPanelButton(Qt::Orientation orientation,
+			QWidget *parent, LapsusSwitch *feat);
 		~LapsusPanelButton();
 
 		QSize sizeHint() const;
@@ -43,25 +43,22 @@ class LapsusPanelButton : public LapsusPanelWidget
 		bool eventFilter( QObject* obj, QEvent* e );
 
 		static bool supportsArgs(const QStringList & args);
-
+		
+		static LapsusPanelButton* newPanelWidget(const QString &confID,
+			Qt::Orientation orientation, QWidget *parent, KConfig *cfg);
+		
 	signals:
 		void rightButtonPressed();
 
 	protected slots:
 		void dbusStateChanged(bool state);
-		void featureChanged(const QString &id, const QString &val);
+		void buttonUpdate(const QString &val);
 
 	private:
-		QStringList _vals;
-		QString _curVal;
+		LapsusSwitch* _switchFeat;
 		QBoxLayout* _layout;
 		QLabel* _iconLabel;
-		QString _featureId;
-		bool _hasDBus;
-		bool _isValid;
 		QMap<QString, int> _icons;
-
-		void checkCurVal();
 };
 
 #endif

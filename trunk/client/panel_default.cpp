@@ -27,9 +27,9 @@
 
 #include "panel_default.h"
 
-LapsusPanelDefault::LapsusPanelDefault( const QString &id,
-	Qt::Orientation orientation, QWidget *parent, KConfig *cfg) :
-		LapsusPanelWidget(id, orientation, parent, cfg), _label(0)
+LapsusPanelDefault::LapsusPanelDefault(Qt::Orientation orientation,
+			QWidget *parent):
+		LapsusPanelWidget(orientation, parent, 0), _label(0)
 {
 	if ( orientation == Qt::Horizontal )
 		_layout = new QVBoxLayout( this );

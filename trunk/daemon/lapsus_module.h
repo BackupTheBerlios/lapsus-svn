@@ -54,9 +54,9 @@ class LapsusModule: public QObject
 		virtual bool handleACPIEvent(const QString &group, const QString &action,
 				const QString &device, uint id, uint value);
 
-		virtual void dbusSignalFeatureChanged(const QString &id, const char *val);
-		virtual void dbusSignalFeatureChanged(const QString &id, const QString &val);
-		virtual void dbusSignalFeatureChanged(const QString &id, const QStringList &vList);
+		virtual void dbusSignalFeatureUpdate(const QString &id, const char *val);
+		virtual void dbusSignalFeatureUpdate(const QString &id, const QString &val);
+		virtual void dbusSignalFeatureUpdate(const QString &id, const QStringList &vList);
 		
 		virtual void dbusSignalFeatureNotif(const QString &id, const char *val);
 		virtual void dbusSignalFeatureNotif(const QString &id, const QString &val);

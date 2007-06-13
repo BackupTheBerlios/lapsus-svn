@@ -27,48 +27,19 @@
 
 #include "panel_slider.h"
 
-LapsusPanelSlider::LapsusPanelSlider( const QString &id,
-	Qt::Orientation orientation, QWidget *parent, KConfig *cfg) :
-		LapsusPanelWidget(id, orientation, parent, cfg),
-		_layout(0), _slider(0), _iconLabel(0),
-		_hasDBus(false), _isValid(false), _dontSendChange(false)
+LapsusPanelSlider::LapsusPanelSlider(Qt::Orientation orientation, QWidget *parent,
+			LapsusSlider *sliderFeat):
+		LapsusPanelWidget(orientation, parent, sliderFeat),
+		_layout(0), _slider(0), _iconLabel(0)
 {
+	if (!sliderFeat || !isValid()) return;
+	
 	if ( orientation == Qt::Horizontal )
 		_layout = new QVBoxLayout( this );
 	else
 		_layout = new QHBoxLayout( this );
 
 	_layout->setAlignment(Qt::AlignCenter);
-
-	_cfg->setGroup(id.lower());
-
-	int minSlider = 0;
-	int maxSlider = 0;
-	int sliderVal = 0;
-	QString sliderTip;
-
-	if (_cfg->hasKey("feature_id"))
-	{
-		_featureId = _cfg->readEntry("feature_id");
-
-		sliderTip = LapsusDBus::get()->getFeatureName(_featureId);
-
-		QStringList list = LapsusDBus::get()->getFeatureArgs(_featureId);
-
-		int minV, maxV;
-
-		if (getMinMaxArgs(list, &minV, &maxV))
-		{
-			// TODO - maybe it should be re-initialized
-			// everytime dbus goes up ?
-			_isValid = true;
-			_hasDBus = true;
-			minSlider = minV;
-			maxSlider = maxV;
-		}
-
-		sliderVal = LapsusDBus::get()->getFeature(_featureId).toInt();
-	}
 
 	int idx = loadNewAutoIcon(10);
 
@@ -88,10 +59,14 @@ LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 		_iconLabel->show();
 	}
 
+	int minSlider = sliderFeat->getSliderMin();
+	int maxSlider = sliderFeat->getSliderMax();
+	int sliderVal = sliderFeat->getSliderValue();
+	
 	if (_panelOrientation == Qt::Horizontal)
 	{
-		_slider = new KSmallSlider(
-				minSlider, maxSlider, maxSlider/4, sliderVal,
+		_slider = new KSmallSlider(minSlider, maxSlider,
+				maxSlider/4, sliderVal,
 				Qt::Vertical, this);
 	}
 	else
@@ -103,26 +78,28 @@ LapsusPanelSlider::LapsusPanelSlider( const QString &id,
 
 	_slider->setBackgroundMode(X11ParentRelative);
 
+	QString sliderTip = sliderFeat->getFeatureName();
+	
 	if (sliderTip.length() > 0)
 		QToolTip::add( this, sliderTip);
 
 	_slider->installEventFilter(this);
 
 	connect ( _slider, SIGNAL(valueChanged(int)),
-			this, SLOT(sliderValueChanged(int)) );
+			sliderFeat, SLOT(setSliderValue(int)) );
 
-	connect ( LapsusDBus::get(), SIGNAL(stateChanged(bool)),
-			this, SLOT(dbusStateChanged(bool)) );
+	connect( sliderFeat, SIGNAL(sliderUpdate(int)),
+			_slider, SLOT(setValue(int)));
 
-	connect( LapsusDBus::get(), SIGNAL(featureChanged(const QString &, const QString &)),
-			this, SLOT(featureChanged(const QString &, const QString &)));
+	connect ( LapsusDBus::get(), SIGNAL(dbusStateUpdate(bool)),
+			this, SLOT(dbusStateUpdate(bool)) );
 
 	_layout->add(_slider);
 	_layout->activate();
 
 	_slider->setColors( "#FFFF00", "#707000", "#000000" );
 
-	if (!_isValid || !_hasDBus)
+	if (!isValid() || !hasDBus())
 		_slider->setGray(true);
 
 	const QSize constrainedSize = sizeHint();
@@ -137,76 +114,8 @@ LapsusPanelSlider::~LapsusPanelSlider()
 {
 }
 
-bool LapsusPanelSlider::getMinMaxArgs(const QStringList & args, int *minV, int *maxV)
+void LapsusPanelSlider::dbusStateUpdate(bool state)
 {
-	bool ret = false;
-	
-	for (uint i = 0; i < args.size(); ++i)
-	{
-		QStringList list = QStringList::split(':', args[i]);
-
-		if (list.size() == 2)
-		{
-			*minV = list[0].toInt();
-			*maxV = list[1].toInt();
-
-			if ( *minV < *maxV )
-				ret = true;
-		}
-	}
-	
-	return ret;
-}
-
-bool LapsusPanelSlider::supportsArgs(const QStringList & args)
-{
-	int minV, maxV;
-
-	return getMinMaxArgs(args, &minV, &maxV);
-}
-
-void LapsusPanelSlider::sliderValueChanged(int nValue)
-{
-	if (!_hasDBus || _dontSendChange) return;
-
-	LapsusDBus::get()->setFeature(_featureId, QString::number(nValue));
-}
-
-void LapsusPanelSlider::featureChanged(const QString &id, const QString &val)
-{
-	if (id == _featureId)
-	{
-		QStringList args = QStringList::split(",", val);
-			
-		bool setVal = false;
-		int nVal = 0;
-		
-		for (uint i = 0; i < args.size(); ++i)
-		{
-			bool ok;
-	
-			int x = args[i].toInt(&ok);
-			
-			if (ok)
-			{
-				setVal = true;
-				nVal = x;
-			}
-		}
-		
-		if (setVal)
-		{
-			_dontSendChange = true;
-			_slider->setValue(nVal);
-			_dontSendChange = false;
-		}
-
-	}
-}
-
-void LapsusPanelSlider::dbusStateChanged(bool state)
-{
-	_hasDBus = state;
 	_slider->setGray(!state);
 }
 
@@ -258,7 +167,7 @@ void LapsusPanelSlider::wheelEvent( QWheelEvent * e)
 {
 	// Slider does it too, but we want mouse wheel to work also
 	// above the label icon
-	if (_slider && _hasDBus && _isValid)
+	if (_slider && hasDBus() && isValid())
 	{
 		if (e->delta() > 0)
 		{
@@ -288,11 +197,11 @@ bool LapsusPanelSlider::eventFilter( QObject* obj, QEvent* e )
 		if (qme->button() == Qt::MidButton)
 			return true;
 		
-		if (!_isValid || !_hasDBus)
+		if (!isValid() || !hasDBus())
 			return true;
 	}
 
-	if (!_isValid || !_hasDBus)
+	if (!isValid() || !hasDBus())
 	{
 		if (e->type() == QEvent::MouseMove
 			|| e->type() == QEvent::Wheel)
@@ -300,4 +209,21 @@ bool LapsusPanelSlider::eventFilter( QObject* obj, QEvent* e )
 	}
 
 	return QWidget::eventFilter(obj,e);
+}
+
+LapsusPanelSlider* LapsusPanelSlider::newPanelWidget(const QString &confID,
+			Qt::Orientation orientation, QWidget *parent, KConfig *cfg)
+{
+	if (LapsusSlider::readFeatureType(confID, cfg) != LapsusSlider::featureType()) return 0;
+	
+	LapsusSlider *feat = new LapsusSlider(cfg, confID);
+	
+	if (feat->isValid())
+	{
+		return new LapsusPanelSlider(orientation, parent, feat);
+	}
+	
+	delete feat;
+	
+	return 0;
 }

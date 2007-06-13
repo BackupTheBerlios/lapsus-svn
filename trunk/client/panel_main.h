@@ -57,7 +57,7 @@ class LapsusPanelMain : public QWidget
 		void showContextMenu();
 
 	protected slots:
-		void featureNotif(const QString &id, const QString &val);
+		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
 
 	private:
 		KConfig _cfg;

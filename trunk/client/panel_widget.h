@@ -27,27 +27,24 @@
 #include <qwidget.h>
 
 #include "lapsus_icons.h"
+#include "lapsus_feature.h"
 
 class LapsusPanelWidget : public QWidget, protected LapsusIcons
 {
 	Q_OBJECT
 
 	public:
-		LapsusPanelWidget(const QString &id,
-			Qt::Orientation orientation, QWidget *parent,
-			KConfig *cfg);
-
+		LapsusPanelWidget(Qt::Orientation orientation,
+			QWidget *parent, LapsusFeature *feat);
 		virtual ~LapsusPanelWidget();
-
-		static LapsusPanelWidget* newAppletwidget(
-			const QString &id, Qt::Orientation orientation,
-			QWidget *parent, KConfig *cfg);
+		
+		bool isValid();
+		bool hasDBus();
 
 	protected:
-		KConfig *_cfg;
+		LapsusFeature* _feature;
 		Qt::Orientation _panelOrientation;
-		QString _id;
-
+		
 		virtual void resizeEvent( QResizeEvent * );
 };
 

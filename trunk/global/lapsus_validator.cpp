@@ -20,6 +20,10 @@
 
 #include "lapsus_validator.h"
 
+LapsusValidator::LapsusValidator()
+{
+}
+
 LapsusValidator::LapsusValidator(const QStringList &validArgs): _valid(validArgs)
 {
 }

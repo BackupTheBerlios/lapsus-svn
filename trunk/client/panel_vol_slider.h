@@ -22,23 +22,24 @@
 #define LAPSUS_PANEL_VOL_SLIDER_H
 
 #include "panel_slider.h"
+#include "lapsus_vol_slider.h"
 
 class LapsusPanelVolSlider : public LapsusPanelSlider
 {
 	Q_OBJECT
 
 	public:
-		LapsusPanelVolSlider(const QString &id,
-			Qt::Orientation orient, QWidget *parent,
-			KConfig *cfg);
+		LapsusPanelVolSlider(Qt::Orientation orientation, QWidget *parent,
+			LapsusVolSlider *sliderFeat);
 		~LapsusPanelVolSlider();
 
 		virtual bool eventFilter( QObject* obj, QEvent* e );
-
-		static bool supportsArgs(const QStringList & args);
-
-	protected slots:
-		virtual void featureChanged(const QString &id, const QString &val);
+		
+		static LapsusPanelVolSlider* newPanelWidget(const QString &confID,
+			Qt::Orientation orientation, QWidget *parent, KConfig *cfg);
+		
+	signals:
+		virtual void toggleMute();
 };
 
 #endif

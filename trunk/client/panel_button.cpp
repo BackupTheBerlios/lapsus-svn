@@ -27,43 +27,31 @@
 
 #include "panel_button.h"
 
-LapsusPanelButton::LapsusPanelButton( const QString &id,
-	Qt::Orientation orientation, QWidget *parent, KConfig *cfg) :
-		LapsusPanelWidget(id, orientation, parent, cfg),
-		_layout(0), _iconLabel(0), _hasDBus(false), _isValid(false)
+LapsusPanelButton::LapsusPanelButton(Qt::Orientation orientation,
+			QWidget *parent, LapsusSwitch *feat):
+		LapsusPanelWidget(orientation, parent, feat),
+		_switchFeat(feat), _layout(0), _iconLabel(0)
 {
+	if (!feat || !isValid()) return;
+	
 	_layout = new QHBoxLayout( this );
 	_layout->setAlignment(Qt::AlignCenter);
 
-	_cfg->setGroup(id.lower());
-
-	QString tip;
-
-	if (_cfg->hasKey("feature_id"))
+	QString tip = feat->getFeatureName();
+	QStringList args = feat->getSwitchAllValues();
+	
+	for (QStringList::Iterator it = args.begin(); it != args.end(); ++it)
 	{
-		_featureId = _cfg->readEntry("feature_id");
+		int icon = loadNewAutoIcon(*it, 20);
 
-		tip = LapsusDBus::get()->getFeatureName(_featureId);
-
-		_vals = LapsusDBus::get()->getFeatureArgs(_featureId);
-
-		if (_vals.size() > 1)
+		if (icon >= 0)
 		{
-			_isValid = true;
-			_hasDBus = true;
-
-			for (QStringList::Iterator it = _vals.begin(); it != _vals.end(); ++it)
-			{
-				int icon = loadNewAutoIcon(*it, 20);
-
-				if (icon >= 0) _icons.insert(*it, icon);
-			}
+			_icons.insert(*it, icon);
 		}
-
-		_curVal = LapsusDBus::get()->getFeature(_featureId);
 	}
 
 	setBackgroundMode(X11ParentRelative);
+	
 	_iconLabel = new QLabel(this);
 	_iconLabel->setAlignment(Qt::AlignCenter);
 	_iconLabel->setBackgroundMode(X11ParentRelative);
@@ -79,13 +67,10 @@ LapsusPanelButton::LapsusPanelButton( const QString &id,
 	if (tip.length() > 0)
 		QToolTip::add( _iconLabel, tip);
 
-	checkCurVal();
+	buttonUpdate(feat->getSwitchValue());
 
-	connect ( LapsusDBus::get(), SIGNAL(stateChanged(bool)),
-			this, SLOT(dbusStateChanged(bool)) );
-
-	connect( LapsusDBus::get(), SIGNAL(featureChanged(const QString &, const QString &)),
-			this, SLOT(featureChanged(const QString &, const QString &)));
+	connect( feat, SIGNAL(switchUpdate(const QString &)),
+			this, SLOT(buttonUpdate(const QString &)));
 
 	_layout->activate();
 
@@ -98,29 +83,13 @@ LapsusPanelButton::~LapsusPanelButton()
 {
 }
 
-bool LapsusPanelButton::supportsArgs(const QStringList & args)
-{
-	if (args.size() > 0)
-	{
-		for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it)
-		{
-			if (QStringList::split(':', *it).size() > 1)
-				return false;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-void LapsusPanelButton::checkCurVal()
+void LapsusPanelButton::buttonUpdate(const QString &val)
 {
 	_iconLabel->clear();
 
-	if (_icons.contains(_curVal))
+	if (_icons.contains(val))
 	{
-		int icon = _icons[_curVal];
+		int icon = _icons[val];
 
 		if (icon >= 0)
 		{
@@ -129,22 +98,7 @@ void LapsusPanelButton::checkCurVal()
 		}
 	}
 
-	_iconLabel->setText(QString("%1").arg(_curVal.upper()));
-}
-
-void LapsusPanelButton::featureChanged(const QString &id, const QString &val)
-{
-	if (id == _featureId)
-	{
-		_curVal = val;
-		checkCurVal();
-	}
-}
-
-void LapsusPanelButton::dbusStateChanged(bool state)
-{
-	_hasDBus = state;
-	checkCurVal();
+	_iconLabel->setText(QString("%1").arg(val.upper()));
 }
 
 QSize LapsusPanelButton::sizeHint() const
@@ -181,24 +135,46 @@ bool LapsusPanelButton::eventFilter( QObject* obj, QEvent* e )
 			return true;
 		}
 
-		if (!_isValid || !_hasDBus)
+		if (!isValid() || !hasDBus() || !_switchFeat)
 			return true;
 
-		if (qme->button() == Qt::LeftButton && _vals.size() > 0)
+		QStringList args = _switchFeat->getSwitchAllValues();
+		QString curVal = _switchFeat->getSwitchValue();
+		
+		if (qme->button() == Qt::LeftButton && args.size() > 0)
 		{
-			QStringList::Iterator it = _vals.find(_curVal);
+			QStringList::Iterator it = args.find(curVal);
 			QString nVal;
 
-			if (it != _vals.end()) ++it;
+			if (it != args.end()) ++it;
 
-			if (it == _vals.end())
-				nVal = *(_vals.begin());
+			if (it == args.end())
+				nVal = *(args.begin());
 			else
 				nVal = *it;
 
-			LapsusDBus::get()->setFeature(_featureId, nVal);
+			_switchFeat->setSwitchValue(nVal);
 		}
+		
+		return true;
 	}
 
 	return QWidget::eventFilter(obj,e);
+}
+
+LapsusPanelButton* LapsusPanelButton::newPanelWidget(const QString &confID,
+			Qt::Orientation orientation, QWidget *parent, KConfig *cfg)
+{
+	if (LapsusSwitch::readFeatureType(confID, cfg) != LapsusSwitch::featureType()) return 0;
+	
+	LapsusSwitch *feat = new LapsusSwitch(cfg, confID);
+	
+	if (feat->isValid())
+	{
+		return new LapsusPanelButton(orientation, parent, feat);
+	}
+	
+	delete feat;
+	
+	return 0;
 }

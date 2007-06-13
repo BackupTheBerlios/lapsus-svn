@@ -126,11 +126,11 @@ bool LapsusInit::featureWrite(const QString &id, const QString &nVal)
 	if (nVal.length() < 1)
 	{
 		if (_initVals.contains(id))
-			dbusSignalFeatureChanged(id, nVal);
-		
-		_initVals.remove(id);
-		
-		return true;
+		{
+			dbusSignalFeatureUpdate(id, nVal);
+			_initVals.remove(id);
+			return true;
+		}
 	}
 	else
 	{
@@ -139,17 +139,14 @@ bool LapsusInit::featureWrite(const QString &id, const QString &nVal)
 			QString modId = id;
 			LapsusModule *mod;
 			
-			if (_modList->findModule(&mod, modId) && mod)
+			if (_modList->findModule(&mod, modId)
+				&& mod
+				&& LapsusValidator(mod->featureArgs(modId)).isValid(nVal)
+				&& _initVals[id] != nVal)
 			{
-				if (LapsusValidator(mod->featureArgs(modId)).isValid(nVal))
-				{
-					if (_initVals[id] != nVal)
-						dbusSignalFeatureChanged(id, nVal);
-					
-					_initVals[id] = nVal;
-					
-					return true;
-				}
+				dbusSignalFeatureUpdate(id, nVal);
+				_initVals[id] = nVal;
+				return true;
 			}
 		}
 	}

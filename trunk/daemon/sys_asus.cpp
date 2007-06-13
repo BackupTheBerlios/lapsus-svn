@@ -459,7 +459,9 @@ QString SysAsus::featureRead(const QString &id)
 bool SysAsus::setBacklight(uint uVal, bool forceSignal)
 {
 	if (uVal > _maxBacklight)
+	{
 		uVal = _maxBacklight;
+	}
 
 	uint oVal = readPathUInt(ASUS_GET_BACKLIGHT_PATH);
 
@@ -469,10 +471,11 @@ bool SysAsus::setBacklight(uint uVal, bool forceSignal)
 
 	if (res || forceSignal)
 	{
-		dbusSignalFeatureChanged(LAPSUS_FEAT_BACKLIGHT_ID, QString::number(uVal));
+		dbusSignalFeatureUpdate(LAPSUS_FEAT_BACKLIGHT_ID, QString::number(uVal));
+		return true;
 	}
 	
-	return true;
+	return false;
 }
 
 bool SysAsus::setLightSensorLevel(uint uVal, bool forceSignal)
@@ -488,10 +491,11 @@ bool SysAsus::setLightSensorLevel(uint uVal, bool forceSignal)
 
 	if (res || forceSignal)
 	{
-		dbusSignalFeatureChanged(LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID, QString::number(uVal));
+		dbusSignalFeatureUpdate(LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID, QString::number(uVal));
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 bool SysAsus::featureWrite(const QString &id, const QString &nVal)
@@ -533,10 +537,13 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 			 * But we don't want to send info if we don't think it has changed...
 			 */
 			if (oVal != uVal)
-				dbusSignalFeatureChanged(id, nVal);
+			{
+				dbusSignalFeatureUpdate(id, nVal);
+				return true;
+			}
 		}
 		
-		return true;
+		return false;
 	}
 
 	QString disp;
@@ -569,12 +576,14 @@ bool SysAsus::featureWrite(const QString &id, const QString &nVal)
 			sVal = oVal & ~(1 << offs);
 		}
 
-		if (sVal == oVal) return true;
+		if (sVal != oVal
+			&& writePathUInt(ASUS_DISPLAY_PATH, sVal))
+		{
+			dbusSignalFeatureUpdate(id, nVal);
+			return true;
+		}
 
-		if (writePathUInt(ASUS_DISPLAY_PATH, sVal))
-			dbusSignalFeatureChanged(id, nVal);
-
-		return true;
+		return false;
 	}
 
 	return false;

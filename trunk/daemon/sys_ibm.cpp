@@ -410,12 +410,14 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 
 		QString lvl = QString::number(n);
 
-		if (oVal == lvl) return true;
+		if (oVal != lvl
+			&& dbgWritePathString(IBM_BACKLIGHT_PATH, QString("level %1").arg(lvl)))
+		{
+			dbusSignalFeatureUpdate(id, lvl);
+			return true;
+		}
 
-		if (dbgWritePathString(IBM_BACKLIGHT_PATH, QString("level %1").arg(lvl)))
-			dbusSignalFeatureChanged(id, lvl);
-
-		return true;
+		return false;
 	}
 
 	if (id == LAPSUS_FEAT_VOLUME_ID)
@@ -429,12 +431,14 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 
 		QString lvl = QString::number(n);
 
-		if (oVal == lvl) return true;
-
-		if (dbgWritePathString(IBM_VOLUME_PATH, QString("level %1").arg(lvl)))
-			dbusSignalFeatureChanged(id, lvl);
-
-		return true;
+		if (oVal != lvl
+			&& dbgWritePathString(IBM_VOLUME_PATH, QString("level %1").arg(lvl)))
+		{
+			dbusSignalFeatureUpdate(id, lvl);
+			return true;
+		}
+		
+		return false;
 	}
 
 	if (id == IBM_LIGHT_ID)
@@ -444,13 +448,16 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 		if (nVal == LAPSUS_FEAT_ON) val = true;
 		else val = false;
 
-		if (val && oVal == LAPSUS_FEAT_ON) return true;
-		if (!val && oVal == LAPSUS_FEAT_OFF) return true;
+		if (val && oVal == LAPSUS_FEAT_ON) return false;
+		if (!val && oVal == LAPSUS_FEAT_OFF) return false;
 
 		if (dbgWritePathString(IBM_LIGHT_PATH, val?IBM_ON:IBM_OFF))
-			dbusSignalFeatureChanged(id, val?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
-
-		return true;
+		{
+			dbusSignalFeatureUpdate(id, val?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
+			return true;
+		}
+		
+		return false;
 	}
 
 	if (id == LAPSUS_FEAT_BLUETOOTH_ID)
@@ -460,13 +467,16 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 		if (nVal == LAPSUS_FEAT_ON) val = true;
 		else val = false;
 
-		if (val && oVal == LAPSUS_FEAT_ON) return true;
-		if (!val && oVal == LAPSUS_FEAT_OFF) return true;
+		if (val && oVal == LAPSUS_FEAT_ON) return false;
+		if (!val && oVal == LAPSUS_FEAT_OFF) return false;
 
-		if( dbgWritePathString(IBM_BLUETOOTH_PATH, val?IBM_ENABLE:IBM_DISABLE))
-			dbusSignalFeatureChanged(id, val?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
-
-		return true;
+		if(dbgWritePathString(IBM_BLUETOOTH_PATH, val?IBM_ENABLE:IBM_DISABLE))
+		{
+			dbusSignalFeatureUpdate(id, val?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
+			return true;
+		}
+		
+		return false;
 	}
 
 	QString tmp;
@@ -478,15 +488,19 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 		if (nVal == LAPSUS_FEAT_ON) val = true;
 		else val = false;
 
-		if (val && oVal == LAPSUS_FEAT_ON) return true;
-		if (!val && oVal == LAPSUS_FEAT_OFF) return true;
+		if (val && oVal == LAPSUS_FEAT_ON) return false;
+		if (!val && oVal == LAPSUS_FEAT_OFF) return false;
 
 		if (val) res = dbgWritePathString(IBM_DISPLAY_PATH, tmp.append("_" IBM_ENABLE));
 		else res = dbgWritePathString(IBM_DISPLAY_PATH, tmp.append("_" IBM_DISABLE));
 
-		if (res) dbusSignalFeatureChanged(id, val?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
-
-		return true;
+		if (res)
+		{
+			dbusSignalFeatureUpdate(id, val?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
+			return true;
+		}
+		
+		return false;
 	}
 
 	if (isLEDFeature(id, tmp))
@@ -499,36 +513,39 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 
 		if (val == 2)
 		{
-			if (oVal == LAPSUS_FEAT_ON) return true;
+			if (oVal == LAPSUS_FEAT_ON) return false;
 			
 			if (dbgWritePathString(IBM_LED_PATH, QString("%1 " IBM_ON).arg(tmp)))
 			{
 				_leds[tmp] = LAPSUS_FEAT_ON;
-				dbusSignalFeatureChanged(id, LAPSUS_FEAT_ON);
+				dbusSignalFeatureUpdate(id, LAPSUS_FEAT_ON);
+				return true;
 			}
 		}
 		else if (val == 1)
 		{
-			if (oVal == LAPSUS_FEAT_BLINK) return true;
+			if (oVal == LAPSUS_FEAT_BLINK) return false;
 			
 			if (dbgWritePathString(IBM_LED_PATH, QString("%1 " IBM_BLINK).arg(tmp)))
 			{
 				_leds[tmp] = LAPSUS_FEAT_BLINK;
-				dbusSignalFeatureChanged(id, LAPSUS_FEAT_BLINK);
+				dbusSignalFeatureUpdate(id, LAPSUS_FEAT_BLINK);
+				return true;
 			}
 		}
 		else
 		{
-			if (oVal == LAPSUS_FEAT_OFF) return true;
+			if (oVal == LAPSUS_FEAT_OFF) return false;
 			
 			if (dbgWritePathString(IBM_LED_PATH, QString("%1 " IBM_OFF).arg(tmp)))
 			{
 				_leds[tmp] = LAPSUS_FEAT_OFF;
-				dbusSignalFeatureChanged(id, LAPSUS_FEAT_OFF);
+				dbusSignalFeatureUpdate(id, LAPSUS_FEAT_OFF);
+				return true;
 			}
 		}
 
-		return true;
+		return false;
 	}
 
 	return false;
@@ -632,7 +649,7 @@ void SysIBM::signalNVRAMChange(const QString &id, unsigned char nVal)
 {
 	QString val = QString::number(nVal);
 
-	dbusSignalFeatureChanged(id, val);
+	dbusSignalFeatureUpdate(id, val);
 	dbusSignalFeatureNotif(id, val);
 }
 

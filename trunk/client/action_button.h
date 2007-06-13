@@ -29,33 +29,28 @@
 #include <kconfig.h>
 
 #include "lapsus_icons.h"
+#include "lapsus_switch.h"
 
 class LapsusActionButton : public KAction, protected LapsusIcons
 {
 	Q_OBJECT
 
 	public:
-		LapsusActionButton(const QString &id, KConfig *cfg,
-			QObject *parent = 0, const KShortcut &cut = KShortcut());
+		LapsusActionButton(const QString &confID,
+			KActionCollection *parent, LapsusSwitch *feat);
 		virtual ~LapsusActionButton();
 
-	private:
-		KConfig *_cfg;
-		QString _id;
-		QString _name;
-		QStringList _vals;
-		QString _curVal;
-		QString _featureId;
-		bool _hasDBus;
-		bool _isValid;
-		QMap<QString, int> _icons;
-
-		void checkCurVal();
-
+		static bool addNewActionButton(const QString &confID,
+			KConfig *cfg, KActionCollection *parent);
+			
 	protected slots:
 		void actionClicked();
-		void featureChanged(const QString &id, const QString &val);
-		void dbusStateChanged(bool state);
+		void buttonUpdate(const QString &val);
+	
+	private:
+		LapsusSwitch* _switchFeat;
+		QString _name;
+		QMap<QString, int> _icons;
 };
 
 #endif

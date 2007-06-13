@@ -25,70 +25,21 @@
 
 #include "panel_vol_slider.h"
 
-LapsusPanelVolSlider::LapsusPanelVolSlider( const QString &id,
-	Qt::Orientation orient, QWidget *parent, KConfig *cfg) :
-		LapsusPanelSlider(id, orient, parent, cfg)
+LapsusPanelVolSlider::LapsusPanelVolSlider(Qt::Orientation orientation, QWidget *parent,
+		LapsusVolSlider *sliderFeat):
+		LapsusPanelSlider(orientation, parent, sliderFeat)
 {
+	if (!sliderFeat || !isValid() || !_slider) return;
+	
+	connect ( this, SIGNAL(toggleMute()),
+		sliderFeat, SLOT(toggleMute()));
+
+	connect( sliderFeat, SIGNAL(sliderMuteUpdate(bool)),
+			_slider, SLOT(setGray(bool)));
 }
 
 LapsusPanelVolSlider::~LapsusPanelVolSlider()
 {
-}
-
-bool LapsusPanelVolSlider::supportsArgs(const QStringList & args)
-{
-	bool hasMute = false;
-	bool hasUnMute = false;
-	bool okMinMax = false;
-	
-	for (uint i = 0; i < args.size(); ++i)
-	{
-		QStringList list = QStringList::split(':', args[i]);
-
-		if (list.size() == 2)
-		{
-			int minV = list[0].toInt();
-			int maxV = list[1].toInt();
-
-			if ( minV < maxV )
-				okMinMax = true;
-		}
-		else if (list.size() < 2)
-		{
-			if (args[i] == LAPSUS_FEAT_MUTE) hasMute = true;
-			else if (args[i] == LAPSUS_FEAT_UNMUTE) hasUnMute = true;
-		}
-	}
-	
-	if (hasMute && hasUnMute && okMinMax) return true;
-	
-	return false;
-}
-
-void LapsusPanelVolSlider::featureChanged(const QString &id, const QString &val)
-{
-	if (id == _featureId)
-	{
-		QStringList args = QStringList::split(",", val);
-			
-		bool setGray = false;
-		
-		for (uint i = 0; i < args.size(); ++i)
-		{
-			if (args[i] == LAPSUS_FEAT_MUTE)
-			{
-				setGray = true;
-			}
-			else if (args[i] == LAPSUS_FEAT_UNMUTE)
-			{
-				setGray = false;
-			}
-		}
-		
-		_slider->setGray(setGray);
-		
-		LapsusPanelSlider::featureChanged(id, val);
-	}
 }
 
 bool LapsusPanelVolSlider::eventFilter( QObject* obj, QEvent* e )
@@ -99,16 +50,28 @@ bool LapsusPanelVolSlider::eventFilter( QObject* obj, QEvent* e )
 
 		if (qme->button() == Qt::MidButton)
 		{
-			if (_hasDBus)
-			{
-				_slider->setGray(!_slider->gray());
-				
-				LapsusDBus::get()->setFeature(_featureId, (_slider->gray())?LAPSUS_FEAT_MUTE:LAPSUS_FEAT_UNMUTE);
-			}
+			emit toggleMute();
 			
 			return true;
 		}
 	}
 	
 	return LapsusPanelSlider::eventFilter(obj,e);
+}
+
+LapsusPanelVolSlider* LapsusPanelVolSlider::newPanelWidget(const QString &confID,
+			Qt::Orientation orientation, QWidget *parent, KConfig *cfg)
+{
+	if (LapsusVolSlider::readFeatureType(confID, cfg) != LapsusVolSlider::featureType()) return 0;
+	
+	LapsusVolSlider *feat = new LapsusVolSlider(cfg, confID);
+	
+	if (feat->isValid())
+	{
+		return new LapsusPanelVolSlider(orientation, parent, feat);
+	}
+	
+	delete feat;
+	
+	return 0;
 }

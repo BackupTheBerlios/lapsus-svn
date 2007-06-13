@@ -25,12 +25,12 @@
 #include <qvaluevector.h>
 #include <qpixmap.h>
 
-#include <kconfig.h>
+#include "lapsus_feature.h"
 
 class LapsusIcons
 {
 	public:
-		LapsusIcons(const QString &id, KConfig *cfg);
+		LapsusIcons(LapsusFeature* feat);
 		~LapsusIcons();
 
 		int loadNewAutoIcon(int size);
@@ -40,7 +40,7 @@ class LapsusIcons
 		QPixmap getIcon(int id) const;
 
 	private:
-		KConfig *_cfg;
+		LapsusFeature* _feature;
 		QString _featureType;
 		QValueVector<QPixmap> _cachedIcons;
 };

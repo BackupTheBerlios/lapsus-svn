@@ -199,9 +199,13 @@ bool LapsusSynaptics::featureWrite(const QString &id, const QString &nVal)
 {
 	if (id == LAPSUS_FEAT_TOUCHPAD_ID)
 	{
-		setState(nVal == LAPSUS_FEAT_ON);
-
-		return true;
+		bool nState = (nVal == LAPSUS_FEAT_ON);
+		
+		if (nState != _isOn)
+		{
+			setState(nState);
+			return true;
+		}
 	}
 
 	return false;
@@ -209,7 +213,7 @@ bool LapsusSynaptics::featureWrite(const QString &id, const QString &nVal)
 
 void LapsusSynaptics::stateChanged(bool nState)
 {
-	dbusSignalFeatureChanged(LAPSUS_FEAT_TOUCHPAD_ID,
+	dbusSignalFeatureUpdate(LAPSUS_FEAT_TOUCHPAD_ID,
 		nState?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
 
 	if (_notifyChange)

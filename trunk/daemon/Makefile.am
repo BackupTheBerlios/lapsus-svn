@@ -13,6 +13,13 @@ METASOURCES = AUTO
 
 sbin_PROGRAMS = lapsusd
 
+# Lets change default KDE prefix. Lapsusd might be used by anything and
+# does not need or use KDE - it uses only Qt.
+# In the future it might be a separate daemon package, with various
+# frontends (KDE, Gnome?) as also separate packages. So it should go
+# to /usr/sbin rather then to $KDEDIR/sbin directory.
+prefix = /usr
+
 # the application source, library search path, and link libraries
 lapsusd_SOURCES = acpi_event_parser.cpp lapsus_signal.cpp lapsus_daemon.cpp lapsus_dbus.cpp main.cpp \
 lapsus_init.cpp lapsus_config.cpp lapsus_module.cpp modules_list.cpp lapsus_mixer.cpp sys_backend.cpp \

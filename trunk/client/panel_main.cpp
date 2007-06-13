@@ -60,10 +60,18 @@ LapsusPanelMain::LapsusPanelMain(QWidget *parent,
 	for ( QStringList::ConstIterator it = _panelEntries.begin();
 		it != _panelEntries.end(); ++it )
 	{
-		LapsusPanelWidget *widget =
-			LapsusPanelWidget::newAppletwidget(
-			*it, _orientation, this,
-			&_cfg);
+		LapsusPanelWidget *widget;
+		
+		widget = LapsusPanelVolSlider::newPanelWidget(
+				*it, _orientation, this, &_cfg);
+		
+		if (!widget)
+			widget = LapsusPanelSlider::newPanelWidget(
+				*it, _orientation, this, &_cfg);
+
+		if (!widget)
+			widget = LapsusPanelButton::newPanelWidget(
+				*it, _orientation, this, &_cfg);
 
 		if (widget)
 		{
@@ -82,35 +90,23 @@ LapsusPanelMain::LapsusPanelMain(QWidget *parent,
 		it != _menuEntries.end(); ++it )
 	{
 		QString str = *it;
-
-		_cfg.setGroup(str);
-
-		if (!_cfg.hasKey("feature_id")) continue;
-
-		QString fId = _cfg.readEntry("feature_id");
-
-		if (fId.length() < 1
-			|| LapsusDBus::get()->getFeatureName(fId).length() < 1
-			|| LapsusDBus::get()->getFeatureArgs(fId).size() < 1)
-		{
-			continue;
-		}
-
+		bool addedOK = false;
+		
 		if (!( KToggleAction* )_actions->action(str))
 		{
-			new LapsusActionButton(str, &_cfg, _actions);
+			addedOK = LapsusActionButton::addNewActionButton(str, &_cfg, _actions);
 		}
 	}
 
 	connect(LapsusDBus::get(),
-		SIGNAL(featureNotif(const QString &, const QString &)),
+		SIGNAL(dbusFeatureUpdate(const QString &, const QString &, bool)),
 		this,
-		SLOT(featureNotif(const QString &, const QString &)));
+		SLOT(dbusFeatureUpdate(const QString &, const QString &, bool)));
 
 	if (added < 1)
 	{
 		LapsusPanelWidget *widget = new LapsusPanelDefault(
-			"lapsus_panel_default", _orientation, this, &_cfg);
+						_orientation, this);
 
 		connect(widget, SIGNAL(rightButtonPressed()),
 			this, SLOT(showContextMenu()));
@@ -176,74 +172,46 @@ void LapsusPanelMain::loadConfig()
 				continue;
 			}
 			
-			QString grp;
+			QString panelID = QString("panel_%1").arg(id);
+			QString menuID = QString("menu_%1").arg(id);
 			QStringList args = LapsusDBus::get()->getFeatureArgs(id);
-
-			if (LapsusPanelVolSlider::supportsArgs(args))
+			
+			if (LapsusVolSlider::supportsArgs(args)
+				&& LapsusVolSlider::addConfigEntry(panelID, id, &_cfg))
 			{
-				grp = QString("panel_%1").arg(id);
-				pEntries.push_front(grp);
-
-				_cfg.deleteGroup(grp);
-				_cfg.setGroup(grp);
-				_cfg.writeEntry("widget_type", "vol_slider");
-				_cfg.writeEntry("feature_id", id);
+				pEntries.push_front(panelID);
 			}
-			else if (LapsusPanelSlider::supportsArgs(args))
+			else if (LapsusSlider::supportsArgs(args)
+				&& LapsusSlider::addConfigEntry(panelID, id, &_cfg))
 			{
-				grp = QString("panel_%1").arg(id);
-				pEntries.push_front(grp);
-
-				_cfg.deleteGroup(grp);
-				_cfg.setGroup(grp);
-				_cfg.writeEntry("widget_type", "slider");
-				_cfg.writeEntry("feature_id", id);
+				pEntries.push_front(panelID);
 			}
-			else if (LapsusPanelButton::supportsArgs(args))
+			else if (LapsusSwitch::supportsArgs(args))
 			{
 				int idx = id.findRev('.');
 				QString fType;
 				
-				if (idx < 1)
+				if (idx > 0)
 				{
-					continue;
+					fType = id.mid(idx+1);
+					
+					if (fType == LAPSUS_FEAT_BLUETOOTH_ID
+						|| fType == LAPSUS_FEAT_WIRELESS_ID)
+					{
+						if (LapsusSwitch::addConfigEntry(panelID, id, &_cfg))
+							pEntries.push_back(panelID);
+					}
+					else if (fType.startsWith(LAPSUS_FEAT_LED_ID_PREFIX)
+						|| fType == LAPSUS_FEAT_TOUCHPAD_ID
+						|| fType == "thinklight")
+					{
+						if (LapsusSwitch::addConfigEntry(menuID, id, &_cfg))
+							mEntries.push_back(menuID);
+					}
 				}
-				
-				fType = id.mid(idx+1);
-				
-				if (fType == LAPSUS_FEAT_BLUETOOTH_ID
-					|| fType == LAPSUS_FEAT_WIRELESS_ID)
-				{
-					grp = QString("panel_%1").arg(id);
-					pEntries.push_back(grp);
-				}
-				else if (fType.startsWith(LAPSUS_FEAT_LED_ID_PREFIX))
-				{
-					grp = QString("menu_%1").arg(id);
-					mEntries.push_back(grp);
-				}
-				else if (fType == "thinklight")
-				{
-					grp = QString("menu_%1").arg(id);
-					mEntries.push_back(grp);
-				}
-				else if (fType == LAPSUS_FEAT_TOUCHPAD_ID)
-				{
-					grp = QString("menu_%1").arg(id);
-					mEntries.push_back(grp);
-				}
-				else
-				{
-					continue;
-				}
-
-				_cfg.deleteGroup(grp);
-				_cfg.setGroup(grp);
-				_cfg.writeEntry("widget_type", "button");
-				_cfg.writeEntry("feature_id", id);
 			}
 		}
-
+		
 		_cfg.setGroup("applet");
 		_cfg.writeEntry("panel_entries", pEntries);
 		_cfg.writeEntry("menu_entries", mEntries);
@@ -310,8 +278,10 @@ void LapsusPanelMain::mousePressEvent( QMouseEvent *e )
 	}
 }
 
-void LapsusPanelMain::featureNotif(const QString &id, const QString &val)
+void LapsusPanelMain::dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif)
 {
+	if (!isNotif) return;
+	
 	if (!_osd) _osd = new LapsusOSD(this);
 
 	QString name = LapsusDBus::get()->getFeatureName(id);

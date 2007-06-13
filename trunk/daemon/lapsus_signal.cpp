@@ -47,7 +47,7 @@ void unixSignalHandler(int)
 	}
 }
 
-LapsusSignal::LapsusSignal()
+LapsusSignal::LapsusSignal(): startedExit(false)
 {
 	if (!alreadyCreated)
 	{

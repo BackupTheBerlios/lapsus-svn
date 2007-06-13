@@ -183,13 +183,13 @@ void LapsusMixer::volumeChanged(int val)
 		if (mixerIsMuted())
 			args.append(LAPSUS_FEAT_MUTE);
 		
-		dbusSignalFeatureChanged(LAPSUS_FEAT_VOLUME_ID, args);
+		dbusSignalFeatureUpdate(LAPSUS_FEAT_VOLUME_ID, args);
 	}
 }
 
 void LapsusMixer::muteChanged(bool muted)
 {
-	dbusSignalFeatureChanged(LAPSUS_FEAT_VOLUME_ID,
+	dbusSignalFeatureUpdate(LAPSUS_FEAT_VOLUME_ID,
 			muted?LAPSUS_FEAT_MUTE:LAPSUS_FEAT_UNMUTE);
 }
 
