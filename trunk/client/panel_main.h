@@ -47,7 +47,7 @@ class LapsusPanelMain : public QWidget
 		QSize minimumSize() const;
 		QSizePolicy sizePolicy() const;
 
-		void appletPreferences();
+		bool appletPreferences();
 
 	protected:
 		void mousePressEvent( QMouseEvent * );

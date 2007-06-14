@@ -151,7 +151,10 @@ int LapsusApplet::heightForWidth(int w) const
 
 void LapsusApplet::preferences()
 {
-	_mainWidget->appletPreferences();
+	if (_mainWidget->appletPreferences())
+	{
+		changeOrientation(_orientation);
+	}
 }
 
 void LapsusApplet::resizeEvent( QResizeEvent *)

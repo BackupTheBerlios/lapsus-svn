@@ -46,6 +46,8 @@ LapsusFeature::LapsusFeature(KConfig *cfg, const QString &idConf, const char *id
 	
 	if (_featDBusID.length() > 0)
 	{
+		_isValid = true;
+		
 		QString val = LapsusDBus::get()->getFeatureValue(_featDBusID);
 		QString featName = LapsusDBus::get()->getFeatureName(_featDBusID);
 		QStringList featArgs = LapsusDBus::get()->getFeatureArgs(_featDBusID);
@@ -53,7 +55,6 @@ LapsusFeature::LapsusFeature(KConfig *cfg, const QString &idConf, const char *id
 		
 		if (val.length() > 0 && featName.length() > 0 && featArgs.count() > 0)
 		{
-			_isValid = true;
 			_hasDBus = true;
 			
 			connect ( LapsusDBus::get(), SIGNAL(dbusStateUpdate(bool)),
@@ -81,6 +82,20 @@ bool LapsusFeature::isArgValid(const QString &arg)
 	if (!_validator) return false;
 	
 	return _validator->isValid(arg);
+}
+
+void LapsusFeature::dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif)
+{
+	if (id != _featDBusID) return;
+	
+	if (isNotif)
+	{
+		emit featureUpdate(val);
+	}
+	else
+	{
+		emit featureUpdate(val);
+	}
 }
 
 void LapsusFeature::updateFeatureValue()
@@ -150,7 +165,9 @@ bool LapsusFeature::hasDBus()
 
 bool LapsusFeature::saveFeature()
 {
-	if (!_cfg || !_isValid) return false;
+	if (!_cfg) return false;
+	
+	if (_featConfID.length() < 1 || _featDBusID.length() < 1) return false;
 	
 	_cfg->setGroup(_featConfID);
 	_cfg->writeEntry(LAPSUS_CONF_FEATURE_ID, _featDBusID);
@@ -169,4 +186,12 @@ QString LapsusFeature::readFeatureType(const QString &confID, KConfig *cfg)
 	
 	cfg->setGroup(confID);
 	return cfg->readEntry(LAPSUS_CONF_WIDGET_TYPE);
+}
+
+QString LapsusFeature::readFeatureDBusID(const QString &confID, KConfig *cfg)
+{
+	if (!cfg) return QString();
+	
+	cfg->setGroup(confID);
+	return cfg->readEntry(LAPSUS_CONF_FEATURE_ID);
 }

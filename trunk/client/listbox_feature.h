@@ -18,45 +18,25 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_SLIDER_H
-#define LAPSUS_SLIDER_H
+#ifndef LAPSUS_LISTBOX_FEATURE_H
+#define LAPSUS_LISTBOX_FEATURE_H
+
+#include <qlistbox.h>
 
 #include "lapsus_feature.h"
 
-class LapsusSlider : public LapsusFeature
+class LapsusListBoxFeature : public QListBoxText
 {
-	Q_OBJECT
-
 	public:
-		LapsusSlider(KConfig *cfg, const QString &idConf, const char *idDBus = 0);
-		virtual ~LapsusSlider();
-
-		virtual bool saveFeature();
+		LapsusListBoxFeature(QListBox* listbox, LapsusFeature* feat);
+		virtual ~LapsusListBoxFeature();
 		
-		int getSliderValue();
-		int getSliderMin();
-		int getSliderMax();
+		LapsusFeature* getFeature();
 		
-		static bool supportsArgs(const QStringList & args);
-		static void addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
-		static const char *featureType();
+		virtual bool isConfigurable();
 	
-	signals:
-		void sliderUpdate(int val);
-		void sliderNotif(int val);
-		
-	public slots:
-		virtual void setSliderValue(int val);
-	
-	protected slots:
-		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
-		
 	private:
-		int _valMin;
-		int _valMax;
-		int _val;
-		
-		static bool getMinMaxArgs(const QStringList & args, int *minV, int *maxV);
+		LapsusFeature* _feature;
 };
 
 #endif

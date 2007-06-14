@@ -48,7 +48,7 @@ LapsusActionButton::LapsusActionButton(const QString &confID,
 	
 	buttonUpdate(feat->getSwitchValue());
 	
-	connect( feat, SIGNAL(switchUpdate(const QString &)),
+	connect( feat, SIGNAL(featureUpdate(const QString &)),
 			this, SLOT(buttonUpdate(const QString &)));
 
 	connect(this, SIGNAL(activated()),

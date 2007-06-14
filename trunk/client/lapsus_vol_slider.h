@@ -36,7 +36,7 @@ class LapsusVolSlider : public LapsusSlider
 		bool isMuted();
 		
 		static bool supportsArgs(const QStringList & args);
-		static bool addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
+		static void addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
 		static const char *featureType();
 		
 	signals:

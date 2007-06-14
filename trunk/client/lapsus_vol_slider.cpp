@@ -107,18 +107,16 @@ bool LapsusVolSlider::saveFeature()
 {
 	if (!_cfg || !_isValid) return false;
 	
-	// TODO - save additional fields.
-	return LapsusSlider::saveFeature();
+	addConfigEntry(_featConfID, _featDBusID, _cfg);
+	return true;
 }
 
-bool LapsusVolSlider::addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg)
+void LapsusVolSlider::addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg)
 {
 	cfg->deleteGroup(confID);
 	cfg->setGroup(confID);
 	cfg->writeEntry(LAPSUS_CONF_WIDGET_TYPE, LAPSUS_CONF_WIDGET_VOL_SLIDER);
 	cfg->writeEntry(LAPSUS_CONF_FEATURE_ID, dbusID);
-	
-	return true;
 }
 
 const char* LapsusVolSlider::featureType()

@@ -18,45 +18,52 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_SLIDER_H
-#define LAPSUS_SLIDER_H
+#include "lapsus.h"
+#include "listbox_switch.h"
 
-#include "lapsus_feature.h"
-
-class LapsusSlider : public LapsusFeature
+LapsusListBoxSwitch::LapsusListBoxSwitch(QListBox* listbox, LapsusSwitch* feat):
+	LapsusListBoxFeature(listbox, feat)
 {
-	Q_OBJECT
+}
 
-	public:
-		LapsusSlider(KConfig *cfg, const QString &idConf, const char *idDBus = 0);
-		virtual ~LapsusSlider();
+LapsusListBoxSwitch::~LapsusListBoxSwitch()
+{
+}
 
-		virtual bool saveFeature();
-		
-		int getSliderValue();
-		int getSliderMin();
-		int getSliderMax();
-		
-		static bool supportsArgs(const QStringList & args);
-		static void addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
-		static const char *featureType();
+bool LapsusListBoxSwitch::isConfigurable()
+{
+	return false;
+}
+
+LapsusListBoxSwitch* LapsusListBoxSwitch::createListBoxItem(
+	QListBox* listbox, const QString &confID, KConfig *cfg)
+{
+	if (LapsusSwitch::readFeatureType(confID, cfg) != LapsusSwitch::featureType()) return 0;
 	
-	signals:
-		void sliderUpdate(int val);
-		void sliderNotif(int val);
-		
-	public slots:
-		virtual void setSliderValue(int val);
+	LapsusSwitch *feat = new LapsusSwitch(cfg, confID);
 	
-	protected slots:
-		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
-		
-	private:
-		int _valMin;
-		int _valMax;
-		int _val;
-		
-		static bool getMinMaxArgs(const QStringList & args, int *minV, int *maxV);
-};
+	if (feat->isValid())
+	{
+		return new LapsusListBoxSwitch(listbox, feat);
+	}
+	
+	delete feat;
+	return 0;
+}
 
-#endif
+LapsusListBoxSwitch* LapsusListBoxSwitch::createListBoxItem(
+	QListBox* listbox, const QString &confID, KConfig *cfg,
+	const QString &dbusID, const QStringList &args)
+{
+	if (!LapsusSwitch::supportsArgs(args)) return 0;
+	
+	LapsusSwitch *feat = new LapsusSwitch(cfg, confID, dbusID);
+	
+	if (feat->isValid())
+	{
+		return new LapsusListBoxSwitch(listbox, feat);
+	}
+	
+	delete feat;
+	return 0;
+}

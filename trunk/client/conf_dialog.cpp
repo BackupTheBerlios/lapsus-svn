@@ -33,8 +33,17 @@ LapsusConfDialog::LapsusConfDialog(QWidget *parent, KConfig *cfg):
 	QVBoxLayout *l = new QVBoxLayout(this);
 	_conf = new LapsusConf(this, cfg);
 	l->addWidget(_conf);
+	
+	connect (_conf, SIGNAL(finished(bool)),
+		this, SLOT(finishedConf(bool)));
 }
 
 LapsusConfDialog::~LapsusConfDialog()
 {
+}
+
+void LapsusConfDialog::finishedConf(bool dirty)
+{
+	if (dirty) accept();
+	else reject();
 }

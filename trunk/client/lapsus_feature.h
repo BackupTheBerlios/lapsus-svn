@@ -56,10 +56,15 @@ class LapsusFeature : public QObject
 		virtual bool saveFeature();
 		
 		static QString readFeatureType(const QString &confID, KConfig *cfg);
+		static QString readFeatureDBusID(const QString &confID, KConfig *cfg);
+		
+	signals:
+		void featureUpdate(const QString &val);
+		void featureNotif(const QString & val);
 		
 	protected slots:
 		virtual void dbusStateUpdate(bool state);
-		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif) = 0;
+		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
 		
 	protected:
 		KConfig* _cfg;

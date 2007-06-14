@@ -75,11 +75,11 @@ void LapsusSwitch::dbusFeatureUpdate(const QString &id, const QString &val, bool
 	
 	if (isNotif)
 	{
-		emit switchUpdate(val);
+		emit featureUpdate(val);
 	}
 	else
 	{
-		emit switchUpdate(val);
+		emit featureUpdate(val);
 	}
 }
 
@@ -104,18 +104,16 @@ bool LapsusSwitch::saveFeature()
 {
 	if (!_cfg || !_isValid) return false;
 	
-	// TODO - save additional fields.
-	return LapsusFeature::saveFeature();
+	addConfigEntry(_featConfID, _featDBusID, _cfg);
+	return true;
 }
 
-bool LapsusSwitch::addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg)
+void LapsusSwitch::addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg)
 {
 	cfg->deleteGroup(confID);
 	cfg->setGroup(confID);
 	cfg->writeEntry(LAPSUS_CONF_WIDGET_TYPE, LAPSUS_CONF_WIDGET_SWITCH);
 	cfg->writeEntry(LAPSUS_CONF_FEATURE_ID, dbusID);
-	
-	return true;
 }
 
 const char* LapsusSwitch::featureType()

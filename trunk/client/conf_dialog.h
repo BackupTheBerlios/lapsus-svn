@@ -34,6 +34,9 @@ class LapsusConfDialog : public KDialog
 			KConfig *cfg);
 		~LapsusConfDialog();
 	
+	protected slots:
+		void finishedConf(bool dirty);
+		
 	private:
 		LapsusConf* _conf;
 };

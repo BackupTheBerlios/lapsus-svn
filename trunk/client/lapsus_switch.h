@@ -37,12 +37,8 @@ class LapsusSwitch : public LapsusFeature
 		QStringList getSwitchAllValues();
 		
 		static bool supportsArgs(const QStringList & args);
-		static bool addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
+		static void addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
 		static const char *featureType();
-		
-	signals:
-		void switchUpdate(const QString &val);
-		void switchNotif(const QString & val);
 		
 	public slots:
 		virtual void setSwitchValue(const QString &val);

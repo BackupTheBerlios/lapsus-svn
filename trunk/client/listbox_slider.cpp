@@ -18,45 +18,52 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#ifndef LAPSUS_SLIDER_H
-#define LAPSUS_SLIDER_H
+#include "lapsus.h"
+#include "listbox_slider.h"
 
-#include "lapsus_feature.h"
-
-class LapsusSlider : public LapsusFeature
+LapsusListBoxSlider::LapsusListBoxSlider(QListBox* listbox, LapsusSlider* feat):
+	LapsusListBoxFeature(listbox, feat)
 {
-	Q_OBJECT
+}
 
-	public:
-		LapsusSlider(KConfig *cfg, const QString &idConf, const char *idDBus = 0);
-		virtual ~LapsusSlider();
+LapsusListBoxSlider::~LapsusListBoxSlider()
+{
+}
 
-		virtual bool saveFeature();
-		
-		int getSliderValue();
-		int getSliderMin();
-		int getSliderMax();
-		
-		static bool supportsArgs(const QStringList & args);
-		static void addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
-		static const char *featureType();
+bool LapsusListBoxSlider::isConfigurable()
+{
+	return false;
+}
+
+LapsusListBoxSlider* LapsusListBoxSlider::createListBoxItem(
+	QListBox* listbox, const QString &confID, KConfig *cfg)
+{
+	if (LapsusSlider::readFeatureType(confID, cfg) != LapsusSlider::featureType()) return 0;
 	
-	signals:
-		void sliderUpdate(int val);
-		void sliderNotif(int val);
-		
-	public slots:
-		virtual void setSliderValue(int val);
+	LapsusSlider *feat = new LapsusSlider(cfg, confID);
 	
-	protected slots:
-		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
-		
-	private:
-		int _valMin;
-		int _valMax;
-		int _val;
-		
-		static bool getMinMaxArgs(const QStringList & args, int *minV, int *maxV);
-};
+	if (feat->isValid())
+	{
+		return new LapsusListBoxSlider(listbox, feat);
+	}
+	
+	delete feat;
+	return 0;
+}
 
-#endif
+LapsusListBoxSlider* LapsusListBoxSlider::createListBoxItem(
+	QListBox* listbox, const QString &confID, KConfig *cfg,
+	const QString &dbusID, const QStringList &args)
+{
+	if (!LapsusSlider::supportsArgs(args)) return 0;
+	
+	LapsusSlider *feat = new LapsusSlider(cfg, confID, dbusID);
+	
+	if (feat->isValid())
+	{
+		new LapsusListBoxSlider(listbox, feat);
+	}
+	
+	delete feat;
+	return 0;
+}

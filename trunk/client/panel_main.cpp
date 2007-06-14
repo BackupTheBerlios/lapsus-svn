@@ -124,21 +124,21 @@ LapsusPanelMain::~LapsusPanelMain()
 
 void LapsusPanelMain::saveConfig()
 {
-	_cfg.setGroup("applet");
+	_cfg.setGroup(LAPSUS_CONF_MAIN_GROUP);
 	_cfg.sync();
 }
 
 void LapsusPanelMain::loadConfig()
 {
-	_cfg.setGroup("applet");
+	_cfg.setGroup(LAPSUS_CONF_MAIN_GROUP);
 
 	bool doAuto = true;
 
-	if (_cfg.hasKey("autodetect"))
+	if (_cfg.hasKey(LAPSUS_CONF_AUTODETECT))
 	{
-		QString str = _cfg.readEntry("autodetect");
+		QString str = _cfg.readEntry(LAPSUS_CONF_AUTODETECT);
 
-		if (str.length() > 0 && str != "true") doAuto = false;
+		if (str.length() > 0 && str != LAPSUS_CONF_TRUE) doAuto = false;
 	}
 
 	if (LapsusDBus::get()->isValid() && doAuto )
@@ -148,42 +148,40 @@ void LapsusPanelMain::loadConfig()
 		QStringList mEntries;
 
 		// Remove old settings
-		_cfg.deleteGroup("applet");
+		_cfg.deleteGroup(LAPSUS_CONF_MAIN_GROUP);
 
-		_cfg.setGroup("applet");
+		_cfg.setGroup(LAPSUS_CONF_MAIN_GROUP);
 
 		// So it's easier to change if user wants to set it to false :)
-		_cfg.writeEntry("autodetect", "true");
+		_cfg.writeEntry(LAPSUS_CONF_AUTODETECT, LAPSUS_CONF_TRUE);
 
 		// It would be nice to have 'applet' group at the beginning
-		_cfg.writeEntry("panel_entries", QStringList());
-		_cfg.writeEntry("menu_entries", QStringList());
+		_cfg.writeEntry(LAPSUS_CONF_PANEL_LIST, QStringList());
+		_cfg.writeEntry(LAPSUS_CONF_MENU_LIST, QStringList());
 
-		QString sInit = QString("%1.").arg(LAPSUS_FEAT_INIT_PREFIX);
-		QString sConf = QString("%1.").arg(LAPSUS_FEAT_CONFIG_PREFIX);
-		
 		for (QStringList::Iterator it = fL.begin(); it != fL.end(); ++it)
 		{
 			QString id = (*it).lower();
 			
 			// We don't add 'init.' or 'config.' entries to panel applet/menu
-			if (id.startsWith(sInit) || id.startsWith(sConf))
+			if (id.startsWith(LAPSUS_FEAT_INIT_PREFIX ".")
+				|| id.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
 			{
 				continue;
 			}
 			
-			QString panelID = QString("panel_%1").arg(id);
-			QString menuID = QString("menu_%1").arg(id);
+			QString panelID = QString(LAPSUS_CONF_PANEL_FEAT_PREFIX "%1").arg(id);
+			QString menuID = QString(LAPSUS_CONF_MENU_FEAT_PREFIX "%1").arg(id);
 			QStringList args = LapsusDBus::get()->getFeatureArgs(id);
 			
-			if (LapsusVolSlider::supportsArgs(args)
-				&& LapsusVolSlider::addConfigEntry(panelID, id, &_cfg))
+			if (LapsusVolSlider::supportsArgs(args))
 			{
+				LapsusVolSlider::addConfigEntry(panelID, id, &_cfg);
 				pEntries.push_front(panelID);
 			}
-			else if (LapsusSlider::supportsArgs(args)
-				&& LapsusSlider::addConfigEntry(panelID, id, &_cfg))
+			else if (LapsusSlider::supportsArgs(args))
 			{
+				LapsusSlider::addConfigEntry(panelID, id, &_cfg);
 				pEntries.push_front(panelID);
 			}
 			else if (LapsusSwitch::supportsArgs(args))
@@ -198,30 +196,30 @@ void LapsusPanelMain::loadConfig()
 					if (fType == LAPSUS_FEAT_BLUETOOTH_ID
 						|| fType == LAPSUS_FEAT_WIRELESS_ID)
 					{
-						if (LapsusSwitch::addConfigEntry(panelID, id, &_cfg))
-							pEntries.push_back(panelID);
+						LapsusSwitch::addConfigEntry(panelID, id, &_cfg);
+						pEntries.push_back(panelID);
 					}
 					else if (fType.startsWith(LAPSUS_FEAT_LED_ID_PREFIX)
 						|| fType == LAPSUS_FEAT_TOUCHPAD_ID
 						|| fType == "thinklight")
 					{
-						if (LapsusSwitch::addConfigEntry(menuID, id, &_cfg))
-							mEntries.push_back(menuID);
+						LapsusSwitch::addConfigEntry(menuID, id, &_cfg);
+						mEntries.push_back(menuID);
 					}
 				}
 			}
 		}
 		
-		_cfg.setGroup("applet");
-		_cfg.writeEntry("panel_entries", pEntries);
-		_cfg.writeEntry("menu_entries", mEntries);
+		_cfg.setGroup(LAPSUS_CONF_MAIN_GROUP);
+		_cfg.writeEntry(LAPSUS_CONF_PANEL_LIST, pEntries);
+		_cfg.writeEntry(LAPSUS_CONF_MENU_LIST, mEntries);
 
 		_cfg.sync();
 	}
 
-	_cfg.setGroup("applet");
-	_panelEntries = _cfg.readListEntry("panel_entries");
-	_menuEntries = _cfg.readListEntry("menu_entries");
+	_cfg.setGroup(LAPSUS_CONF_MAIN_GROUP);
+	_panelEntries = _cfg.readListEntry(LAPSUS_CONF_PANEL_LIST);
+	_menuEntries = _cfg.readListEntry(LAPSUS_CONF_MENU_LIST);
 }
 
 int LapsusPanelMain::widthForHeight(int h) const
@@ -315,33 +313,17 @@ void LapsusPanelMain::timerEvent( QTimerEvent * e)
 	}
 }
 
-void LapsusPanelMain::appletPreferences()
+bool LapsusPanelMain::appletPreferences()
 {
 	if (_confDlg) delete _confDlg;
 	
 	_confDlg = new LapsusConfDialog(0, &_cfg);
 	_confDlg->exec();
+	
+	int res = _confDlg->result();
+	
+	delete _confDlg;
+	_confDlg = 0;
+	
+	return (res != QDialog::Rejected);
 }
-
-/*
-void LapsusPanelMain::preferencesDone()
-{
-	_pref->delayedDestruct();
-	_pref = 0;
-}
-
-void LapsusPanelMain::applyPreferences()
-{
-	if (!_pref)
-		return;
-
-	// copy the colors from the prefs dialog
-	_pref->activeColors(_colors.high     , _colors.low     , _colors.back);
-
-	if (!_slider)
-		return;
-
-	setColors();
-	saveConfig();
-}
-*/

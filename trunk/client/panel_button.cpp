@@ -69,7 +69,7 @@ LapsusPanelButton::LapsusPanelButton(Qt::Orientation orientation,
 
 	buttonUpdate(feat->getSwitchValue());
 
-	connect( feat, SIGNAL(switchUpdate(const QString &)),
+	connect( feat, SIGNAL(featureUpdate(const QString &)),
 			this, SLOT(buttonUpdate(const QString &)));
 
 	_layout->activate();
