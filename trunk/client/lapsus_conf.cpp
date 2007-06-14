@@ -119,6 +119,9 @@ LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 	
 	connect (btOK, SIGNAL(clicked()),
 		this, SLOT(confOKClicked()));
+		
+	connect (btCancel, SIGNAL(clicked()),
+		this, SLOT(confCancelClicked()));
 }
 
 LapsusConf::~LapsusConf()
