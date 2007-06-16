@@ -20,33 +20,35 @@
 
 #include "lapsus.h"
 #include "lapsus_slider.h"
+#include "listbox_slider.h"
+#include "panel_slider.h"
 
-#define LAPSUS_CONF_WIDGET_SLIDER		"slider"
-
-LapsusSlider::LapsusSlider(KConfig *cfg, const QString &idConf, const char *idDBus):
-	LapsusFeature(cfg, idConf, idDBus),
+LapsusSlider::LapsusSlider(KConfig *cfg, const QString &dbusID,
+		LapsusFeature::Place where, const char *featureType):
+	LapsusFeature(cfg, dbusID, where, featureType),
 	_valMin(0), _valMax(0), _val(0)
 {
-	if (!_isValid) return;
-
-	if (!getMinMaxArgs(getFeatureArgs(), &_valMin, &_valMax))
+	if (_dbusValid)
 	{
-		_isValid = false;
-		return;
+		if (!getMinMaxArgs(getFeatureArgs(), &_valMin, &_valMax))
+		{
+			_dbusValid = false;
+			return;
+		}
+		
+		bool ok = false;
+		int tmp;
+		
+		tmp = getFeatureValue().toInt(&ok);
+		
+		if (!ok)
+		{
+			_dbusValid = false;
+			return;
+		}
+		
+		_val = tmp;
 	}
-	
-	bool ok = false;
-	int tmp;
-	
-	tmp = getFeatureValue().toInt(&ok);
-	
-	if (!ok)
-	{
-		_isValid = false;
-		return;
-	}
-	
-	_val = tmp;
 }
 
 LapsusSlider::~LapsusSlider()
@@ -58,10 +60,10 @@ bool LapsusSlider::getMinMaxArgs(const QStringList & args, int *minV, int *maxV)
 	bool ret = false;
 	int tmpMinV, tmpMaxV;
 	
-	for (uint i = 0; i < args.size(); ++i)
+	for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it)
 	{
-		QStringList list = QStringList::split(':', args[i]);
-
+		QStringList list = QStringList::split(':', *it);
+		
 		if (list.size() == 2)
 		{
 			bool ok = false;
@@ -69,7 +71,7 @@ bool LapsusSlider::getMinMaxArgs(const QStringList & args, int *minV, int *maxV)
 			tmpMinV = list[0].toInt(&ok);
 			
 			if (ok) tmpMaxV = list[1].toInt(&ok);
-
+			
 			if (ok && tmpMinV < tmpMaxV )
 			{
 				*minV = tmpMinV;
@@ -80,13 +82,6 @@ bool LapsusSlider::getMinMaxArgs(const QStringList & args, int *minV, int *maxV)
 	}
 	
 	return ret;
-}
-
-bool LapsusSlider::supportsArgs(const QStringList & args)
-{
-	int minV, maxV;
-
-	return getMinMaxArgs(args, &minV, &maxV);
 }
 
 void LapsusSlider::dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif)
@@ -108,6 +103,8 @@ void LapsusSlider::dbusFeatureUpdate(const QString &id, const QString &val, bool
 	{
 		emit sliderUpdate(iVal);
 	}
+	
+	LapsusFeature::dbusFeatureUpdate(id, val, isNotif);
 }
 
 void LapsusSlider::setSliderValue(int val)
@@ -125,29 +122,32 @@ int LapsusSlider::getSliderMin()
 	return _valMin;
 }
 
-
 int LapsusSlider::getSliderMax()
 {
 	return _valMax;
 }
 
+LapsusListBoxFeature* LapsusSlider::createListBoxFeature(QListBox* listbox,
+		LapsusFeature::ValidityMode vMode)
+{
+	if (!validMode(vMode)) return 0;
+	
+	return new LapsusListBoxSlider(listbox, this);
+}
+
+LapsusPanelWidget* LapsusSlider::createPanelWidget(Qt::Orientation orientation, QWidget *parent,
+		LapsusFeature::ValidityMode vMode)
+{
+	if (!validMode(vMode)) return 0;
+	
+	return new LapsusPanelSlider(orientation, parent, this);
+}
+
 bool LapsusSlider::saveFeature()
 {
-	if (!_cfg || !_isValid) return false;
+	if (!LapsusFeature::saveFeature()) return false;
 	
-	addConfigEntry(_featConfID, _featDBusID, _cfg);
+	// TODO - here all options specific for Slider Feature should be saved.
+	
 	return true;
-}
-
-void LapsusSlider::addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg)
-{
-	cfg->deleteGroup(confID);
-	cfg->setGroup(confID);
-	cfg->writeEntry(LAPSUS_CONF_WIDGET_TYPE, LAPSUS_CONF_WIDGET_SLIDER);
-	cfg->writeEntry(LAPSUS_CONF_FEATURE_ID, dbusID);
-}
-
-const char* LapsusSlider::featureType()
-{
-	return LAPSUS_CONF_WIDGET_SLIDER;
 }

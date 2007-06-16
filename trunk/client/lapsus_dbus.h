@@ -54,7 +54,7 @@ class LapsusDBus : public QObject
 		LapsusDBus();
 		~LapsusDBus();
 
-		bool isValid();
+		bool isActive();
 
 		QStringList listFeatures();
 		QString getFeatureName(const QString &id);
@@ -86,7 +86,7 @@ class LapsusDBus : public QObject
 		QStringList _featureList;
 		QDict<DBusFeature> _features;
 		int _timerId;
-		bool _isValid;
+		bool _isActive;
 		
 		static int dbusRefs;
 		static LapsusDBus* globalDBusObject;

@@ -20,51 +20,49 @@
 
 #include "lapsus.h"
 #include "lapsus_switch.h"
+#include "listbox_switch.h"
+#include "panel_button.h"
+#include "action_button.h"
 
-#define LAPSUS_CONF_WIDGET_SWITCH		"switch"
-
-LapsusSwitch::LapsusSwitch(KConfig *cfg, const QString &idConf, const char *idDBus):
-	LapsusFeature(cfg, idConf, idDBus)
+LapsusSwitch::LapsusSwitch(KConfig *cfg, const QString &dbusID,
+			LapsusFeature::Place where, const char *featureType):
+	LapsusFeature(cfg, dbusID, where, featureType)
 {
-	if (!_isValid) return;
-
-	if (!supportsArgs(getFeatureArgs()))
+	if (_dbusValid)
 	{
-		_isValid = false;
-		return;
-	}
-	
-	QString tmp = getFeatureValue();
-	
-	if (!isArgValid(tmp))
-	{
-		_isValid = false;
-		return;
-	}
-	
-	_val = tmp;
-}
-
-LapsusSwitch::~LapsusSwitch()
-{
-}
-
-bool LapsusSwitch::supportsArgs(const QStringList & args)
-{
-	// At least two possible states
-	if (args.size() > 1)
-	{
+		QStringList args = getFeatureArgs();
+		
+		// At least two possible states
+		if (args.size() < 2)
+		{
+			_dbusValid = false;
+			return;
+		}
+		
 		// None of the states is a range of values
 		for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it)
 		{
 			if (QStringList::split(':', *it).size() > 1)
-				return false;
+			{
+				_dbusValid = false;
+				return;
+			}
 		}
-
-		return true;
+		
+		QString tmp = getFeatureValue();
+	
+		if (!isArgValid(tmp))
+		{
+			_dbusValid = false;
+			return;
+		}
+		
+		_val = tmp;
 	}
+}
 
-	return false;
+LapsusSwitch::~LapsusSwitch()
+{
 }
 
 void LapsusSwitch::dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif)
@@ -73,14 +71,7 @@ void LapsusSwitch::dbusFeatureUpdate(const QString &id, const QString &val, bool
 	
 	_val = val;
 	
-	if (isNotif)
-	{
-		emit featureUpdate(val);
-	}
-	else
-	{
-		emit featureUpdate(val);
-	}
+	LapsusFeature::dbusFeatureUpdate(id, val, isNotif);
 }
 
 void LapsusSwitch::setSwitchValue(const QString &val)
@@ -100,23 +91,37 @@ QStringList LapsusSwitch::getSwitchAllValues()
 	return getFeatureArgs();
 }
 
-bool LapsusSwitch::saveFeature()
+LapsusListBoxFeature* LapsusSwitch::createListBoxFeature(QListBox* listbox,
+		LapsusFeature::ValidityMode vMode)
 {
-	if (!_cfg || !_isValid) return false;
+	if (!validMode(vMode)) return 0;
 	
-	addConfigEntry(_featConfID, _featDBusID, _cfg);
+	return new LapsusListBoxSwitch(listbox, this);
+}
+
+LapsusPanelWidget* LapsusSwitch::createPanelWidget(Qt::Orientation orientation, QWidget *parent,
+		LapsusFeature::ValidityMode vMode)
+{
+	if (!validMode(vMode)) return 0;
+	
+	return new LapsusPanelButton(orientation, parent, this);
+}
+
+bool LapsusSwitch::createActionButton(KActionCollection *parent,
+		LapsusFeature::ValidityMode vMode)
+{
+	if (!validMode(vMode)) return false;
+	
+	new LapsusActionButton(getFeatureConfID(), parent, this);
+	
 	return true;
 }
 
-void LapsusSwitch::addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg)
+bool LapsusSwitch::saveFeature()
 {
-	cfg->deleteGroup(confID);
-	cfg->setGroup(confID);
-	cfg->writeEntry(LAPSUS_CONF_WIDGET_TYPE, LAPSUS_CONF_WIDGET_SWITCH);
-	cfg->writeEntry(LAPSUS_CONF_FEATURE_ID, dbusID);
-}
-
-const char* LapsusSwitch::featureType()
-{
-	return LAPSUS_CONF_WIDGET_SWITCH;
+	if (!LapsusFeature::saveFeature()) return false;
+	
+	// TODO - here all options specific for Switch Feature should be saved.
+	
+	return true;
 }

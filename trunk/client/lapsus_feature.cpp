@@ -18,53 +18,45 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include <qwidget.h>
-#include <qlabel.h>
-#include <qtooltip.h>
-
 #include "lapsus.h"
 #include "lapsus_dbus.h"
-#include "lapsus_slider.h"
+#include "lapsus_feature.h"
 
-LapsusFeature::LapsusFeature(KConfig *cfg, const QString &idConf, const char *idDBus):
-		_cfg(cfg), _validator(0), _featConfID(idConf),
-		_hasDBus(false), _isValid(false), _blockSendSet(false)
+#define LAPSUS_CONF_FEATURE_TYPE	"feature_type"
+#define LAPSUS_CONF_PANEL_FEAT_PREFIX	"panel_"
+#define LAPSUS_CONF_MENU_FEAT_PREFIX	"menu_"
+
+LapsusFeature::LapsusFeature(KConfig *cfg, const QString &dbusID,
+			LapsusFeature::Place where, const char *featureType):
+	_cfg(cfg), _featDBusID(dbusID), _place(where), _featureType(featureType),
+	_validator(0), _confValid(false), _dbusValid(false), _dbusActive(false),
+	_blockSendSet(false)
 {
-	if (_cfg)
+	if (_cfg != 0 && _featureType != 0)
 	{
-		_cfg->setGroup(_featConfID);
-	}
+		QString confID = getFeatureConfID();
 	
-	if (idDBus)
-	{
-		_featDBusID = QString(idDBus);
-	}
-	else if (_cfg && _cfg->hasKey(LAPSUS_CONF_FEATURE_ID))
-	{
-		_featDBusID = _cfg->readEntry(LAPSUS_CONF_FEATURE_ID);
+		if (confID.length() > 0)
+		{
+			_cfg->setGroup(confID);
+			QString fType = _cfg->readEntry(LAPSUS_CONF_FEATURE_TYPE);
+			
+			if (fType == _featureType) _confValid = true;
+		}
 	}
 	
 	if (_featDBusID.length() > 0)
 	{
-		_isValid = true;
+		if ((LapsusDBus::get()->getFeatureValue(_featDBusID)).length() < 1) return;
+		if ((LapsusDBus::get()->getFeatureName(_featDBusID)).length() < 1) return;
 		
-		QString val = LapsusDBus::get()->getFeatureValue(_featDBusID);
-		QString featName = LapsusDBus::get()->getFeatureName(_featDBusID);
 		QStringList featArgs = LapsusDBus::get()->getFeatureArgs(_featDBusID);
+		
+		if (featArgs.count() < 1) return;
+		
 		_validator = new LapsusValidator(featArgs);
 		
-		if (val.length() > 0 && featName.length() > 0 && featArgs.count() > 0)
-		{
-			_hasDBus = true;
-			
-			connect ( LapsusDBus::get(), SIGNAL(dbusStateUpdate(bool)),
-				this, SLOT(dbusStateUpdate(bool)) );
-
-			connect(LapsusDBus::get(),
-				SIGNAL(dbusFeatureUpdate(const QString &, const QString &, bool)),
-				this,
-				SLOT(dbusFeatureUpdate(const QString &, const QString &, bool)));
-		}
+		_dbusValid = true;
 	}
 }
 
@@ -84,6 +76,28 @@ bool LapsusFeature::isArgValid(const QString &arg)
 	return _validator->isValid(arg);
 }
 
+bool LapsusFeature::dbusConnect()
+{
+	if (!_dbusValid) return false;
+	
+	connect ( LapsusDBus::get(), SIGNAL(dbusStateUpdate(bool)),
+		this, SLOT(dbusStateUpdate(bool)) );
+	
+	connect(LapsusDBus::get(),
+		SIGNAL(dbusFeatureUpdate(const QString &, const QString &, bool)),
+		this,
+		SLOT(dbusFeatureUpdate(const QString &, const QString &, bool)));
+	
+	_dbusActive = LapsusDBus::get()->isActive();
+	
+	return true;
+}
+
+void LapsusFeature::dbusStateUpdate(bool state)
+{
+	_dbusActive = state;
+}
+
 void LapsusFeature::dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif)
 {
 	if (id != _featDBusID) return;
@@ -100,7 +114,7 @@ void LapsusFeature::dbusFeatureUpdate(const QString &id, const QString &val, boo
 
 void LapsusFeature::updateFeatureValue()
 {
-	if (!_isValid) return;
+	if (!_dbusValid) return;
 	
 	_blockSendSet = true;
 	
@@ -113,85 +127,99 @@ void LapsusFeature::updateFeatureValue()
 
 bool LapsusFeature::setFeatureValue(const QString &nVal)
 {
-	if (!_isValid || !_hasDBus || _blockSendSet) return false;
+	if (!_dbusValid || _blockSendSet) return false;
 	
 	return LapsusDBus::get()->setFeature(_featDBusID, nVal);
 }
 
 QString LapsusFeature::getFeatureValue()
 {
-	if (!_isValid) return QString();
+	if (!_dbusValid) return QString();
 	
 	return LapsusDBus::get()->getFeatureValue(_featDBusID);
 }
 
 QString LapsusFeature::getFeatureName()
 {
-	if (!_isValid) return QString();
+	if (!_dbusValid) return QString();
 	
 	return LapsusDBus::get()->getFeatureName(_featDBusID);
 }
 
 QStringList LapsusFeature::getFeatureArgs()
 {
-	if (!_isValid) return QStringList();
+	if (!_dbusValid) return QStringList();
 	
 	return LapsusDBus::get()->getFeatureArgs(_featDBusID);
 }
 
 QString LapsusFeature::getFeatureDBusID()
 {
-	if (!_isValid) return QString();
-	
 	return _featDBusID;
 }
 
 QString LapsusFeature::getFeatureConfID()
 {
-	if (!_isValid) return QString();
+	if (_place == LapsusFeature::PlacePanel)
+		return QString(LAPSUS_CONF_PANEL_FEAT_PREFIX "%1").arg(_featDBusID);
+	else if (_place == LapsusFeature::PlaceMenu)
+		return QString(LAPSUS_CONF_MENU_FEAT_PREFIX "%1").arg(_featDBusID);
 	
-	return _featConfID;
+	return QString();
 }
 
-bool LapsusFeature::isValid()
+bool LapsusFeature::confValid()
 {
-	return _isValid;
+	return _confValid;
 }
 
-bool LapsusFeature::hasDBus()
+bool LapsusFeature::dbusValid()
 {
-	return _hasDBus;
+	return _dbusValid;
+}
+
+bool LapsusFeature::dbusActive()
+{
+	return _dbusActive;
 }
 
 bool LapsusFeature::saveFeature()
 {
 	if (!_cfg) return false;
 	
-	if (_featConfID.length() < 1 || _featDBusID.length() < 1) return false;
+	// OR - if at least one of them is valid it is enough to save the feature.
+	if (!_confValid && !_dbusValid) return false;
 	
-	_cfg->setGroup(_featConfID);
-	_cfg->writeEntry(LAPSUS_CONF_FEATURE_ID, _featDBusID);
+	QString featConf = getFeatureConfID();
+	
+	if (featConf.length() < 1 || _featDBusID.length() < 1) return false;
+	
+	_cfg->deleteGroup(featConf);
+	_cfg->setGroup(featConf);
+	_cfg->writeEntry(LAPSUS_CONF_FEATURE_TYPE, _featureType);
 	
 	return true;
 }
 
-void LapsusFeature::dbusStateUpdate(bool state)
+LapsusListBoxFeature* LapsusFeature::createListBoxFeature(QListBox*, LapsusFeature::ValidityMode)
 {
-	_hasDBus = state;
+	return 0;
 }
 
-QString LapsusFeature::readFeatureType(const QString &confID, KConfig *cfg)
+LapsusPanelWidget* LapsusFeature::createPanelWidget(Qt::Orientation, QWidget *, LapsusFeature::ValidityMode)
 {
-	if (!cfg) return QString();
-	
-	cfg->setGroup(confID);
-	return cfg->readEntry(LAPSUS_CONF_WIDGET_TYPE);
+	return 0;
 }
 
-QString LapsusFeature::readFeatureDBusID(const QString &confID, KConfig *cfg)
+bool LapsusFeature::createActionButton(KActionCollection *, LapsusFeature::ValidityMode)
 {
-	if (!cfg) return QString();
+	return false;
+}
+
+bool LapsusFeature::validMode(LapsusFeature::ValidityMode vMode)
+{
+	if (vMode == LapsusFeature::ValidDBus && dbusValid()) return true;
+	if (vMode == LapsusFeature::ValidConf && confValid()) return true;
 	
-	cfg->setGroup(confID);
-	return cfg->readEntry(LAPSUS_CONF_FEATURE_ID);
+	return false;
 }

@@ -26,13 +26,14 @@
 #include "lapsus_dbus.h"
 
 #include "panel_slider.h"
+#include "lapsus_slider.h"
 
 LapsusPanelSlider::LapsusPanelSlider(Qt::Orientation orientation, QWidget *parent,
 			LapsusSlider *sliderFeat):
 		LapsusPanelWidget(orientation, parent, sliderFeat),
 		_layout(0), _slider(0), _iconLabel(0)
 {
-	if (!sliderFeat || !isValid()) return;
+	if (!dbusValid()) return;
 	
 	if ( orientation == Qt::Horizontal )
 		_layout = new QVBoxLayout( this );
@@ -99,7 +100,7 @@ LapsusPanelSlider::LapsusPanelSlider(Qt::Orientation orientation, QWidget *paren
 
 	_slider->setColors( "#FFFF00", "#707000", "#000000" );
 
-	if (!isValid() || !hasDBus())
+	if (!dbusValid() || !dbusActive())
 		_slider->setGray(true);
 
 	const QSize constrainedSize = sizeHint();
@@ -167,7 +168,7 @@ void LapsusPanelSlider::wheelEvent( QWheelEvent * e)
 {
 	// Slider does it too, but we want mouse wheel to work also
 	// above the label icon
-	if (_slider && hasDBus() && isValid())
+	if (_slider && dbusValid() && dbusActive())
 	{
 		if (e->delta() > 0)
 		{
@@ -197,11 +198,11 @@ bool LapsusPanelSlider::eventFilter( QObject* obj, QEvent* e )
 		if (qme->button() == Qt::MidButton)
 			return true;
 		
-		if (!isValid() || !hasDBus())
+		if (!dbusValid() || !dbusActive())
 			return true;
 	}
 
-	if (!isValid() || !hasDBus())
+	if (!dbusValid() || !dbusActive())
 	{
 		if (e->type() == QEvent::MouseMove
 			|| e->type() == QEvent::Wheel)
@@ -209,21 +210,4 @@ bool LapsusPanelSlider::eventFilter( QObject* obj, QEvent* e )
 	}
 
 	return QWidget::eventFilter(obj,e);
-}
-
-LapsusPanelSlider* LapsusPanelSlider::newPanelWidget(const QString &confID,
-			Qt::Orientation orientation, QWidget *parent, KConfig *cfg)
-{
-	if (LapsusSlider::readFeatureType(confID, cfg) != LapsusSlider::featureType()) return 0;
-	
-	LapsusSlider *feat = new LapsusSlider(cfg, confID);
-	
-	if (feat->isValid())
-	{
-		return new LapsusPanelSlider(orientation, parent, feat);
-	}
-	
-	delete feat;
-	
-	return 0;
 }

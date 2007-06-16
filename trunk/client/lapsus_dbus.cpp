@@ -37,13 +37,13 @@ DBusFeature::~DBusFeature()
 {
 }
 
-LapsusDBus::LapsusDBus(): _proxyDBus(0), _timerId(0), _isValid(false)
+LapsusDBus::LapsusDBus(): _proxyDBus(0), _timerId(0), _isActive(false)
 {
 	_features.setAutoDelete(true);
 	
 	restartDBus();
 
-	if (!_isValid)
+	if (!_isActive)
 	{
 		connError();
 	}
@@ -89,9 +89,9 @@ void LapsusDBus::remove()
 	}
 }
 
-bool LapsusDBus::isValid()
+bool LapsusDBus::isActive()
 {
-	return _isValid;
+	return _isActive;
 }
 
 bool LapsusDBus::restartDBus()
@@ -120,7 +120,7 @@ bool LapsusDBus::restartDBus()
 
 		initParams();
 
-		if (_isValid) return true;
+		if (_isActive) return true;
 	}
 
 	return false;
@@ -134,11 +134,11 @@ void LapsusDBus::connError()
 
 	if (_timerId)
 	{
-		// We want the signal to be emited only when _isValid is true,
+		// We want the signal to be emited only when _isActive is true,
 		// but during the signal it should be already false
-		if (_isValid)
+		if (_isActive)
 		{
-			_isValid = false;
+			_isActive = false;
 			
 			emit dbusStateUpdate(false);
 		}
@@ -220,7 +220,7 @@ void LapsusDBus::initParams()
 
 	if (!ok) return;
 
-	_isValid = true;
+	_isActive = true;
 
 	for (QStringList::iterator it = tmpFeatures.begin(); it != tmpFeatures.end(); ++it)
 	{
@@ -231,14 +231,14 @@ void LapsusDBus::initParams()
 
 QStringList LapsusDBus::listFeatures()
 {
-	if (!_isValid) return QStringList();
+	if (!_isActive) return QStringList();
 
 	return _featureList;
 }
 
 DBusFeature* LapsusDBus::getDBusFeature(const QString &id)
 {
-	if (!_isValid) return 0;
+	if (!_isActive) return 0;
 	
 	return _features.find(id.lower());
 }
@@ -272,7 +272,7 @@ QString LapsusDBus::getFeatureValue(const QString &id)
 
 bool LapsusDBus::updateFeatureValue(const QString &id)
 {
-	if (!_isValid) return false;
+	if (!_isActive) return false;
 
 	QString lId = id.lower();
 
@@ -358,7 +358,7 @@ void LapsusDBus::handleDBusSignal(const QDBusMessage &message)
 
 bool LapsusDBus::setFeature(const QString &id, const QString &val)
 {
-	if (!_isValid) return false;
+	if (!_isActive) return false;
 
 	QString lId = id.lower();
 

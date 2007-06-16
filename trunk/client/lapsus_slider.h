@@ -23,12 +23,16 @@
 
 #include "lapsus_feature.h"
 
+#define LAPSUS_FEATURE_TYPE_SLIDER		"slider"
+
 class LapsusSlider : public LapsusFeature
 {
 	Q_OBJECT
 
 	public:
-		LapsusSlider(KConfig *cfg, const QString &idConf, const char *idDBus = 0);
+		LapsusSlider(KConfig *cfg, const QString &dbusID,
+				LapsusFeature::Place where,
+				const char *featureType = LAPSUS_FEATURE_TYPE_SLIDER);
 		virtual ~LapsusSlider();
 
 		virtual bool saveFeature();
@@ -37,10 +41,11 @@ class LapsusSlider : public LapsusFeature
 		int getSliderMin();
 		int getSliderMax();
 		
-		static bool supportsArgs(const QStringList & args);
-		static void addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
-		static const char *featureType();
-	
+		virtual LapsusListBoxFeature* createListBoxFeature(QListBox* listbox,
+						LapsusFeature::ValidityMode vMode);
+		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent,
+						LapsusFeature::ValidityMode vMode);
+		
 	signals:
 		void sliderUpdate(int val);
 		void sliderNotif(int val);

@@ -34,36 +34,3 @@ bool LapsusListBoxSwitch::isConfigurable()
 {
 	return false;
 }
-
-LapsusListBoxSwitch* LapsusListBoxSwitch::createListBoxItem(
-	QListBox* listbox, const QString &confID, KConfig *cfg)
-{
-	if (LapsusSwitch::readFeatureType(confID, cfg) != LapsusSwitch::featureType()) return 0;
-	
-	LapsusSwitch *feat = new LapsusSwitch(cfg, confID);
-	
-	if (feat->isValid())
-	{
-		return new LapsusListBoxSwitch(listbox, feat);
-	}
-	
-	delete feat;
-	return 0;
-}
-
-LapsusListBoxSwitch* LapsusListBoxSwitch::createListBoxItem(
-	QListBox* listbox, const QString &confID, KConfig *cfg,
-	const QString &dbusID, const QStringList &args)
-{
-	if (!LapsusSwitch::supportsArgs(args)) return 0;
-	
-	LapsusSwitch *feat = new LapsusSwitch(cfg, confID, dbusID);
-	
-	if (feat->isValid())
-	{
-		return new LapsusListBoxSwitch(listbox, feat);
-	}
-	
-	delete feat;
-	return 0;
-}

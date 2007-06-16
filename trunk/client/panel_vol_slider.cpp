@@ -24,12 +24,13 @@
 #include "lapsus_dbus.h"
 
 #include "panel_vol_slider.h"
+#include "lapsus_vol_slider.h"
 
 LapsusPanelVolSlider::LapsusPanelVolSlider(Qt::Orientation orientation, QWidget *parent,
 		LapsusVolSlider *sliderFeat):
 		LapsusPanelSlider(orientation, parent, sliderFeat)
 {
-	if (!sliderFeat || !isValid() || !_slider) return;
+	if (!dbusValid()) return;
 	
 	connect ( this, SIGNAL(toggleMute()),
 		sliderFeat, SLOT(toggleMute()));
@@ -57,21 +58,4 @@ bool LapsusPanelVolSlider::eventFilter( QObject* obj, QEvent* e )
 	}
 	
 	return LapsusPanelSlider::eventFilter(obj,e);
-}
-
-LapsusPanelVolSlider* LapsusPanelVolSlider::newPanelWidget(const QString &confID,
-			Qt::Orientation orientation, QWidget *parent, KConfig *cfg)
-{
-	if (LapsusVolSlider::readFeatureType(confID, cfg) != LapsusVolSlider::featureType()) return 0;
-	
-	LapsusVolSlider *feat = new LapsusVolSlider(cfg, confID);
-	
-	if (feat->isValid())
-	{
-		return new LapsusPanelVolSlider(orientation, parent, feat);
-	}
-	
-	delete feat;
-	
-	return 0;
 }

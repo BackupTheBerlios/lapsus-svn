@@ -20,32 +20,44 @@
 
 #include "lapsus.h"
 #include "lapsus_vol_slider.h"
+#include "listbox_vol_slider.h"
+#include "panel_vol_slider.h"
 
-#define LAPSUS_CONF_WIDGET_VOL_SLIDER		"vol_slider"
-
-LapsusVolSlider::LapsusVolSlider(KConfig *cfg, const QString &idConf, const char *idDBus):
-	LapsusSlider(cfg, idConf, idDBus), _isMuted(false)
+LapsusVolSlider::LapsusVolSlider(KConfig *cfg, const QString &dbusID,
+		LapsusFeature::Place where, const char *featureType):
+	LapsusSlider(cfg, dbusID, where, featureType),
+	_isMuted(false)
 {
+	if (_dbusValid)
+	{
+		bool hasMute = false;
+		bool hasUnMute = false;
+		QStringList args = getFeatureArgs();
+	
+		for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it)
+		{
+			if (*it == LAPSUS_FEAT_MUTE) hasMute = true;
+			else if (*it == LAPSUS_FEAT_UNMUTE) hasUnMute = true;
+		}
+	
+		if (!hasMute || !hasUnMute)
+		{
+			_dbusValid = false;
+			return;
+		}
+		
+		args = QStringList::split(",", getFeatureValue());
+		
+		for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it)
+		{
+			if (*it == LAPSUS_FEAT_MUTE) _isMuted = true;
+			else if (*it == LAPSUS_FEAT_UNMUTE) _isMuted = false;
+		}
+	}
 }
 
 LapsusVolSlider::~LapsusVolSlider()
 {
-}
-
-bool LapsusVolSlider::supportsArgs(const QStringList & args)
-{
-	if (!LapsusSlider::supportsArgs(args)) return false;
-	
-	bool hasMute = false;
-	bool hasUnMute = false;
-	
-	for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it)
-	{
-		if (*it == LAPSUS_FEAT_MUTE) hasMute = true;
-		else if (*it == LAPSUS_FEAT_UNMUTE) hasUnMute = true;
-	}
-	
-	return (hasMute && hasUnMute);
 }
 
 void LapsusVolSlider::dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif)
@@ -57,19 +69,19 @@ void LapsusVolSlider::dbusFeatureUpdate(const QString &id, const QString &val, b
 	
 	bool setGray = false;
 	
-	for (uint i = 0; i < args.size(); ++i)
+	for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it)
 	{
-		if (args[i] == LAPSUS_FEAT_MUTE)
+		if (*it == LAPSUS_FEAT_MUTE)
 		{
 			setGray = true;
 		}
-		else if (args[i] == LAPSUS_FEAT_UNMUTE)
+		else if (*it == LAPSUS_FEAT_UNMUTE)
 		{
 			setGray = false;
 		}
 		else
 		{
-			otherArgs.append(args[i]);
+			otherArgs.append(*it);
 		}
 	}
 	
@@ -103,23 +115,27 @@ void LapsusVolSlider::setSliderMute(bool val)
 	setFeatureValue(val ? LAPSUS_FEAT_MUTE : LAPSUS_FEAT_UNMUTE);
 }
 
+LapsusListBoxFeature* LapsusVolSlider::createListBoxFeature(QListBox* listbox,
+		LapsusFeature::ValidityMode vMode)
+{
+	if (!validMode(vMode)) return 0;
+	
+	return new LapsusListBoxVolSlider(listbox, this);
+}
+
+LapsusPanelWidget* LapsusVolSlider::createPanelWidget(Qt::Orientation orientation, QWidget *parent,
+		LapsusFeature::ValidityMode vMode)
+{
+	if (!validMode(vMode)) return 0;
+	
+	return new LapsusPanelVolSlider(orientation, parent, this);
+}
+
 bool LapsusVolSlider::saveFeature()
 {
-	if (!_cfg || !_isValid) return false;
+	if (!LapsusSlider::saveFeature()) return false;
 	
-	addConfigEntry(_featConfID, _featDBusID, _cfg);
+	// TODO - here all options specific for VolSlider Feature should be saved.
+	
 	return true;
-}
-
-void LapsusVolSlider::addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg)
-{
-	cfg->deleteGroup(confID);
-	cfg->setGroup(confID);
-	cfg->writeEntry(LAPSUS_CONF_WIDGET_TYPE, LAPSUS_CONF_WIDGET_VOL_SLIDER);
-	cfg->writeEntry(LAPSUS_CONF_FEATURE_ID, dbusID);
-}
-
-const char* LapsusVolSlider::featureType()
-{
-	return LAPSUS_CONF_WIDGET_VOL_SLIDER;
 }

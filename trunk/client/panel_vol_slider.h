@@ -22,7 +22,8 @@
 #define LAPSUS_PANEL_VOL_SLIDER_H
 
 #include "panel_slider.h"
-#include "lapsus_vol_slider.h"
+
+class LapsusVolSlider;
 
 class LapsusPanelVolSlider : public LapsusPanelSlider
 {
@@ -34,9 +35,6 @@ class LapsusPanelVolSlider : public LapsusPanelSlider
 		~LapsusPanelVolSlider();
 
 		virtual bool eventFilter( QObject* obj, QEvent* e );
-		
-		static LapsusPanelVolSlider* newPanelWidget(const QString &confID,
-			Qt::Orientation orientation, QWidget *parent, KConfig *cfg);
 		
 	signals:
 		virtual void toggleMute();

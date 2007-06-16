@@ -23,12 +23,16 @@
 
 #include "lapsus_feature.h"
 
+#define LAPSUS_FEATURE_TYPE_SWITCH		"switch"
+
 class LapsusSwitch : public LapsusFeature
 {
 	Q_OBJECT
 
 	public:
-		LapsusSwitch(KConfig *cfg, const QString &idConf, const char *idDBus = 0);
+		LapsusSwitch(KConfig *cfg, const QString &dbusID,
+				LapsusFeature::Place where,
+				const char *featureType = LAPSUS_FEATURE_TYPE_SWITCH);
 		virtual ~LapsusSwitch();
 
 		virtual bool saveFeature();
@@ -36,9 +40,12 @@ class LapsusSwitch : public LapsusFeature
 		QString getSwitchValue();
 		QStringList getSwitchAllValues();
 		
-		static bool supportsArgs(const QStringList & args);
-		static void addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
-		static const char *featureType();
+		virtual LapsusListBoxFeature* createListBoxFeature(QListBox* listbox,
+						LapsusFeature::ValidityMode vMode);
+		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent,
+						LapsusFeature::ValidityMode vMode);
+		virtual bool createActionButton(KActionCollection *parent,
+						LapsusFeature::ValidityMode vMode);
 		
 	public slots:
 		virtual void setSwitchValue(const QString &val);

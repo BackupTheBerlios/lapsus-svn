@@ -23,7 +23,7 @@
 
 #include <qlistbox.h>
 
-#include "lapsus_feature.h"
+class LapsusFeature;
 
 class LapsusListBoxFeature : public QListBoxText
 {

@@ -25,7 +25,8 @@
 
 #include "ksmallslider.h"
 #include "panel_widget.h"
-#include "lapsus_switch.h"
+
+class LapsusSwitch;
 
 class LapsusPanelButton : public LapsusPanelWidget
 {
@@ -44,14 +45,10 @@ class LapsusPanelButton : public LapsusPanelWidget
 
 		static bool supportsArgs(const QStringList & args);
 		
-		static LapsusPanelButton* newPanelWidget(const QString &confID,
-			Qt::Orientation orientation, QWidget *parent, KConfig *cfg);
-		
 	signals:
 		void rightButtonPressed();
 
 	protected slots:
-		void dbusStateChanged(bool state);
 		void buttonUpdate(const QString &val);
 
 	private:

@@ -25,7 +25,8 @@
 
 #include "ksmallslider.h"
 #include "panel_widget.h"
-#include "lapsus_slider.h"
+
+class LapsusSlider;
 
 class LapsusPanelSlider : public LapsusPanelWidget
 {
@@ -41,9 +42,6 @@ class LapsusPanelSlider : public LapsusPanelWidget
 		QSizePolicy sizePolicy() const;
 
 		virtual bool eventFilter( QObject* obj, QEvent* e );
-		
-		static LapsusPanelSlider* newPanelWidget(const QString &confID,
-			Qt::Orientation orientation, QWidget *parent, KConfig *cfg);
 		
 	signals:
 		void rightButtonPressed();

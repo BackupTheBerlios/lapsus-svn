@@ -29,7 +29,8 @@
 #include <kconfig.h>
 
 #include "lapsus_icons.h"
-#include "lapsus_switch.h"
+
+class LapsusSwitch;
 
 class LapsusActionButton : public KAction, protected LapsusIcons
 {
@@ -40,9 +41,6 @@ class LapsusActionButton : public KAction, protected LapsusIcons
 			KActionCollection *parent, LapsusSwitch *feat);
 		virtual ~LapsusActionButton();
 
-		static bool addNewActionButton(const QString &confID,
-			KConfig *cfg, KActionCollection *parent);
-			
 	protected slots:
 		void actionClicked();
 		void buttonUpdate(const QString &val);

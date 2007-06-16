@@ -22,13 +22,14 @@
 #include "lapsus_dbus.h"
 
 #include "action_button.h"
+#include "lapsus_switch.h"
 
 LapsusActionButton::LapsusActionButton(const QString &confID,
 		KActionCollection *parent, LapsusSwitch *feat):
 	KAction(confID, 0, 0, 0, parent, confID), LapsusIcons(feat),
 	_switchFeat(feat)
 {
-	if (!feat || !feat->isValid()) return;
+	if (!feat || !feat->dbusValid()) return;
 	
 	_name = feat->getFeatureName();
 
@@ -78,7 +79,7 @@ void LapsusActionButton::buttonUpdate(const QString &val)
 
 void LapsusActionButton::actionClicked()
 {
-	if (!_switchFeat || !_switchFeat->isValid() || !_switchFeat->hasDBus() )
+	if (!_switchFeat || !_switchFeat->dbusValid() || !_switchFeat->dbusActive() )
 		return;
 	
 	QStringList args = _switchFeat->getSwitchAllValues();
@@ -95,21 +96,4 @@ void LapsusActionButton::actionClicked()
 		nVal = *it;
 
 	_switchFeat->setSwitchValue(nVal);
-}
-
-bool LapsusActionButton::addNewActionButton(const QString &confID, KConfig *cfg, KActionCollection *parent)
-{
-	if (LapsusSwitch::readFeatureType(confID, cfg) != LapsusSwitch::featureType()) return false;
-	
-	LapsusSwitch *feat = new LapsusSwitch(cfg, confID);
-	
-	if (feat->isValid())
-	{
-		new LapsusActionButton(confID, parent, feat);
-		return true;
-	}
-	
-	delete feat;
-	
-	return false;
 }

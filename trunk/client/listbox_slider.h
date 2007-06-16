@@ -32,10 +32,6 @@ class LapsusListBoxSlider : public LapsusListBoxFeature
 		
 		virtual bool isConfigurable();
 	
-		static LapsusListBoxSlider* createListBoxItem(QListBox* listbox, const QString &confID, KConfig *cfg);
-		static LapsusListBoxSlider* createListBoxItem(QListBox* listbox, const QString &confID, KConfig *cfg,
-			const QString &dbusID, const QStringList &args);
-	
 	private:
 		LapsusSlider* _slider;
 };

@@ -28,15 +28,22 @@
 
 #include "lapsus_validator.h"
 
-#define LAPSUS_CONF_WIDGET_TYPE		"widget_type"
-#define LAPSUS_CONF_FEATURE_ID		"feature_id"
+class LapsusListBoxFeature;
+class LapsusPanelWidget;
+class LapsusActionButton;
+class QListBox;
+class KActionCollection;
 
 class LapsusFeature : public QObject
 {
 	Q_OBJECT
 
 	public:
-		LapsusFeature(KConfig *cfg, const QString &idConf, const char *idDBus = 0);
+		enum Place { PlaceUnknown, PlacePanel, PlaceMenu };
+		enum ValidityMode { ValidUnknown, ValidConf, ValidDBus };
+		
+		LapsusFeature(KConfig *cfg, const QString &dbusID,
+				LapsusFeature::Place where, const char *featureType = 0);
 		virtual ~LapsusFeature();
 
 		bool setFeatureValue(const QString &nVal);
@@ -47,16 +54,24 @@ class LapsusFeature : public QObject
 		
 		QString getFeatureConfID();
 		QString getFeatureDBusID();
+		LapsusFeature::Place getFeaturePlace();
+		
+		bool dbusConnect();
+		
+		bool confValid();
+		bool dbusValid();
+		bool dbusActive();
 		
 		bool isArgValid(const QString &arg);
-	
-		bool isValid();
-		bool hasDBus();
 		
 		virtual bool saveFeature();
 		
-		static QString readFeatureType(const QString &confID, KConfig *cfg);
-		static QString readFeatureDBusID(const QString &confID, KConfig *cfg);
+		virtual LapsusListBoxFeature* createListBoxFeature(QListBox* listbox,
+							LapsusFeature::ValidityMode vMode);
+		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent,
+							LapsusFeature::ValidityMode vMode);
+		virtual bool createActionButton(KActionCollection *parent,
+							LapsusFeature::ValidityMode vMode);
 		
 	signals:
 		void featureUpdate(const QString &val);
@@ -64,16 +79,20 @@ class LapsusFeature : public QObject
 		
 	protected slots:
 		virtual void dbusStateUpdate(bool state);
-		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
+                virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
 		
 	protected:
 		KConfig* _cfg;
-		LapsusValidator* _validator;
 		QString _featDBusID;
-		QString _featConfID;
-		bool _hasDBus;
-		bool _isValid;
+		LapsusFeature::Place _place;
+		const char *_featureType;
+		LapsusValidator* _validator;
+		bool _confValid;
+		bool _dbusValid;
+		bool _dbusActive;
 		bool _blockSendSet;
+		
+		bool validMode(LapsusFeature::ValidityMode vMode);
 };
 
 #endif

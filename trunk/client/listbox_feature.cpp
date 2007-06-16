@@ -20,6 +20,7 @@
 
 #include "lapsus.h"
 #include "listbox_feature.h"
+#include "lapsus_feature.h"
 
 LapsusListBoxFeature::LapsusListBoxFeature(QListBox* listbox, LapsusFeature* feat):
 	QListBoxText(listbox), _feature(feat)

@@ -34,36 +34,3 @@ bool LapsusListBoxVolSlider::isConfigurable()
 {
 	return false;
 }
-
-LapsusListBoxVolSlider* LapsusListBoxVolSlider::createListBoxItem(
-	QListBox* listbox, const QString &confID, KConfig *cfg)
-{
-	if (LapsusVolSlider::readFeatureType(confID, cfg) != LapsusVolSlider::featureType()) return 0;
-	
-	LapsusVolSlider *feat = new LapsusVolSlider(cfg, confID);
-	
-	if (feat->isValid())
-	{
-		return new LapsusListBoxVolSlider(listbox, feat);
-	}
-	
-	delete feat;
-	return 0;
-}
-
-LapsusListBoxVolSlider* LapsusListBoxVolSlider::createListBoxItem(
-	QListBox* listbox, const QString &confID, KConfig *cfg,
-	const QString &dbusID, const QStringList &args)
-{
-	if (!LapsusVolSlider::supportsArgs(args)) return 0;
-	
-	LapsusVolSlider *feat = new LapsusVolSlider(cfg, confID, dbusID);
-	
-	if (feat->isValid())
-	{
-		return new LapsusListBoxVolSlider(listbox, feat);
-	}
-	
-	delete feat;
-	return 0;
-}

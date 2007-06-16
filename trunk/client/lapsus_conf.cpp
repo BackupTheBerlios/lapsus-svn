@@ -27,16 +27,16 @@
 #include "lapsus.h"
 #include "lapsus_dbus.h"
 #include "lapsus_conf.h"
-#include "listbox_vol_slider.h"
-#include "listbox_slider.h"
-#include "listbox_switch.h"
+#include "feature_manager.h"
+
+#include "listbox_feature.h"
 
 LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 	LapsusConfBase(parent), _osd(0), _cfg(cfg)
 {
 	connect( tabsConf, SIGNAL( currentChanged(QWidget *) ), this, SLOT( tabChanged(QWidget *) ) );
 	
-	if (!cfg || !LapsusDBus::get()->isValid()) return;
+	if (!cfg || !LapsusDBus::get()->isActive()) return;
 	
 	QListBox *avail = selectPanel->availableListBox();
 	QListBox *selected = selectPanel->selectedListBox();
@@ -48,38 +48,28 @@ LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 	
 	for (QStringList::Iterator it = entries.begin(); it != entries.end(); ++it)
 	{
-		QString confID = (*it);
-		LapsusListBoxFeature* feat;
-		
-		feat = LapsusListBoxVolSlider::createListBoxItem(selected, confID, cfg);
-		
-		if (!feat) feat = LapsusListBoxSlider::createListBoxItem(selected, confID, cfg);
-		if (!feat) feat = LapsusListBoxSwitch::createListBoxItem(selected, confID, cfg);
+		QString id = (*it);
+		LapsusListBoxFeature* feat = LapsusFeatureManager::newListBoxFeature(
+			cfg, id, LapsusFeature::PlacePanel, selected, LapsusFeature::ValidConf);
 		
 		if (feat != 0 && feat->getFeature())
 		{
-			fL.remove(feat->getFeature()->getFeatureDBusID());
+			fL.remove(id);
 		}
 	}
 	
 	for (QStringList::Iterator it = fL.begin(); it != fL.end(); ++it)
 	{
-		QString dbusID = (*it);
+		QString id = (*it);
 		
-		if (dbusID.startsWith(LAPSUS_FEAT_INIT_PREFIX ".")
-			|| dbusID.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
+		if (id.startsWith(LAPSUS_FEAT_INIT_PREFIX ".")
+			|| id.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
 		{
 			continue;
 		}
 		
-		QString confID = QString(LAPSUS_CONF_PANEL_FEAT_PREFIX "%1").arg(dbusID);
-		QStringList args = LapsusDBus::get()->getFeatureArgs(dbusID);
-		LapsusListBoxFeature* feat;
-		
-		feat = LapsusListBoxVolSlider::createListBoxItem(avail, confID, cfg, dbusID, args);
-		
-		if (!feat) feat = LapsusListBoxSlider::createListBoxItem(avail, confID, cfg, dbusID, args);
-		if (!feat) feat = LapsusListBoxSwitch::createListBoxItem(avail, confID, cfg, dbusID, args);
+		LapsusFeatureManager::newListBoxFeature(cfg, id, LapsusFeature::PlacePanel, avail,
+					LapsusFeature::ValidDBus);
 	}
 	
 	avail = selectMenu->availableListBox();
@@ -92,29 +82,28 @@ LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 	
 	for (QStringList::Iterator it = entries.begin(); it != entries.end(); ++it)
 	{
-		QString confID = (*it);
-		LapsusListBoxFeature* feat = LapsusListBoxSwitch::createListBoxItem(selected, confID, cfg);
+		QString id = (*it);
+		LapsusListBoxFeature* feat = LapsusFeatureManager::newListBoxFeature(
+			cfg, id, LapsusFeature::PlaceMenu, selected, LapsusFeature::ValidConf);
 		
 		if (feat != 0 && feat->getFeature())
 		{
-			fL.remove(feat->getFeature()->getFeatureDBusID());
+			fL.remove(id);
 		}
 	}
 	
 	for (QStringList::Iterator it = fL.begin(); it != fL.end(); ++it)
 	{
-		QString dbusID = (*it);
+		QString id = (*it);
 		
-		if (dbusID.startsWith(LAPSUS_FEAT_INIT_PREFIX ".")
-			|| dbusID.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
+		if (id.startsWith(LAPSUS_FEAT_INIT_PREFIX ".")
+			|| id.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
 		{
 			continue;
 		}
 		
-		QString confID = QString(LAPSUS_CONF_PANEL_FEAT_PREFIX "%1").arg(dbusID);
-		QStringList args = LapsusDBus::get()->getFeatureArgs(dbusID);
-		
-		LapsusListBoxSwitch::createListBoxItem(avail, confID, cfg, dbusID, args);
+		LapsusFeatureManager::newListBoxFeature(cfg, id, LapsusFeature::PlaceMenu, avail,
+					LapsusFeature::ValidDBus);
 	}
 	
 	connect (btOK, SIGNAL(clicked()),
@@ -157,7 +146,6 @@ void LapsusConf::confOKClicked()
 	
 	c = selected->count();
 	
-	_cfg->deleteGroup(LAPSUS_CONF_MAIN_GROUP);
 	_cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
 	_cfg->writeEntry(LAPSUS_CONF_AUTODETECT, LAPSUS_CONF_FALSE);
 	
@@ -167,8 +155,8 @@ void LapsusConf::confOKClicked()
 		
 		if (feat && feat->getFeature())
 		{
+			entries.append(feat->getFeature()->getFeatureDBusID());
 			feat->getFeature()->saveFeature();
-			entries.append(feat->getFeature()->getFeatureConfID());
 		}
 	}
 	
@@ -186,8 +174,8 @@ void LapsusConf::confOKClicked()
 		
 		if (feat && feat->getFeature())
 		{
+			entries.append(feat->getFeature()->getFeatureDBusID());
 			feat->getFeature()->saveFeature();
-			entries.append(feat->getFeature()->getFeatureConfID());
 		}
 	}
 	

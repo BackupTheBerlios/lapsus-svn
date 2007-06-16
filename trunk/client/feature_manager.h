@@ -18,19 +18,35 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "lapsus.h"
-#include "listbox_slider.h"
+#ifndef LAPSUS_FEATURE_MANAGER_H
+#define LAPSUS_FEATURE_MANAGER_H
 
-LapsusListBoxSlider::LapsusListBoxSlider(QListBox* listbox, LapsusSlider* feat):
-	LapsusListBoxFeature(listbox, feat)
-{
-}
+#include <qptrlist.h>
+#include <kconfig.h>
 
-LapsusListBoxSlider::~LapsusListBoxSlider()
-{
-}
+#include "lapsus_feature.h"
 
-bool LapsusListBoxSlider::isConfigurable()
+class LapsusFeatureManager
 {
-	return false;
-}
+	public:
+		static QPtrList<LapsusFeature> autodetectFeatures(KConfig *cfg, LapsusFeature::Place where);
+		
+		static void writeAutoConfig(KConfig *cfg);
+		
+		static LapsusFeature* newLapsusFeature(KConfig *cfg, const QString &id,
+			LapsusFeature::Place where, LapsusFeature::ValidityMode vMode);
+		
+		static LapsusPanelWidget* newPanelWidget(KConfig *cfg, const QString &id,
+			Qt::Orientation orientation, QWidget *parent, LapsusFeature::ValidityMode vMode);
+		
+		static LapsusListBoxFeature* newListBoxFeature(KConfig *cfg, const QString &id,
+			LapsusFeature::Place where, QListBox* listbox, LapsusFeature::ValidityMode vMode);
+		
+		static bool newActionButton(KConfig *cfg, const QString &id,
+			KActionCollection *parent, LapsusFeature::ValidityMode vMode);
+	
+	private:
+		static bool checkModeValid(bool confValid, bool dbusValid, LapsusFeature::ValidityMode vMode);
+};
+
+#endif

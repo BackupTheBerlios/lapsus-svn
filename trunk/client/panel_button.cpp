@@ -26,13 +26,14 @@
 #include "lapsus_dbus.h"
 
 #include "panel_button.h"
+#include "lapsus_switch.h"
 
 LapsusPanelButton::LapsusPanelButton(Qt::Orientation orientation,
 			QWidget *parent, LapsusSwitch *feat):
 		LapsusPanelWidget(orientation, parent, feat),
 		_switchFeat(feat), _layout(0), _iconLabel(0)
 {
-	if (!feat || !isValid()) return;
+	if (!dbusValid()) return;
 	
 	_layout = new QHBoxLayout( this );
 	_layout->setAlignment(Qt::AlignCenter);
@@ -135,7 +136,7 @@ bool LapsusPanelButton::eventFilter( QObject* obj, QEvent* e )
 			return true;
 		}
 
-		if (!isValid() || !hasDBus() || !_switchFeat)
+		if (!dbusValid() || !dbusActive())
 			return true;
 
 		QStringList args = _switchFeat->getSwitchAllValues();
@@ -160,21 +161,4 @@ bool LapsusPanelButton::eventFilter( QObject* obj, QEvent* e )
 	}
 
 	return QWidget::eventFilter(obj,e);
-}
-
-LapsusPanelButton* LapsusPanelButton::newPanelWidget(const QString &confID,
-			Qt::Orientation orientation, QWidget *parent, KConfig *cfg)
-{
-	if (LapsusSwitch::readFeatureType(confID, cfg) != LapsusSwitch::featureType()) return 0;
-	
-	LapsusSwitch *feat = new LapsusSwitch(cfg, confID);
-	
-	if (feat->isValid())
-	{
-		return new LapsusPanelButton(orientation, parent, feat);
-	}
-	
-	delete feat;
-	
-	return 0;
 }

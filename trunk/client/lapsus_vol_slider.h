@@ -23,21 +23,26 @@
 
 #include "lapsus_slider.h"
 
+#define LAPSUS_FEATURE_TYPE_VOL_SLIDER		"vol_slider"
+
 class LapsusVolSlider : public LapsusSlider
 {
 	Q_OBJECT
 
 	public:
-		LapsusVolSlider(KConfig *cfg, const QString &idConf, const char *idDBus = 0);
+		LapsusVolSlider(KConfig *cfg, const QString &dbusID,
+				LapsusFeature::Place where,
+				const char *featureType = LAPSUS_FEATURE_TYPE_VOL_SLIDER);
 		virtual ~LapsusVolSlider();
 
 		virtual bool saveFeature();
 		
 		bool isMuted();
 		
-		static bool supportsArgs(const QStringList & args);
-		static void addConfigEntry(const QString &confID, const QString &dbusID, KConfig *cfg);
-		static const char *featureType();
+		virtual LapsusListBoxFeature* createListBoxFeature(QListBox* listbox,
+						LapsusFeature::ValidityMode vMode);
+		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent,
+						LapsusFeature::ValidityMode vMode);
 		
 	signals:
 		void sliderMuteUpdate(bool muted);

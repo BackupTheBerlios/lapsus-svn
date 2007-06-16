@@ -23,6 +23,7 @@
 #include "panel_vol_slider.h"
 #include "panel_button.h"
 #include "lapsus_dbus.h"
+#include "lapsus_feature.h"
 
 LapsusPanelWidget::LapsusPanelWidget(Qt::Orientation orientation,
 			QWidget *parent, LapsusFeature *feat):
@@ -36,18 +37,22 @@ LapsusPanelWidget::~LapsusPanelWidget()
 {
 }
 
-bool LapsusPanelWidget::isValid()
+bool LapsusPanelWidget::dbusValid()
 {
 	if (!_feature) return false;
 	
-	return _feature->isValid();
+	return _feature->dbusValid();
 }
 
-bool LapsusPanelWidget::hasDBus()
+bool LapsusPanelWidget::dbusActive()
 {
 	if (!_feature) return false;
 	
-	return _feature->hasDBus();
+	// We check in the feature, because we are not only interested if
+	// the dbus connection is active. We also want to know, if our
+	// feature is connected to dbus object with signals (which might
+	// not be true)
+	return _feature->dbusActive();
 }
 
 // LapsusPanelWidget* LapsusPanelWidget::newAppletwidget(

@@ -31,9 +31,6 @@
 #define LAPSUS_CONF_MENU_LIST		"menu_entries"
 #define LAPSUS_CONF_AUTODETECT		"autodetect"
 
-#define LAPSUS_CONF_PANEL_FEAT_PREFIX	"panel_"
-#define LAPSUS_CONF_MENU_FEAT_PREFIX	"menu_"
-
 #define LAPSUS_CONF_TRUE		"true"
 #define LAPSUS_CONF_FALSE		"false"
 

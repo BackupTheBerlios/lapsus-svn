@@ -7,7 +7,7 @@ METASOURCES = AUTO
 lib_LTLIBRARIES = lapsus_panelapplet.la
 
 lapsus_panelapplet_la_SOURCES = \
-lapsus_dbus.cpp ../global/lapsus_validator.cpp \
+lapsus_dbus.cpp ../global/lapsus_validator.cpp feature_manager.cpp \
 lapsus_feature.cpp lapsus_switch.cpp lapsus_vol_slider.cpp lapsus_slider.cpp \
 lapsus_icons.cpp flowlayout.cpp ksmallslider.cpp osd.cpp \
 listbox_switch.cpp listbox_slider.cpp listbox_vol_slider.cpp listbox_feature.cpp \

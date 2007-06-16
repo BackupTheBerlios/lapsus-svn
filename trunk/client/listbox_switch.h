@@ -32,12 +32,8 @@ class LapsusListBoxSwitch : public LapsusListBoxFeature
 		
 		virtual bool isConfigurable();
 	
-		static LapsusListBoxSwitch* createListBoxItem(QListBox* listbox, const QString &confID, KConfig *cfg);
-		static LapsusListBoxSwitch* createListBoxItem(QListBox* listbox, const QString &confID, KConfig *cfg,
-			const QString &dbusID, const QStringList &args);
-	
 	private:
-		LapsusSwitch* _slider;
+		LapsusSwitch* _switch;
 };
 
 #endif

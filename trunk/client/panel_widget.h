@@ -27,7 +27,8 @@
 #include <qwidget.h>
 
 #include "lapsus_icons.h"
-#include "lapsus_feature.h"
+
+class LapsusFeature;
 
 class LapsusPanelWidget : public QWidget, protected LapsusIcons
 {
@@ -38,9 +39,9 @@ class LapsusPanelWidget : public QWidget, protected LapsusIcons
 			QWidget *parent, LapsusFeature *feat);
 		virtual ~LapsusPanelWidget();
 		
-		bool isValid();
-		bool hasDBus();
-
+		virtual bool dbusValid();
+		virtual bool dbusActive();
+		
 	protected:
 		LapsusFeature* _feature;
 		Qt::Orientation _panelOrientation;
