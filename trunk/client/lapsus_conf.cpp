@@ -154,32 +154,44 @@ void LapsusConf::panelSelectionChanged()
 {
 	QListViewItem* item = listPanel->selectedItem();
 	
-	btPanelUp->setEnabled(false);
-	btPanelDown->setEnabled(false);
+	bool enableUp = false;
+	bool enableDown = false;
 	
 	if (item)
 	{
-		if (item != listPanel->firstChild()) btPanelUp->setEnabled(true);
-		if (item != listPanel->lastChild()) btPanelDown->setEnabled(true);
+		if (item != listPanel->firstChild()) enableUp = true;
+		if (item != listPanel->lastChild()) enableDown = true;
 		
 		listPanel->ensureItemVisible(item);
 	}
+	
+	if (enableUp != btPanelUp->isEnabled())
+		btPanelUp->setEnabled(enableUp);
+	
+	if (enableDown != btPanelDown->isEnabled())
+		btPanelDown->setEnabled(enableDown);
 }
 
 void LapsusConf::menuSelectionChanged()
 {
 	QListViewItem* item = listMenu->selectedItem();
 	
-	btMenuUp->setEnabled(false);
-	btMenuDown->setEnabled(false);
+	bool enableUp = false;
+	bool enableDown = false;
 	
 	if (item)
 	{
-		if (item != listMenu->firstChild()) btMenuUp->setEnabled(true);
-		if (item != listMenu->lastChild()) btMenuDown->setEnabled(true);
+		if (item != listMenu->firstChild()) enableUp = true;
+		if (item != listMenu->lastChild()) enableDown = true;
 		
 		listMenu->ensureItemVisible(item);
 	}
+	
+	if (enableUp != btMenuUp->isEnabled())
+		btMenuUp->setEnabled(enableUp);
+	
+	if (enableDown != btMenuDown->isEnabled())
+		btMenuDown->setEnabled(enableDown);
 }
 
 void LapsusConf::panelUp()
