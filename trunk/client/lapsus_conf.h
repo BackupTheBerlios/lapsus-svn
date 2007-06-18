@@ -60,8 +60,10 @@ class LapsusConf: public LapsusConfBase
 		
 		void panelUp();
 		void panelDown();
+		void panelAuto();
 		void menuUp();
 		void menuDown();
+		void menuAuto();
 		
 	private:
 		LapsusOSD* _osd;
@@ -72,6 +74,7 @@ class LapsusConf: public LapsusConfBase
 			QStringList *listFrom, QStringList *listPresent,
 			QStringList *listDBus, LapsusFeature::Place where);
 		void addAllListEntries(LapsusFeature::Place where);
+		void fillAuto(KListView* itemList, LapsusFeature::Place where);
 };
 
 #endif

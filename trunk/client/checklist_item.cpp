@@ -36,6 +36,7 @@ LapsusCheckListItem::LapsusCheckListItem(KListView *parent, LapsusFeature *featu
 
 LapsusCheckListItem::~LapsusCheckListItem()
 {
+	if (_feature) delete _feature;
 }
 
 QString LapsusCheckListItem::text(int column) const

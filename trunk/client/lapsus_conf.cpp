@@ -57,14 +57,20 @@ LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 	connect (btPanelDown, SIGNAL(clicked()),
 		this, SLOT(panelDown()));
 	
+	connect (btPanelAuto, SIGNAL(clicked()),
+		this, SLOT(panelAuto()));
+	
+	connect (listMenu, SIGNAL(selectionChanged()),
+		this, SLOT(menuSelectionChanged()));
+	
 	connect (btMenuUp, SIGNAL(clicked()),
 		this, SLOT(menuUp()));
 	
 	connect (btMenuDown, SIGNAL(clicked()),
 		this, SLOT(menuDown()));
 	
-	connect (listMenu, SIGNAL(selectionChanged()),
-		this, SLOT(menuSelectionChanged()));
+	connect (btMenuAuto, SIGNAL(clicked()),
+		this, SLOT(menuAuto()));
 	
 	connect (btOK, SIGNAL(clicked()),
 		this, SLOT(confOKClicked()));
@@ -102,7 +108,7 @@ void LapsusConf::addListEntries(KListView* itemList,
 			if (last != item)
 				item->moveItem(last);
 			
-			if (listPresent->contains(id))
+			if (listPresent && listPresent->contains(id))
 			{
 				item->setOn(true);
 			}
@@ -228,6 +234,39 @@ void LapsusConf::panelDown()
 	}
 }
 
+void LapsusConf::fillAuto(KListView* itemList, LapsusFeature::Place where)
+{
+	QPtrList<LapsusFeature> list = LapsusFeatureManager::autodetectFeatures(_cfg, where);
+	LapsusFeature* feat;
+	QStringList dbusList = LapsusDBus::get()->listFeatures();
+	
+	list.setAutoDelete(false);
+	
+	itemList->clear();
+	
+	for (feat = list.first(); feat; feat = list.next())
+	{
+		QString id = feat->getFeatureDBusID();
+		LapsusCheckListItem* item = new LapsusCheckListItem(itemList, feat);
+		QListViewItem* last = itemList->lastChild();
+		
+		if (last != item)
+			item->moveItem(last);
+		
+		item->setOn(true);
+		
+		dbusList.remove(id);
+	}
+	
+	// Add remaining items.
+	addListEntries(itemList, &dbusList, 0, 0, where);
+}
+
+void LapsusConf::panelAuto()
+{
+	fillAuto(listPanel, LapsusFeature::PlacePanel);
+}
+
 void LapsusConf::menuUp()
 {
 	QListViewItem* item = listMenu->selectedItem();
@@ -261,6 +300,12 @@ void LapsusConf::menuDown()
 		}
 	}
 }
+
+void LapsusConf::menuAuto()
+{
+	fillAuto(listMenu, LapsusFeature::PlaceMenu);
+}
+
 void LapsusConf::tabChanged(QWidget *tab)
 {
 	if (tab == OSDPage)
