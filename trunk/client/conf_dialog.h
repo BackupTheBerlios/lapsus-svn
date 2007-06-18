@@ -33,12 +33,8 @@ class LapsusConfDialog : public KDialog
 		LapsusConfDialog(QWidget *parent,
 			KConfig *cfg);
 		~LapsusConfDialog();
-	
-	protected slots:
-		void finishedConf(bool dirty);
 		
-	private:
-		LapsusConf* _conf;
+		LapsusConf* lapsusConf;
 };
 
 #endif

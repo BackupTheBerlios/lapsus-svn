@@ -48,7 +48,7 @@ class LapsusConf: public LapsusConfBase
 		~LapsusConf();
 	
 	signals:
-		void finished(bool dirty);
+		void finished(bool ok);
 		
 	protected slots:
 		void tabChanged(QWidget *tab);

@@ -36,15 +36,15 @@
 #include "lapsus_dbus.h"
 
 #include "feature_manager.h"
+#include "lapsus_conf.h"
 
 // 1.5 sec
 #define OSD_TIMEOUT_MS			2000
 
-LapsusPanelMain::LapsusPanelMain(QWidget *parent,
+LapsusPanelMain::LapsusPanelMain(KConfig* cfg, QWidget *parent,
 			Qt::Orientation orientation):
-	QWidget( parent ), _cfg("lapsusrc"),
-	_orientation( orientation ), _osd(0), _osdTimer(0),
-	_confDlg(0)
+	QWidget( parent ), _cfg(cfg),
+	_orientation( orientation ), _osd(0), _osdTimer(0)
 {
 	_layout = new FlowLayout(this, _orientation);
 	_layout->setSpacing(4);
@@ -63,7 +63,7 @@ LapsusPanelMain::LapsusPanelMain(QWidget *parent,
 		it != _panelEntries.end(); ++it )
 	{
 		LapsusPanelWidget *widget = LapsusFeatureManager::newPanelWidget(
-			&_cfg, *it, _orientation, this);
+			_cfg, *it, _orientation, this);
 		
 		if (widget)
 		{
@@ -86,7 +86,7 @@ LapsusPanelMain::LapsusPanelMain(QWidget *parent,
 		
 		if (!( KToggleAction* )_actions->action(str))
 		{
-			addedOK = LapsusFeatureManager::newActionButton(&_cfg, str, _actions);
+			addedOK = LapsusFeatureManager::newActionButton(_cfg, str, _actions);
 		}
 	}
 
@@ -111,36 +111,35 @@ LapsusPanelMain::LapsusPanelMain(QWidget *parent,
 
 LapsusPanelMain::~LapsusPanelMain()
 {
-	if (_confDlg) delete _confDlg;
 }
 
 void LapsusPanelMain::saveConfig()
 {
-	_cfg.setGroup(LAPSUS_CONF_MAIN_GROUP);
-	_cfg.sync();
+	_cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
+	_cfg->sync();
 }
 
 void LapsusPanelMain::loadConfig()
 {
-	_cfg.setGroup(LAPSUS_CONF_MAIN_GROUP);
+	_cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
 
 	bool doAuto = true;
 
-	if (_cfg.hasKey(LAPSUS_CONF_AUTODETECT))
+	if (_cfg->hasKey(LAPSUS_CONF_AUTODETECT))
 	{
-		QString str = _cfg.readEntry(LAPSUS_CONF_AUTODETECT);
+		QString str = _cfg->readEntry(LAPSUS_CONF_AUTODETECT);
 
 		if (str.length() > 0 && str != LAPSUS_CONF_TRUE) doAuto = false;
 	}
 
 	if (LapsusDBus::get()->isActive() && doAuto )
 	{
-		LapsusFeatureManager::writeAutoConfig(&_cfg);
+		LapsusFeatureManager::writeAutoConfig(_cfg);
 	}
 
-	_cfg.setGroup(LAPSUS_CONF_MAIN_GROUP);
-	_panelEntries = _cfg.readListEntry(LAPSUS_CONF_PANEL_LIST_SELECTED);
-	_menuEntries = _cfg.readListEntry(LAPSUS_CONF_MENU_LIST_SELECTED);
+	_cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
+	_panelEntries = _cfg->readListEntry(LAPSUS_CONF_PANEL_LIST_SELECTED);
+	_menuEntries = _cfg->readListEntry(LAPSUS_CONF_MENU_LIST_SELECTED);
 }
 
 int LapsusPanelMain::widthForHeight(int h) const
@@ -232,19 +231,4 @@ void LapsusPanelMain::timerEvent( QTimerEvent * e)
 			_osd->hide();
 		}
 	}
-}
-
-bool LapsusPanelMain::appletPreferences()
-{
-	if (_confDlg) delete _confDlg;
-	
-	_confDlg = new LapsusConfDialog(0, &_cfg);
-	_confDlg->exec();
-	
-	int res = _confDlg->result();
-	
-	delete _confDlg;
-	_confDlg = 0;
-	
-	return (res != QDialog::Rejected);
 }

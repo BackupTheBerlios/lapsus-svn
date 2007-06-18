@@ -28,14 +28,13 @@
 
 #include "flowlayout.h"
 #include "osd.h"
-#include "conf_dialog.h"
 
 class LapsusPanelMain : public QWidget
 {
 	Q_OBJECT
 
 	public:
-		LapsusPanelMain(QWidget *parent,
+		LapsusPanelMain(KConfig *cfg, QWidget *parent,
 			Qt::Orientation orientation);
 
 		virtual ~LapsusPanelMain();
@@ -46,8 +45,6 @@ class LapsusPanelMain : public QWidget
 		QSize sizeHint() const;
 		QSize minimumSize() const;
 		QSizePolicy sizePolicy() const;
-
-		bool appletPreferences();
 
 	protected:
 		void mousePressEvent( QMouseEvent * );
@@ -60,7 +57,7 @@ class LapsusPanelMain : public QWidget
 		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
 
 	private:
-		KConfig _cfg;
+		KConfig* _cfg;
 		QStringList _panelEntries;
 		QStringList _menuEntries;
 		FlowLayout* _layout;
@@ -69,7 +66,6 @@ class LapsusPanelMain : public QWidget
 		Qt::Orientation _orientation;
 		LapsusOSD* _osd;
 		int _osdTimer;
-		LapsusConfDialog *_confDlg;
 
 		void saveConfig();
 		void loadConfig();

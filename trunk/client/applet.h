@@ -31,6 +31,7 @@
 #include <kbugreport.h>
 
 #include "panel_main.h"
+#include "conf_dialog.h"
 
 class LapsusApplet : public KPanelApplet
 {
@@ -53,12 +54,17 @@ class LapsusApplet : public KPanelApplet
 		void mousePressEvent( QMouseEvent *e );
 		void resizeEvent( QResizeEvent * );
 
+	protected slots:
+		void finishedConf(bool ok);
+		
 	private:
+		KConfig _cfg;
 		QBoxLayout *_layout;
 		LapsusPanelMain *_mainWidget;
 		Qt::Orientation _orientation;
 		KAboutApplication *_aboutDlg;
 		KBugReport *_bugDlg;
+		LapsusConfDialog *_confDlg;
 		KAboutData _aboutData;
 		
 		void changeOrientation(Qt::Orientation orientation);

@@ -41,8 +41,9 @@ LapsusApplet::LapsusApplet( const QString& configFile, Type t, QWidget *parent, 
 	: KPanelApplet( configFile, t,
 	KPanelApplet::About | KPanelApplet::Preferences | KPanelApplet::ReportBug,
 	parent, name ),
+	_cfg("lapsusrc"),
 	_layout(0), _mainWidget(0), _orientation(orientation()),
-	_aboutDlg(0), _bugDlg(0),
+	_aboutDlg(0), _bugDlg(0), _confDlg(0),
 	_aboutData( "lapsus", I18N_NOOP("Lapsus Panel Applet"),
                          LAPSUS_VERSION,
                          I18N_NOOP("Lapsus provides easy access to additional\nfeatures of ASUS and IBM/Lenovo laptops."),
@@ -73,6 +74,7 @@ LapsusApplet::~LapsusApplet()
 {
 	if (_aboutDlg) delete _aboutDlg;
 	if (_bugDlg) delete _bugDlg;
+	if (_confDlg) delete _confDlg;
 	
 	/*
 	 * It would be removed anyway, but we want to make sure
@@ -121,7 +123,7 @@ void LapsusApplet::changeOrientation(Qt::Orientation orientation)
 		delete _mainWidget;
 	}
 
-	_mainWidget = new LapsusPanelMain(this, _orientation);
+	_mainWidget = new LapsusPanelMain(&_cfg, this, _orientation);
 	_layout->add(_mainWidget);
 
 	_mainWidget->show();
@@ -151,10 +153,24 @@ int LapsusApplet::heightForWidth(int w) const
 
 void LapsusApplet::preferences()
 {
-	if (_mainWidget->appletPreferences())
-	{
-		changeOrientation(_orientation);
-	}
+	if (_confDlg) delete _confDlg;
+	
+	_confDlg = new LapsusConfDialog(0, &_cfg);
+	
+	connect(_confDlg->lapsusConf,
+		SIGNAL(finished(bool)),
+		this,
+		SLOT(finishedConf(bool)));
+	
+	_confDlg->show();
+}
+
+void LapsusApplet::finishedConf(bool ok)
+{
+	delete _confDlg;
+	_confDlg = 0;
+	
+	if (ok) changeOrientation(_orientation);
 }
 
 void LapsusApplet::resizeEvent( QResizeEvent *)
