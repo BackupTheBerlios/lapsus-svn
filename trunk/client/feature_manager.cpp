@@ -28,14 +28,6 @@
 
 #include "lapsus_conf.h"
 
-bool LapsusFeatureManager::checkModeValid(bool confValid, bool dbusValid, LapsusFeature::ValidityMode vMode)
-{
-	if (vMode == LapsusFeature::ValidConf && confValid) return true;
-	if (vMode == LapsusFeature::ValidDBus && dbusValid) return true;
-	
-	return false;
-}
-
 QPtrList<LapsusFeature> LapsusFeatureManager::autodetectFeatures(KConfig *cfg, LapsusFeature::Place where)
 {
 	QPtrList<LapsusFeature> list;
@@ -146,7 +138,7 @@ void LapsusFeatureManager::writeAutoConfig(KConfig *cfg)
 	}
 	
 	cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
-	cfg->writeEntry(LAPSUS_CONF_PANEL_LIST, entries);
+	cfg->writeEntry(LAPSUS_CONF_PANEL_LIST_SELECTED, entries);
 	entries.clear();
 	
 	list.setAutoDelete(true);
@@ -161,7 +153,7 @@ void LapsusFeatureManager::writeAutoConfig(KConfig *cfg)
 	}
 	
 	cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
-	cfg->writeEntry(LAPSUS_CONF_MENU_LIST, entries);
+	cfg->writeEntry(LAPSUS_CONF_MENU_LIST_SELECTED, entries);
 	entries.clear();
 	
 	list.setAutoDelete(true);
@@ -171,30 +163,28 @@ void LapsusFeatureManager::writeAutoConfig(KConfig *cfg)
 }
 
 LapsusFeature* LapsusFeatureManager::newLapsusFeature(KConfig *cfg,
-		const QString &id, LapsusFeature::Place where, LapsusFeature::ValidityMode vMode)
+		const QString &id, LapsusFeature::Place where)
 {
-	if (vMode == LapsusFeature::ValidUnknown) return 0;
-	
 	LapsusFeature *feat;
 	
 	if (where == LapsusFeature::PlacePanel)
 	{
 		feat = new LapsusVolSlider(cfg, id, where);
 		
-		if (checkModeValid(feat->confValid(), feat->dbusValid(), vMode)) return feat;
+		if (feat->confValid() || feat->dbusValid()) return feat;
 		
 		delete feat;
 		
 		feat = new LapsusSlider(cfg, id, where);
 		
-		if (checkModeValid(feat->confValid(), feat->dbusValid(), vMode)) return feat;
+		if (feat->confValid() || feat->dbusValid()) return feat;
 		
 		delete feat;
 	}
 	
 	feat = new LapsusSwitch(cfg, id, where);
 	
-	if (checkModeValid(feat->confValid(), feat->dbusValid(), vMode)) return feat;
+	if (feat->confValid() || feat->dbusValid()) return feat;
 	
 	delete feat;
 	
@@ -202,15 +192,19 @@ LapsusFeature* LapsusFeatureManager::newLapsusFeature(KConfig *cfg,
 }
 
 LapsusPanelWidget* LapsusFeatureManager::newPanelWidget(KConfig *cfg, const QString &id,
-			Qt::Orientation orientation, QWidget *parent, LapsusFeature::ValidityMode vMode)
+			Qt::Orientation orientation, QWidget *parent)
 {
-	LapsusFeature *feat = newLapsusFeature(cfg, id, LapsusFeature::PlacePanel, vMode);
+	LapsusFeature *feat = newLapsusFeature(cfg, id, LapsusFeature::PlacePanel);
 	
 	if (!feat) return 0;
 	
-	feat->dbusConnect();
+	if (!feat->dbusValid())
+	{
+		delete feat;
+		return 0;
+	}
 	
-	LapsusPanelWidget* widget = feat->createPanelWidget(orientation, parent, vMode);
+	LapsusPanelWidget* widget = feat->createPanelWidget(orientation, parent);
 	
 	if (!widget)
 	{
@@ -221,36 +215,20 @@ LapsusPanelWidget* LapsusFeatureManager::newPanelWidget(KConfig *cfg, const QStr
 	return widget;
 }
 
-LapsusListBoxFeature* LapsusFeatureManager::newListBoxFeature(KConfig *cfg, const QString &id,
-			LapsusFeature::Place where, QListBox* listbox, LapsusFeature::ValidityMode vMode)
+bool LapsusFeatureManager::newActionButton(KConfig *cfg, const QString &id,
+		KActionCollection *parent)
 {
-	LapsusFeature *feat = newLapsusFeature(cfg, id, where, vMode);
+	LapsusFeature *feat = newLapsusFeature(cfg, id, LapsusFeature::PlaceMenu);
 	
 	if (!feat) return 0;
 	
-	feat->dbusConnect();
-	
-	LapsusListBoxFeature* listboxFeat = feat->createListBoxFeature(listbox, vMode);
-	
-	if (!listboxFeat)
+	if (!feat->dbusValid())
 	{
 		delete feat;
 		return 0;
 	}
 	
-	return listboxFeat;
-}
-
-bool LapsusFeatureManager::newActionButton(KConfig *cfg, const QString &id,
-		KActionCollection *parent, LapsusFeature::ValidityMode vMode)
-{
-	LapsusFeature *feat = newLapsusFeature(cfg, id, LapsusFeature::PlacePanel, vMode);
-	
-	if (!feat) return 0;
-	
-	feat->dbusConnect();
-	
-	bool ret = feat->createActionButton(parent, vMode);
+	bool ret = feat->createActionButton(parent);
 	
 	if (!ret) delete feat;
 	

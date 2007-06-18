@@ -28,7 +28,6 @@
 
 #include "lapsus_validator.h"
 
-class LapsusListBoxFeature;
 class LapsusPanelWidget;
 class LapsusActionButton;
 class QListBox;
@@ -40,7 +39,6 @@ class LapsusFeature : public QObject
 
 	public:
 		enum Place { PlaceUnknown, PlacePanel, PlaceMenu };
-		enum ValidityMode { ValidUnknown, ValidConf, ValidDBus };
 		
 		LapsusFeature(KConfig *cfg, const QString &dbusID,
 				LapsusFeature::Place where, const char *featureType = 0);
@@ -66,12 +64,8 @@ class LapsusFeature : public QObject
 		
 		virtual bool saveFeature();
 		
-		virtual LapsusListBoxFeature* createListBoxFeature(QListBox* listbox,
-							LapsusFeature::ValidityMode vMode);
-		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent,
-							LapsusFeature::ValidityMode vMode);
-		virtual bool createActionButton(KActionCollection *parent,
-							LapsusFeature::ValidityMode vMode);
+		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent);
+		virtual bool createActionButton(KActionCollection *parent);
 		
 	signals:
 		void featureUpdate(const QString &val);
@@ -91,8 +85,6 @@ class LapsusFeature : public QObject
 		bool _dbusValid;
 		bool _dbusActive;
 		bool _blockSendSet;
-		
-		bool validMode(LapsusFeature::ValidityMode vMode);
 };
 
 #endif

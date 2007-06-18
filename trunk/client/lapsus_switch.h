@@ -40,12 +40,8 @@ class LapsusSwitch : public LapsusFeature
 		QString getSwitchValue();
 		QStringList getSwitchAllValues();
 		
-		virtual LapsusListBoxFeature* createListBoxFeature(QListBox* listbox,
-						LapsusFeature::ValidityMode vMode);
-		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent,
-						LapsusFeature::ValidityMode vMode);
-		virtual bool createActionButton(KActionCollection *parent,
-						LapsusFeature::ValidityMode vMode);
+		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent);
+		virtual bool createActionButton(KActionCollection *parent);
 		
 	public slots:
 		virtual void setSwitchValue(const QString &val);

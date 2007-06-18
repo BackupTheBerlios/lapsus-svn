@@ -31,6 +31,8 @@ LapsusPanelWidget::LapsusPanelWidget(Qt::Orientation orientation,
 	_feature(feat), _panelOrientation( orientation )
 {
 	setBackgroundMode(X11ParentRelative);
+	
+	if (feat) feat->dbusConnect();
 }
 
 LapsusPanelWidget::~LapsusPanelWidget()

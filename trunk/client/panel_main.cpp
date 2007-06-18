@@ -63,7 +63,7 @@ LapsusPanelMain::LapsusPanelMain(QWidget *parent,
 		it != _panelEntries.end(); ++it )
 	{
 		LapsusPanelWidget *widget = LapsusFeatureManager::newPanelWidget(
-			&_cfg, *it, _orientation, this, LapsusFeature::ValidDBus);
+			&_cfg, *it, _orientation, this);
 		
 		if (widget)
 		{
@@ -86,8 +86,7 @@ LapsusPanelMain::LapsusPanelMain(QWidget *parent,
 		
 		if (!( KToggleAction* )_actions->action(str))
 		{
-			addedOK = LapsusFeatureManager::newActionButton(&_cfg, str, _actions,
-				LapsusFeature::ValidDBus);
+			addedOK = LapsusFeatureManager::newActionButton(&_cfg, str, _actions);
 		}
 	}
 
@@ -140,8 +139,8 @@ void LapsusPanelMain::loadConfig()
 	}
 
 	_cfg.setGroup(LAPSUS_CONF_MAIN_GROUP);
-	_panelEntries = _cfg.readListEntry(LAPSUS_CONF_PANEL_LIST);
-	_menuEntries = _cfg.readListEntry(LAPSUS_CONF_MENU_LIST);
+	_panelEntries = _cfg.readListEntry(LAPSUS_CONF_PANEL_LIST_SELECTED);
+	_menuEntries = _cfg.readListEntry(LAPSUS_CONF_MENU_LIST_SELECTED);
 }
 
 int LapsusPanelMain::widthForHeight(int h) const

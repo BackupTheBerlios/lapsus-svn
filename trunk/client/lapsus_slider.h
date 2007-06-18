@@ -41,10 +41,7 @@ class LapsusSlider : public LapsusFeature
 		int getSliderMin();
 		int getSliderMax();
 		
-		virtual LapsusListBoxFeature* createListBoxFeature(QListBox* listbox,
-						LapsusFeature::ValidityMode vMode);
-		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent,
-						LapsusFeature::ValidityMode vMode);
+		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent);
 		
 	signals:
 		void sliderUpdate(int val);
@@ -55,8 +52,9 @@ class LapsusSlider : public LapsusFeature
 	
 	protected slots:
 		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
+		virtual void dbusSliderUpdate(const QString &val, bool isNotif);
 		
-	private:
+	protected:
 		int _valMin;
 		int _valMax;
 		int _val;

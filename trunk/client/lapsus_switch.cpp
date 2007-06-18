@@ -20,7 +20,6 @@
 
 #include "lapsus.h"
 #include "lapsus_switch.h"
-#include "listbox_switch.h"
 #include "panel_button.h"
 #include "action_button.h"
 
@@ -91,27 +90,13 @@ QStringList LapsusSwitch::getSwitchAllValues()
 	return getFeatureArgs();
 }
 
-LapsusListBoxFeature* LapsusSwitch::createListBoxFeature(QListBox* listbox,
-		LapsusFeature::ValidityMode vMode)
+LapsusPanelWidget* LapsusSwitch::createPanelWidget(Qt::Orientation orientation, QWidget *parent)
 {
-	if (!validMode(vMode)) return 0;
-	
-	return new LapsusListBoxSwitch(listbox, this);
-}
-
-LapsusPanelWidget* LapsusSwitch::createPanelWidget(Qt::Orientation orientation, QWidget *parent,
-		LapsusFeature::ValidityMode vMode)
-{
-	if (!validMode(vMode)) return 0;
-	
 	return new LapsusPanelButton(orientation, parent, this);
 }
 
-bool LapsusSwitch::createActionButton(KActionCollection *parent,
-		LapsusFeature::ValidityMode vMode)
+bool LapsusSwitch::createActionButton(KActionCollection *parent)
 {
-	if (!validMode(vMode)) return false;
-	
 	new LapsusActionButton(getFeatureConfID(), parent, this);
 	
 	return true;

@@ -70,4 +70,7 @@
 
 #define LAPSUS_FEAT_PARAM_NOTIF		"notifs"
 
+#define DBG_DUMP printf("%s:%u\n", __FILE__, __LINE__)
+#define DBG_DUMP_X(fmt, x) printf("%s:%u: %s=" fmt "\n", __FILE__, __LINE__, #x, x)
+
 #endif

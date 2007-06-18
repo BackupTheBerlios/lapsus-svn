@@ -34,19 +34,13 @@ class LapsusFeatureManager
 		static void writeAutoConfig(KConfig *cfg);
 		
 		static LapsusFeature* newLapsusFeature(KConfig *cfg, const QString &id,
-			LapsusFeature::Place where, LapsusFeature::ValidityMode vMode);
+			LapsusFeature::Place where);
 		
 		static LapsusPanelWidget* newPanelWidget(KConfig *cfg, const QString &id,
-			Qt::Orientation orientation, QWidget *parent, LapsusFeature::ValidityMode vMode);
-		
-		static LapsusListBoxFeature* newListBoxFeature(KConfig *cfg, const QString &id,
-			LapsusFeature::Place where, QListBox* listbox, LapsusFeature::ValidityMode vMode);
+			Qt::Orientation orientation, QWidget *parent);
 		
 		static bool newActionButton(KConfig *cfg, const QString &id,
-			KActionCollection *parent, LapsusFeature::ValidityMode vMode);
-	
-	private:
-		static bool checkModeValid(bool confValid, bool dbusValid, LapsusFeature::ValidityMode vMode);
+			KActionCollection *parent);
 };
 
 #endif

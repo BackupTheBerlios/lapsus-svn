@@ -32,10 +32,10 @@ LapsusPanelVolSlider::LapsusPanelVolSlider(Qt::Orientation orientation, QWidget 
 {
 	if (!dbusValid()) return;
 	
-	connect ( this, SIGNAL(toggleMute()),
+	connect(this, SIGNAL(toggleMute()),
 		sliderFeat, SLOT(toggleMute()));
 
-	connect( sliderFeat, SIGNAL(sliderMuteUpdate(bool)),
+	connect(sliderFeat, SIGNAL(sliderMuteUpdate(bool)),
 			_slider, SLOT(setGray(bool)));
 }
 

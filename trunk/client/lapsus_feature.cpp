@@ -80,8 +80,10 @@ bool LapsusFeature::dbusConnect()
 {
 	if (!_dbusValid) return false;
 	
-	connect ( LapsusDBus::get(), SIGNAL(dbusStateUpdate(bool)),
-		this, SLOT(dbusStateUpdate(bool)) );
+	connect(LapsusDBus::get(),
+		SIGNAL(dbusStateUpdate(bool)),
+		this,
+		SLOT(dbusStateUpdate(bool)) );
 	
 	connect(LapsusDBus::get(),
 		SIGNAL(dbusFeatureUpdate(const QString &, const QString &, bool)),
@@ -201,25 +203,12 @@ bool LapsusFeature::saveFeature()
 	return true;
 }
 
-LapsusListBoxFeature* LapsusFeature::createListBoxFeature(QListBox*, LapsusFeature::ValidityMode)
+LapsusPanelWidget* LapsusFeature::createPanelWidget(Qt::Orientation, QWidget *)
 {
 	return 0;
 }
 
-LapsusPanelWidget* LapsusFeature::createPanelWidget(Qt::Orientation, QWidget *, LapsusFeature::ValidityMode)
+bool LapsusFeature::createActionButton(KActionCollection *)
 {
-	return 0;
-}
-
-bool LapsusFeature::createActionButton(KActionCollection *, LapsusFeature::ValidityMode)
-{
-	return false;
-}
-
-bool LapsusFeature::validMode(LapsusFeature::ValidityMode vMode)
-{
-	if (vMode == LapsusFeature::ValidDBus && dbusValid()) return true;
-	if (vMode == LapsusFeature::ValidConf && confValid()) return true;
-	
 	return false;
 }

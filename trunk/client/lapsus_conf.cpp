@@ -23,13 +23,15 @@
 #include <klocale.h>
 #include <kactionselector.h>
 #include <kpushbutton.h>
+#include <qtable.h>
+#include <qtoolbutton.h>
+#include <kiconloader.h>
 
 #include "lapsus.h"
 #include "lapsus_dbus.h"
 #include "lapsus_conf.h"
 #include "feature_manager.h"
-
-#include "listbox_feature.h"
+#include "checklist_item.h"
 
 LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 	LapsusConfBase(parent), _osd(0), _cfg(cfg)
@@ -38,73 +40,31 @@ LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 	
 	if (!cfg || !LapsusDBus::get()->isActive()) return;
 	
-	QListBox *avail = selectPanel->availableListBox();
-	QListBox *selected = selectPanel->selectedListBox();
+	btPanelUp->setIconSet(SmallIconSet("up", IconSize(KIcon::Small)));
+	btPanelDown->setIconSet(SmallIconSet("down", IconSize(KIcon::Small)));
+	btMenuUp->setIconSet(SmallIconSet("up", IconSize(KIcon::Small)));
+	btMenuDown->setIconSet(SmallIconSet("down", IconSize(KIcon::Small)));
 	
-	cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
+	addAllListEntries(LapsusFeature::PlacePanel);
+	addAllListEntries(LapsusFeature::PlaceMenu);
 	
-	QStringList fL = LapsusDBus::get()->listFeatures();
-	QStringList entries = cfg->readListEntry(LAPSUS_CONF_PANEL_LIST);
+	connect (listPanel, SIGNAL(selectionChanged()),
+		this, SLOT(panelSelectionChanged()));
 	
-	for (QStringList::Iterator it = entries.begin(); it != entries.end(); ++it)
-	{
-		QString id = (*it);
-		LapsusListBoxFeature* feat = LapsusFeatureManager::newListBoxFeature(
-			cfg, id, LapsusFeature::PlacePanel, selected, LapsusFeature::ValidConf);
-		
-		if (feat != 0 && feat->getFeature())
-		{
-			fL.remove(id);
-		}
-	}
+	connect (btPanelUp, SIGNAL(clicked()),
+		this, SLOT(panelUp()));
 	
-	for (QStringList::Iterator it = fL.begin(); it != fL.end(); ++it)
-	{
-		QString id = (*it);
-		
-		if (id.startsWith(LAPSUS_FEAT_INIT_PREFIX ".")
-			|| id.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
-		{
-			continue;
-		}
-		
-		LapsusFeatureManager::newListBoxFeature(cfg, id, LapsusFeature::PlacePanel, avail,
-					LapsusFeature::ValidDBus);
-	}
+	connect (btPanelDown, SIGNAL(clicked()),
+		this, SLOT(panelDown()));
 	
-	avail = selectMenu->availableListBox();
-	selected = selectMenu->selectedListBox();
+	connect (btMenuUp, SIGNAL(clicked()),
+		this, SLOT(menuUp()));
 	
-	cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
+	connect (btMenuDown, SIGNAL(clicked()),
+		this, SLOT(menuDown()));
 	
-	fL = LapsusDBus::get()->listFeatures();
-	entries = cfg->readListEntry(LAPSUS_CONF_MENU_LIST);
-	
-	for (QStringList::Iterator it = entries.begin(); it != entries.end(); ++it)
-	{
-		QString id = (*it);
-		LapsusListBoxFeature* feat = LapsusFeatureManager::newListBoxFeature(
-			cfg, id, LapsusFeature::PlaceMenu, selected, LapsusFeature::ValidConf);
-		
-		if (feat != 0 && feat->getFeature())
-		{
-			fL.remove(id);
-		}
-	}
-	
-	for (QStringList::Iterator it = fL.begin(); it != fL.end(); ++it)
-	{
-		QString id = (*it);
-		
-		if (id.startsWith(LAPSUS_FEAT_INIT_PREFIX ".")
-			|| id.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
-		{
-			continue;
-		}
-		
-		LapsusFeatureManager::newListBoxFeature(cfg, id, LapsusFeature::PlaceMenu, avail,
-					LapsusFeature::ValidDBus);
-	}
+	connect (listMenu, SIGNAL(selectionChanged()),
+		this, SLOT(menuSelectionChanged()));
 	
 	connect (btOK, SIGNAL(clicked()),
 		this, SLOT(confOKClicked()));
@@ -117,6 +77,178 @@ LapsusConf::~LapsusConf()
 {
 }
 
+void LapsusConf::addListEntries(KListView* itemList,
+		QStringList *listFrom, QStringList *listPresent,
+		QStringList *listDBus, LapsusFeature::Place where)
+{
+	for (QStringList::Iterator it = listFrom->begin(); it != listFrom->end(); ++it)
+	{
+		QString id = (*it);
+		
+		if (id.startsWith(LAPSUS_FEAT_INIT_PREFIX ".")
+			|| id.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
+		{
+			continue;
+		}
+		
+		LapsusFeature* feat = LapsusFeatureManager::newLapsusFeature(_cfg, id, where);
+		
+		if (feat != 0)
+		{
+			LapsusCheckListItem* item = new LapsusCheckListItem(itemList, feat);
+			
+			QListViewItem* last = itemList->lastChild();
+			
+			if (last != item)
+				item->moveItem(last);
+			
+			if (listPresent->contains(id))
+			{
+				item->setOn(true);
+			}
+			
+			if (listDBus) listDBus->remove(id);
+		}
+	}
+}
+
+void LapsusConf::addAllListEntries(LapsusFeature::Place where)
+{
+	_cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
+	
+	QStringList listAll, listPresent;
+	QStringList listDBus = LapsusDBus::get()->listFeatures();
+	KListView* list = 0;
+	
+	if (where == LapsusFeature::PlacePanel)
+	{
+		listAll = _cfg->readListEntry(LAPSUS_CONF_PANEL_LIST_ALL);
+		listPresent = _cfg->readListEntry(LAPSUS_CONF_PANEL_LIST_SELECTED);
+		list = listPanel;
+	}
+	else if (where == LapsusFeature::PlaceMenu)
+	{
+		listAll = _cfg->readListEntry(LAPSUS_CONF_MENU_LIST_ALL);
+		listPresent = _cfg->readListEntry(LAPSUS_CONF_MENU_LIST_SELECTED);
+		list = listMenu;
+	}
+	else
+	{
+		return;
+	}
+	
+	if (!list) return;
+	
+	list->setSelectionMode(QListView::Single);
+	list->setSorting(-1);
+	list->addColumn(i18n("ID"));
+	list->addColumn(i18n("Name"));
+	list->addColumn(i18n("Value"));
+	list->setAllColumnsShowFocus(true);
+	
+	addListEntries(list, &listAll, &listPresent, &listDBus, where);
+	addListEntries(list, &listDBus, &listPresent, 0, where);
+}
+
+void LapsusConf::panelSelectionChanged()
+{
+	QListViewItem* item = listPanel->selectedItem();
+	
+	btPanelUp->setEnabled(false);
+	btPanelDown->setEnabled(false);
+	
+	if (item)
+	{
+		if (item != listPanel->firstChild()) btPanelUp->setEnabled(true);
+		if (item != listPanel->lastChild()) btPanelDown->setEnabled(true);
+		
+		listPanel->ensureItemVisible(item);
+	}
+}
+
+void LapsusConf::menuSelectionChanged()
+{
+	QListViewItem* item = listMenu->selectedItem();
+	
+	btMenuUp->setEnabled(false);
+	btMenuDown->setEnabled(false);
+	
+	if (item)
+	{
+		if (item != listMenu->firstChild()) btMenuUp->setEnabled(true);
+		if (item != listMenu->lastChild()) btMenuDown->setEnabled(true);
+		
+		listMenu->ensureItemVisible(item);
+	}
+}
+
+void LapsusConf::panelUp()
+{
+	QListViewItem* item = listPanel->selectedItem();
+	
+	if (item)
+	{
+		QListViewItem* nItem = item->itemAbove();
+	
+		if (nItem)
+		{
+			nItem->moveItem(item);
+			
+			panelSelectionChanged();
+		}
+	}
+}
+
+void LapsusConf::panelDown()
+{
+	QListViewItem* item = listPanel->selectedItem();
+	
+	if (item)
+	{
+		QListViewItem* nItem = item->itemBelow();
+	
+		if (nItem)
+		{
+			item->moveItem(nItem);
+			
+			panelSelectionChanged();
+		}
+	}
+}
+
+void LapsusConf::menuUp()
+{
+	QListViewItem* item = listMenu->selectedItem();
+	
+	if (item)
+	{
+		QListViewItem* nItem = item->itemAbove();
+	
+		if (nItem)
+		{
+			nItem->moveItem(item);
+			
+			menuSelectionChanged();
+		}
+	}
+}
+
+void LapsusConf::menuDown()
+{
+	QListViewItem* item = listMenu->selectedItem();
+	
+	if (item)
+	{
+		QListViewItem* nItem = item->itemBelow();
+	
+		if (nItem)
+		{
+			item->moveItem(nItem);
+			
+			menuSelectionChanged();
+		}
+	}
+}
 void LapsusConf::tabChanged(QWidget *tab)
 {
 	if (tab == OSDPage)
@@ -140,47 +272,63 @@ void LapsusConf::confOKClicked()
 {
 	if (!_cfg) return;
 	
-	int i, c;
-	QListBox* selected = selectPanel->selectedListBox();
-	QStringList entries;
+	QStringList all;
+	QStringList selected;
 	
-	c = selected->count();
-	
+	// So it is at the beginning
 	_cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
 	_cfg->writeEntry(LAPSUS_CONF_AUTODETECT, LAPSUS_CONF_FALSE);
 	
-	for (i = 0; i < c; ++i)
+	for( QListViewItem* item = listPanel->firstChild();
+		item; item = item->itemBelow())
 	{
-		LapsusListBoxFeature* feat = (LapsusListBoxFeature*) selected->item(i);
+		LapsusCheckListItem* lItem = (LapsusCheckListItem*) item;
+		LapsusFeature *feat = 0;
 		
-		if (feat && feat->getFeature())
+		if (lItem) feat = lItem->getFeature();
+		
+		if (feat)
 		{
-			entries.append(feat->getFeature()->getFeatureDBusID());
-			feat->getFeature()->saveFeature();
+			all.append(feat->getFeatureDBusID());
+			
+			if (lItem->isOn())
+			{
+				selected.append(feat->getFeatureDBusID());
+				feat->saveFeature();
+			}
 		}
 	}
 	
 	_cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
-	_cfg->writeEntry(LAPSUS_CONF_PANEL_LIST, entries);
+	_cfg->writeEntry(LAPSUS_CONF_PANEL_LIST_ALL, all);
+	_cfg->writeEntry(LAPSUS_CONF_PANEL_LIST_SELECTED, selected);
 	
-	selected = selectMenu->selectedListBox();
-	entries.clear();
+	all.clear();
+	selected.clear();
 	
-	c = selected->count();
-	
-	for (i = 0; i < c; ++i)
+	for( QListViewItem* item = listMenu->firstChild();
+		item; item = item->itemBelow())
 	{
-		LapsusListBoxFeature* feat = (LapsusListBoxFeature*) selected->item(i);
+		LapsusCheckListItem* lItem = (LapsusCheckListItem*) item;
+		LapsusFeature *feat = 0;
 		
-		if (feat && feat->getFeature())
+		if (lItem) feat = lItem->getFeature();
+		
+		if (feat)
 		{
-			entries.append(feat->getFeature()->getFeatureDBusID());
-			feat->getFeature()->saveFeature();
+			all.append(feat->getFeatureDBusID());
+			
+			if (lItem->isOn())
+			{
+				selected.append(feat->getFeatureDBusID());
+				feat->saveFeature();
+			}
 		}
 	}
 	
 	_cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
-	_cfg->writeEntry(LAPSUS_CONF_MENU_LIST, entries);
+	_cfg->writeEntry(LAPSUS_CONF_MENU_LIST_ALL, all);
+	_cfg->writeEntry(LAPSUS_CONF_MENU_LIST_SELECTED, selected);
 	
 	_cfg->sync();
 	

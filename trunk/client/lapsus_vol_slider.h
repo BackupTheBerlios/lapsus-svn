@@ -39,10 +39,7 @@ class LapsusVolSlider : public LapsusSlider
 		
 		bool isMuted();
 		
-		virtual LapsusListBoxFeature* createListBoxFeature(QListBox* listbox,
-						LapsusFeature::ValidityMode vMode);
-		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent,
-						LapsusFeature::ValidityMode vMode);
+		virtual LapsusPanelWidget* createPanelWidget(Qt::Orientation orientation, QWidget *parent);
 		
 	signals:
 		void sliderMuteUpdate(bool muted);
@@ -53,7 +50,7 @@ class LapsusVolSlider : public LapsusSlider
 		virtual void setSliderMute(bool val);
 	
 	protected slots:
-		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif = false);
+		virtual void dbusSliderUpdate(const QString &val, bool isNotif = false);
 		
 	private:
 		bool _isMuted;

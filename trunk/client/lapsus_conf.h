@@ -25,15 +25,18 @@
 
 #include "conf_base.h"
 #include "osd.h"
+#include "lapsus_feature.h"
 
-#define LAPSUS_CONF_MAIN_GROUP		"applet"
-#define LAPSUS_CONF_PANEL_LIST		"panel_entries"
-#define LAPSUS_CONF_MENU_LIST		"menu_entries"
-#define LAPSUS_CONF_AUTODETECT		"autodetect"
+#define LAPSUS_CONF_MAIN_GROUP			"applet"
+#define LAPSUS_CONF_AUTODETECT			"autodetect"
 
-#define LAPSUS_CONF_TRUE		"true"
-#define LAPSUS_CONF_FALSE		"false"
+#define LAPSUS_CONF_TRUE			"true"
+#define LAPSUS_CONF_FALSE			"false"
 
+#define LAPSUS_CONF_PANEL_LIST_SELECTED		"panel_entries"
+#define LAPSUS_CONF_MENU_LIST_SELECTED		"menu_entries"
+#define LAPSUS_CONF_PANEL_LIST_ALL		"all_panel_entries"
+#define LAPSUS_CONF_MENU_LIST_ALL		"all_menu_entries"
 
 class LapsusConf: public LapsusConfBase
 {
@@ -51,12 +54,24 @@ class LapsusConf: public LapsusConfBase
 		void tabChanged(QWidget *tab);
 		void confOKClicked();
 		void confCancelClicked();
-	
+		
+		void panelSelectionChanged();
+		void menuSelectionChanged();
+		
+		void panelUp();
+		void panelDown();
+		void menuUp();
+		void menuDown();
+		
 	private:
 		LapsusOSD* _osd;
 		KConfig *_cfg;
-		
 		QPoint _osdPos;
+		
+		void addListEntries(KListView* itemList,
+			QStringList *listFrom, QStringList *listPresent,
+			QStringList *listDBus, LapsusFeature::Place where);
+		void addAllListEntries(LapsusFeature::Place where);
 };
 
 #endif

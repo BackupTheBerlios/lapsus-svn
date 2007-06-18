@@ -19,18 +19,45 @@
  ***************************************************************************/
 
 #include "lapsus.h"
-#include "listbox_switch.h"
+#include "checklist_item.h"
 
-LapsusListBoxSwitch::LapsusListBoxSwitch(QListBox* listbox, LapsusSwitch* feat):
-	LapsusListBoxFeature(listbox, feat)
+LapsusCheckListItem::LapsusCheckListItem(KListView *parent, LapsusFeature *feature):
+	QCheckListItem(parent, "", QCheckListItem::CheckBox),
+	_feature(feature)
+{
+	if (feature && feature->dbusValid())
+	{
+		feature->dbusConnect();
+		
+		LapsusFeature::connect(feature, SIGNAL(featureUpdate(const QString &)),
+			parent, SLOT(triggerUpdate()));
+	}
+}
+
+LapsusCheckListItem::~LapsusCheckListItem()
 {
 }
 
-LapsusListBoxSwitch::~LapsusListBoxSwitch()
+QString LapsusCheckListItem::text(int column) const
 {
+	if (!_feature) return QString();
+	
+	switch (column)
+	{
+		case 0: return _feature->getFeatureDBusID();
+		break;
+		
+		case 1: return _feature->getFeatureName();
+		break;
+		
+		case 2: return _feature->getFeatureValue();
+		break;
+	}
+	
+	return QString();
 }
 
-bool LapsusListBoxSwitch::isConfigurable()
+LapsusFeature* LapsusCheckListItem::getFeature()
 {
-	return false;
+	return _feature;
 }

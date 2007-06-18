@@ -20,7 +20,6 @@
 
 #include "lapsus.h"
 #include "lapsus_slider.h"
-#include "listbox_slider.h"
 #include "panel_slider.h"
 
 LapsusSlider::LapsusSlider(KConfig *cfg, const QString &dbusID,
@@ -37,17 +36,8 @@ LapsusSlider::LapsusSlider(KConfig *cfg, const QString &dbusID,
 		}
 		
 		bool ok = false;
-		int tmp;
-		
-		tmp = getFeatureValue().toInt(&ok);
-		
-		if (!ok)
-		{
-			_dbusValid = false;
-			return;
-		}
-		
-		_val = tmp;
+		int tmp = getFeatureValue().toInt(&ok);
+		if (ok) _val = tmp;
 	}
 }
 
@@ -84,16 +74,12 @@ bool LapsusSlider::getMinMaxArgs(const QStringList & args, int *minV, int *maxV)
 	return ret;
 }
 
-void LapsusSlider::dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif)
+void LapsusSlider::dbusSliderUpdate(const QString &val, bool isNotif)
 {
-	if (id != _featDBusID) return;
-	
 	bool ok = false;
 	int iVal = val.toInt(&ok);
 	
 	if (!ok) return;
-	
-	_val = iVal;
 	
 	if (isNotif)
 	{
@@ -101,9 +87,16 @@ void LapsusSlider::dbusFeatureUpdate(const QString &id, const QString &val, bool
 	}
 	else
 	{
+		_val = iVal;
 		emit sliderUpdate(iVal);
 	}
+}
+
+void LapsusSlider::dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif)
+{
+	if (id != _featDBusID) return;
 	
+	dbusSliderUpdate(val, isNotif);
 	LapsusFeature::dbusFeatureUpdate(id, val, isNotif);
 }
 
@@ -127,19 +120,8 @@ int LapsusSlider::getSliderMax()
 	return _valMax;
 }
 
-LapsusListBoxFeature* LapsusSlider::createListBoxFeature(QListBox* listbox,
-		LapsusFeature::ValidityMode vMode)
+LapsusPanelWidget* LapsusSlider::createPanelWidget(Qt::Orientation orientation, QWidget *parent)
 {
-	if (!validMode(vMode)) return 0;
-	
-	return new LapsusListBoxSlider(listbox, this);
-}
-
-LapsusPanelWidget* LapsusSlider::createPanelWidget(Qt::Orientation orientation, QWidget *parent,
-		LapsusFeature::ValidityMode vMode)
-{
-	if (!validMode(vMode)) return 0;
-	
 	return new LapsusPanelSlider(orientation, parent, this);
 }
 

@@ -31,6 +31,8 @@ LapsusActionButton::LapsusActionButton(const QString &confID,
 {
 	if (!feat || !feat->dbusValid()) return;
 	
+	feat->dbusConnect();
+	
 	_name = feat->getFeatureName();
 
 	if (_name.length() > 0) setToolTip(_name);
@@ -49,7 +51,7 @@ LapsusActionButton::LapsusActionButton(const QString &confID,
 	
 	buttonUpdate(feat->getSwitchValue());
 	
-	connect( feat, SIGNAL(featureUpdate(const QString &)),
+	connect(feat, SIGNAL(featureUpdate(const QString &)),
 			this, SLOT(buttonUpdate(const QString &)));
 
 	connect(this, SIGNAL(activated()),

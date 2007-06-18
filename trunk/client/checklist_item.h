@@ -18,19 +18,25 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
-#include "lapsus.h"
-#include "listbox_vol_slider.h"
+#ifndef LAPSUS_CHECK_LIST_ITEM_H
+#define LAPSUS_CHECK_LIST_ITEM_H
 
-LapsusListBoxVolSlider::LapsusListBoxVolSlider(QListBox* listbox, LapsusVolSlider* feat):
-	LapsusListBoxFeature(listbox, feat)
-{
-}
+#include <qlistview.h>
+#include <klistview.h>
 
-LapsusListBoxVolSlider::~LapsusListBoxVolSlider()
-{
-}
+#include "lapsus_feature.h"
 
-bool LapsusListBoxVolSlider::isConfigurable()
+class LapsusCheckListItem: public QCheckListItem
 {
-	return false;
-}
+	public:
+		LapsusCheckListItem(KListView *parent, LapsusFeature *feature);
+		virtual ~LapsusCheckListItem();
+		
+		virtual LapsusFeature* getFeature();
+		virtual QString text(int column) const;
+		
+	protected:
+		LapsusFeature* _feature;
+};
+
+#endif
