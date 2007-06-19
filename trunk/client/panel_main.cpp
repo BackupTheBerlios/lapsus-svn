@@ -38,14 +38,13 @@
 #include "feature_manager.h"
 #include "lapsus_conf.h"
 
-// 1.5 sec
-#define OSD_TIMEOUT_MS			2000
-
 LapsusPanelMain::LapsusPanelMain(KConfig* cfg, QWidget *parent,
 			Qt::Orientation orientation):
-	QWidget( parent ), _cfg(cfg),
-	_orientation( orientation ), _osd(0), _osdTimer(0)
+	QWidget( parent ), _osd(cfg, this), _cfg(cfg),
+	_orientation( orientation )
 {
+	_osd.enableDBus();
+	
 	_layout = new FlowLayout(this, _orientation);
 	_layout->setSpacing(4);
 
@@ -89,11 +88,6 @@ LapsusPanelMain::LapsusPanelMain(KConfig* cfg, QWidget *parent,
 			addedOK = LapsusFeatureManager::newActionButton(_cfg, str, _actions);
 		}
 	}
-
-	connect(LapsusDBus::get(),
-		SIGNAL(dbusFeatureUpdate(const QString &, const QString &, bool)),
-		this,
-		SLOT(dbusFeatureUpdate(const QString &, const QString &, bool)));
 
 	if (added < 1)
 	{
@@ -193,42 +187,5 @@ void LapsusPanelMain::mousePressEvent( QMouseEvent *e )
 	{
 		e->accept();
 		showContextMenu();
-	}
-}
-
-void LapsusPanelMain::dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif)
-{
-	if (!isNotif) return;
-	
-	if (!_osd) _osd = new LapsusOSD(this);
-
-	QString name = LapsusDBus::get()->getFeatureName(id);
-
-	if (name.length() < 1) return;
-
-	if (_osdTimer)
-	{
-		killTimer(_osdTimer);
-		_osdTimer = 0;
-	}
-
-	_osd->setText(QString("%1: %2").arg(name).arg(val.upper()));
-	_osd->show();
-
-	// TODO This should be kept in configuration
-	_osdTimer = startTimer(OSD_TIMEOUT_MS);
-}
-
-void LapsusPanelMain::timerEvent( QTimerEvent * e)
-{
-	if (_osdTimer && e->timerId() == _osdTimer)
-	{
-		killTimer(_osdTimer);
-		_osdTimer = 0;
-
-		if (_osd)
-		{
-			_osd->hide();
-		}
 	}
 }

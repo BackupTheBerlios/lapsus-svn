@@ -25,6 +25,7 @@
 #ifndef LAPSUS_OSD_H_
 #define LAPSUS_OSD_H_
 
+#include <kconfig.h>
 #include <qwidget.h>
 #include <qpixmap.h>
 
@@ -42,15 +43,28 @@ class LapsusOSD : public QWidget
 	Q_OBJECT
 
 	public:
-		LapsusOSD( QWidget* parent = 0, const char* name = 0 );
+		LapsusOSD (KConfig *cfg, QWidget* parent = 0, const char* name = 0 );
 		~LapsusOSD();
 
 		int screen() const { return _screen; }
 		const QPoint& position() const { return _position; }
 
+		void enableDBus();
+		
+		QColor getForeground();
+		QColor getBackground();
+		QColor getDefaultForeground();
+		QColor getDefaultBackground();
+		double getTimeout();
+		bool getUseCustomColors();
+		
+		void resetConfig();
+		void saveConfig();
+		
 	public slots:
 		void setScreen( int );
 		void setText( const QString& );
+		void setProgressText(uint, const QString&);
 
 		/**
 		* The position refers to one of the corners of the widget
@@ -63,7 +77,12 @@ class LapsusOSD : public QWidget
 		void setDraggingEnabled(bool drag);
 		
 		void show();
-
+		
+		void setTimeout(double nVal);
+		void setUseCustom(bool nVal);
+		void setForeground(const QColor &nVal);
+		void setBackground(const QColor &nVal);
+		
 	protected:
 		void paintEvent( QPaintEvent* );
 		void mousePressEvent( QMouseEvent* );
@@ -71,17 +90,23 @@ class LapsusOSD : public QWidget
 		void mouseMoveEvent( QMouseEvent* );
 		void renderOSD();
 		void reposition( QSize size = QSize() );
+		void timerEvent( QTimerEvent * );
 
 	protected slots:
 		void refresh();
-
+		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
+		
 	private:
 		/**
 		* Ensure that the position is inside m_screen
 		*/
 		QPoint fixupPosition( const QPoint& p );
 		static const int s_outerMargin = 15;
-
+		
+		bool featureProcRange(const QString &val, const QStringList &args, uint *proc);
+		void loadConfig();
+		
+		KConfig* _cfg;
 		QPixmap _osdBuffer;
 		bool _dirty;
 		QString _text;
@@ -90,6 +115,13 @@ class LapsusOSD : public QWidget
 		int _screen;
 		QPoint _position;
 		bool _draggingEnabled;
+		bool _progressVisible;
+		uint _progressProc;
+		int _osdTimer;
+		double _timeout;
+		bool _useCustomColors;
+		QColor _foreground;
+		QColor _background;
 };
 
 #endif

@@ -65,8 +65,10 @@ class LapsusConf: public LapsusConfBase
 		void menuDown();
 		void menuAuto();
 		
+		void resetOSD();
+		
 	private:
-		LapsusOSD* _osd;
+		LapsusOSD _osd;
 		KConfig *_cfg;
 		QPoint _osdPos;
 		
@@ -75,6 +77,7 @@ class LapsusConf: public LapsusConfBase
 			QStringList *listDBus, LapsusFeature::Place where);
 		void addAllListEntries(LapsusFeature::Place where);
 		void fillAuto(KListView* itemList, LapsusFeature::Place where);
+		void setOSDValues();
 };
 
 #endif

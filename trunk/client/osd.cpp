@@ -23,6 +23,7 @@
  ***************************************************************************/
 
 #include "osd.h"
+#include "lapsus_dbus.h"
 
 #include <kwin.h>
 #include <kiconloader.h>
@@ -38,18 +39,27 @@
 
 #include <X11/Xlib.h>
 
-
 #include <kglobalsettings.h>
 
+#define LAPSUS_CONF_OSD_GROUP		"osd"
+#define LAPSUS_CONF_OSD_TIMEOUT		"timeout"
+#define LAPSUS_CONF_OSD_USE_CUSTOM	"use_custom_colors"
+#define LAPSUS_CONF_OSD_FOREGROUND	"foreground"
+#define LAPSUS_CONF_OSD_BACKGROUND	"background"
+#define LAPSUS_CONF_OSD_POSITION	"position"
 
-LapsusOSD::LapsusOSD( QWidget* parent, const char* name )
+LapsusOSD::LapsusOSD(KConfig *cfg, QWidget* parent, const char* name )
 	: QWidget( parent, name, WType_TopLevel | WNoAutoErase |
 				WStyle_Customize | WX11BypassWM |
 				WStyle_StaysOnTop ),
+	_cfg(cfg),
 	_dirty(true), _dragging(false), _screen(0),
-	_position(s_outerMargin, s_outerMargin),
-	_draggingEnabled(false)
+	_draggingEnabled(false),
+	_progressVisible(false), _progressProc(0),
+	_osdTimer(0)
 {
+	loadConfig();
+	
 	setFocusPolicy( NoFocus );
 	setBackgroundMode( NoBackground );
 
@@ -67,6 +77,14 @@ LapsusOSD::~LapsusOSD()
 {
 }
 
+void LapsusOSD::enableDBus()
+{
+	connect(LapsusDBus::get(),
+		SIGNAL(dbusFeatureUpdate(const QString &, const QString &, bool)),
+		this,
+		SLOT(dbusFeatureUpdate(const QString &, const QString &, bool)));
+}
+
 void LapsusOSD::show()
 {
 	if( _dirty ) renderOSD();
@@ -79,6 +97,23 @@ void LapsusOSD::setText( const QString& text )
 	if( _text != text )
 	{
 		_text = text;
+		_progressVisible = false;
+		refresh();
+	}
+}
+
+void LapsusOSD::setProgressText(uint progressProc, const QString& text)
+{
+	if( _text != text )
+	{
+		_text = text;
+		_progressVisible = true;
+		
+		if (progressProc < 100)
+			_progressProc = progressProc;
+		else
+			_progressProc = 100;
+		
 		refresh();
 	}
 }
@@ -107,6 +142,20 @@ void LapsusOSD::renderOSD()
 	//if( K3bTheme* theme = k3bappcore->themeManager()->currentTheme() ) {
 	if( true )
 	{
+		QColor cF;
+		QColor cB;
+		
+		if (_useCustomColors)
+		{
+			cF = _foreground;
+			cB = _background;
+		}
+		else
+		{
+			cF = getDefaultForeground();
+			cB = getDefaultBackground();
+		}	
+
 		QPixmap icon = KGlobal::iconLoader()->loadIcon( "laptop", KIcon::NoGroup, 32 );
 		int margin = 10;
 		int textWidth = fontMetrics().width( _text );
@@ -116,19 +165,19 @@ void LapsusOSD::renderOSD()
 		//		QMAX( 2*margin + icon.height(), 2*margin + fontMetrics().height()*2 ) );
 
 		// change every time
-		QSize newSize( QMAX( 2*margin + icon.width() + margin + textWidth, 100 ),
+		QSize newSize( QMAX( 2*margin + icon.width() + margin + textWidth, 150 ),
 				QMAX( 2*margin + icon.height(), 2*margin + fontMetrics().height()*2 ) );
 
 		_osdBuffer.resize( newSize );
 		QPainter p( &_osdBuffer );
 
 		//p.setPen( theme->foregroundColor() );
-		p.setPen( KGlobalSettings::activeTextColor() );
+		p.setPen( cF );
 
 		// draw the background and the frame
 		QRect thisRect( 0, 0, newSize.width(), newSize.height() );
 		//p.fillRect( thisRect, theme->backgroundColor() );
-		p.fillRect( thisRect, KGlobalSettings::activeTitleColor() );
+		p.fillRect( thisRect, cB );
 		p.drawRect( thisRect );
 
 		// draw the icon
@@ -139,17 +188,18 @@ void LapsusOSD::renderOSD()
 		int textX = 2*margin + icon.width();
 		int textY = (newSize.height() + (fontMetrics().ascent()*5)/6)/2;
 
-		p.drawText( textX, textY, _text );
-
-		/*
-		// draw the progress
-		textY += fontMetrics().descent() + 4;
-		QRect progressRect( textX, textY, newSize.width()-textX-margin, newSize.height()-textY-margin );
-		p.drawRect( progressRect );
-		progressRect.setWidth( _progress > 0 ? _progress*progressRect.width()/100 : 0 );
-		//p.fillRect( progressRect, theme->foregroundColor() );
-		p.fillRect( progressRect, KGlobalSettings::activeTextColor() );
-		*/
+		p.drawText(textX, textY, _text);
+		
+		if (_progressVisible)
+		{
+			// draw the progress
+			textY += fontMetrics().descent() + 4;
+			QRect progressRect( textX, textY, newSize.width()-textX-margin, newSize.height()-textY-margin );
+			p.drawRect( progressRect );
+			progressRect.setWidth( _progressProc > 0 ? _progressProc*progressRect.width()/100 : 0 );
+			//p.fillRect( progressRect, theme->foregroundColor() );
+			p.fillRect( progressRect, cF );
+		}
 
 		// reposition the osd
 		reposition( newSize );
@@ -214,14 +264,6 @@ void LapsusOSD::mousePressEvent( QMouseEvent* e )
 			grabMouse( KCursor::sizeAllCursor() );
 			_dragging = true;
 		}
-		/*
-		else if( e->button() == RightButton )
-		{
-			KPopupMenu m;
-			if( m.insertItem( i18n("Hide OSD") ) == m.exec( e->globalPos() ) )
-				hide();
-		}
-		*/
 	}
 }
 
@@ -265,7 +307,6 @@ void LapsusOSD::mouseMoveEvent( QMouseEvent* e )
 	}
 }
 
-
 QPoint LapsusOSD::fixupPosition( const QPoint& pp )
 {
 	QPoint p(pp);
@@ -284,4 +325,177 @@ QPoint LapsusOSD::fixupPosition( const QPoint& pp )
 	p += screen.topLeft();
 
 	return p;
+}
+
+void LapsusOSD::dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif)
+{
+	if (!isNotif) return;
+	
+	QString name = LapsusDBus::get()->getFeatureName(id);
+
+	if (name.length() < 1) return;
+
+	if (_osdTimer)
+	{
+		killTimer(_osdTimer);
+		_osdTimer = 0;
+	}
+
+	uint proc;
+	
+	if (featureProcRange(val, LapsusDBus::get()->getFeatureArgs(id), &proc))
+	{
+		setProgressText(proc, QString("%1: %2").arg(name).arg(val.upper()));
+	}
+	else
+	{
+		setText(QString("%1: %2").arg(name).arg(val.upper()));
+	}
+	
+	show();
+
+	// TODO This should be kept in configuration
+	_osdTimer = startTimer((uint) (_timeout*1000.0));
+}
+
+bool LapsusOSD::featureProcRange(const QString &val, const QStringList &args, uint *proc)
+{
+	int vMin, vMax;
+	int cur = 0;
+	
+	QStringList vals = QStringList::split(',', val);
+	
+	bool ok = false;
+	
+	for (QStringList::ConstIterator it = vals.begin(); it != vals.end(); ++it)
+	{
+		cur = (*it).toInt(&ok);
+		
+		if (ok) break;
+	}
+	
+	if (!ok) return false;
+	
+	for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it)
+	{
+		QStringList list = QStringList::split(':', *it);
+		
+		if (list.size() == 2)
+		{
+			vMin = list[0].toInt(&ok);
+			
+			if (ok) vMax = list[1].toInt(&ok);
+			
+			if (ok && vMin < vMax && vMin <= cur && cur <= vMax )
+			{
+				cur -= vMin;
+				vMax -= vMin;
+				
+				*proc = (uint) (100*cur)/vMax;
+				
+				return true;
+			}
+		}
+	}
+	
+	return false;
+}
+
+void LapsusOSD::timerEvent(QTimerEvent * e)
+{
+	if (_osdTimer && e->timerId() == _osdTimer)
+	{
+		killTimer(_osdTimer);
+		_osdTimer = 0;
+		hide();
+	}
+}
+
+void LapsusOSD::loadConfig()
+{
+	resetConfig();
+	
+	if (!_cfg) return;
+	
+	_cfg->setGroup(LAPSUS_CONF_OSD_GROUP);
+	_timeout = _cfg->readDoubleNumEntry(LAPSUS_CONF_OSD_TIMEOUT, _timeout);
+	_useCustomColors = _cfg->readBoolEntry(LAPSUS_CONF_OSD_USE_CUSTOM, _useCustomColors);
+	_foreground = _cfg->readColorEntry(LAPSUS_CONF_OSD_FOREGROUND, &_foreground);
+	_background = _cfg->readColorEntry(LAPSUS_CONF_OSD_BACKGROUND, &_background);
+	_position = _cfg->readPointEntry(LAPSUS_CONF_OSD_POSITION, &_position);
+}
+
+void LapsusOSD::setTimeout(double nVal)
+{
+	_timeout = nVal;
+}
+
+void LapsusOSD::setUseCustom(bool nVal)
+{
+	_useCustomColors = nVal;
+	refresh();
+}
+
+void LapsusOSD::setForeground(const QColor &nVal)
+{
+	_foreground = nVal;
+	refresh();
+}
+
+void LapsusOSD::setBackground(const QColor &nVal)
+{
+	_background = nVal;
+	refresh();
+}
+
+void LapsusOSD::saveConfig()
+{
+	if (!_cfg) return;
+	
+	_cfg->setGroup(LAPSUS_CONF_OSD_GROUP);
+	_cfg->writeEntry(LAPSUS_CONF_OSD_TIMEOUT, _timeout);
+	_cfg->writeEntry(LAPSUS_CONF_OSD_USE_CUSTOM, _useCustomColors);
+	_cfg->writeEntry(LAPSUS_CONF_OSD_FOREGROUND, _foreground);
+	_cfg->writeEntry(LAPSUS_CONF_OSD_BACKGROUND, _background);
+	_cfg->writeEntry(LAPSUS_CONF_OSD_POSITION, _position);
+}
+
+void LapsusOSD::resetConfig()
+{
+	// Default values:
+	_position = QPoint(s_outerMargin, s_outerMargin);
+	_timeout = 1.5;
+	_useCustomColors = false;
+	_foreground = getDefaultForeground();
+	_background = getDefaultBackground();
+}
+
+QColor LapsusOSD::getForeground()
+{
+	return _foreground;
+}
+
+QColor LapsusOSD::getBackground()
+{
+	return _background;
+}
+
+QColor LapsusOSD::getDefaultForeground()
+{
+	return KGlobalSettings::activeTextColor();
+}
+
+QColor LapsusOSD::getDefaultBackground()
+{
+	return KGlobalSettings::activeTitleColor();
+}
+
+double LapsusOSD::getTimeout()
+{
+	return _timeout;
+}
+
+bool LapsusOSD::getUseCustomColors()
+{
+	return _useCustomColors;
 }

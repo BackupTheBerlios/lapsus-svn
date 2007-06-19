@@ -53,9 +53,6 @@ class LapsusApplet : public KPanelApplet
 	protected:
 		void mousePressEvent( QMouseEvent *e );
 		void resizeEvent( QResizeEvent * );
-
-	protected slots:
-		void finishedConf(bool ok);
 		
 	private:
 		KConfig _cfg;

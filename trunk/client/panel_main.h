@@ -48,15 +48,14 @@ class LapsusPanelMain : public QWidget
 
 	protected:
 		void mousePressEvent( QMouseEvent * );
-		void timerEvent( QTimerEvent * );
 
 	public slots:
 		void showContextMenu();
 
-	protected slots:
-		virtual void dbusFeatureUpdate(const QString &id, const QString &val, bool isNotif);
+
 
 	private:
+		LapsusOSD _osd;
 		KConfig* _cfg;
 		QStringList _panelEntries;
 		QStringList _menuEntries;
@@ -64,8 +63,6 @@ class LapsusPanelMain : public QWidget
 		KPopupMenu* _popMenu;
 		KActionCollection* _actions;
 		Qt::Orientation _orientation;
-		LapsusOSD* _osd;
-		int _osdTimer;
 
 		void saveConfig();
 		void loadConfig();

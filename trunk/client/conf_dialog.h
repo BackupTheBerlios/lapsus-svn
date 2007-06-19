@@ -35,6 +35,9 @@ class LapsusConfDialog : public KDialog
 		~LapsusConfDialog();
 		
 		LapsusConf* lapsusConf;
+	
+	protected slots:
+		void confClosed(bool ok);
 };
 
 #endif

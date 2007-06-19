@@ -26,6 +26,9 @@
 #include <qtable.h>
 #include <qtoolbutton.h>
 #include <kiconloader.h>
+#include <knuminput.h>
+#include <qcheckbox.h>
+#include <kcolorbutton.h>
 
 #include "lapsus.h"
 #include "lapsus_dbus.h"
@@ -34,9 +37,12 @@
 #include "checklist_item.h"
 
 LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
-	LapsusConfBase(parent), _osd(0), _cfg(cfg)
+	LapsusConfBase(parent), _osd(cfg, this), _cfg(cfg)
 {
 	connect( tabsConf, SIGNAL( currentChanged(QWidget *) ), this, SLOT( tabChanged(QWidget *) ) );
+	
+	_osd.setText(i18n("Drag OSD to desired position"));
+	_osd.setDraggingEnabled(true);
 	
 	if (!cfg || !LapsusDBus::get()->isActive()) return;
 	
@@ -47,6 +53,8 @@ LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 	
 	addAllListEntries(LapsusFeature::PlacePanel);
 	addAllListEntries(LapsusFeature::PlaceMenu);
+	
+	setOSDValues();
 	
 	connect (listPanel, SIGNAL(selectionChanged()),
 		this, SLOT(panelSelectionChanged()));
@@ -72,6 +80,23 @@ LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 	connect (btMenuAuto, SIGNAL(clicked()),
 		this, SLOT(menuAuto()));
 	
+	
+	connect(btOSDReset, SIGNAL(clicked()),
+		this, SLOT(resetOSD()));
+		
+	connect (osdTime, SIGNAL(valueChanged(double)),
+		&_osd, SLOT(setTimeout(double)));
+	
+	connect (osdCustomColors, SIGNAL(toggled(bool)),
+		&_osd, SLOT(setUseCustom(bool)));
+	
+	connect (osdForeground, SIGNAL(changed(const QColor &)),
+		&_osd, SLOT(setForeground(const QColor &)));
+	
+	connect (osdBackground, SIGNAL(changed(const QColor &)),
+		&_osd, SLOT(setBackground(const QColor &)));
+		
+		
 	connect (btOK, SIGNAL(clicked()),
 		this, SLOT(confOKClicked()));
 		
@@ -81,6 +106,7 @@ LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 
 LapsusConf::~LapsusConf()
 {
+	_osd.hide();
 }
 
 void LapsusConf::addListEntries(KListView* itemList,
@@ -306,22 +332,29 @@ void LapsusConf::menuAuto()
 	fillAuto(listMenu, LapsusFeature::PlaceMenu);
 }
 
+void LapsusConf::resetOSD()
+{
+	_osd.resetConfig();
+	setOSDValues();
+}
+
+void LapsusConf::setOSDValues()
+{
+	osdTime->setValue(_osd.getTimeout());
+	osdCustomColors->setChecked(_osd.getUseCustomColors());
+	osdForeground->setColor(_osd.getForeground());
+	osdBackground->setColor(_osd.getBackground());
+}
+
 void LapsusConf::tabChanged(QWidget *tab)
 {
 	if (tab == OSDPage)
 	{
-		if (!_osd)
-		{
-			_osd = new LapsusOSD(this);
-			_osd->setText(i18n("Drag OSD to desired position"));
-			_osd->setDraggingEnabled(true);
-		}
-	
-		_osd->show();
+		_osd.show();
 	}
 	else
 	{
-		if (_osd) _osd->hide();
+		_osd.hide();
 	}
 }
 
@@ -382,6 +415,8 @@ void LapsusConf::confOKClicked()
 			}
 		}
 	}
+	
+	_osd.saveConfig();
 	
 	_cfg->setGroup(LAPSUS_CONF_MAIN_GROUP);
 	_cfg->writeEntry(LAPSUS_CONF_MENU_LIST_ALL, all);

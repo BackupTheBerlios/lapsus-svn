@@ -157,20 +157,13 @@ void LapsusApplet::preferences()
 	
 	_confDlg = new LapsusConfDialog(0, &_cfg);
 	
-	connect(_confDlg->lapsusConf,
-		SIGNAL(finished(bool)),
-		this,
-		SLOT(finishedConf(bool)));
+	int ret = _confDlg->exec();
 	
-	_confDlg->show();
-}
-
-void LapsusApplet::finishedConf(bool ok)
-{
 	delete _confDlg;
 	_confDlg = 0;
 	
-	if (ok) changeOrientation(_orientation);
+	if (ret == QDialog::Accepted)
+		changeOrientation(_orientation);
 }
 
 void LapsusApplet::resizeEvent( QResizeEvent *)
