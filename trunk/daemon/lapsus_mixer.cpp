@@ -212,28 +212,36 @@ QString LapsusMixer::featureRead(const QString &id)
 
 bool LapsusMixer::featureWrite(const QString &id, const QString &nVal)
 {
+	bool ret = false;
+
 	if (id == LAPSUS_FEAT_VOLUME_ID)
 	{
-		if (nVal == LAPSUS_FEAT_MUTE)
+		QStringList list = QStringList::split(",", nVal);
+
+		for (QStringList::ConstIterator it = list.begin(); it != list.end(); ++it)
 		{
-			return mixerSetMuted(true);
-		}
+			QString val = *it;
+
+			if (val == LAPSUS_FEAT_MUTE)
+			{
+				ret |= mixerSetMuted(true);
+			}
+			else if (val == LAPSUS_FEAT_UNMUTE)
+			{
+				ret |= mixerSetMuted(false);
+			}
+			else
+			{
+				bool res = false;
 		
-		if (nVal == LAPSUS_FEAT_UNMUTE)
-		{
-			return mixerSetMuted(false);
-		}
+				int iVal = val.toUInt(&res);
 		
-		bool res = false;
-
-		int val = nVal.toUInt(&res);
-
-		if (!res) return false;
-
-		return mixerSetNormVolume(val);
+				if (res) ret |= mixerSetNormVolume(iVal);
+			}
+		}
 	}
 
-	return false;
+	return ret;
 }
 
 QStringList LapsusMixer::featureArgs(const QString &id)

@@ -124,7 +124,7 @@ de.berlios.Lapsus.setFeature - it takes feature ID and a new value for it.
 
 It also generates two signals (async events):
 
-de.berlios.Lapsus.featureChanged - it has feature ID and new value of the
+de.berlios.Lapsus.featureUpdate - it has feature ID and new value of the
                                    feature. It is generated everytime lapsusd
                                    changes that value (but if something else
                                    modifies it, for example using /sys

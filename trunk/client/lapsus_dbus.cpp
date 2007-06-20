@@ -364,7 +364,7 @@ bool LapsusDBus::setFeature(const QString &id, const QString &val)
 
 	DBusFeature *feat = getDBusFeature(lId);
 
-	if (!feat || feat->blockSet) return false;
+	if (feat && feat->blockSet) return false;
 
 	QValueList<QDBusData> params;
 

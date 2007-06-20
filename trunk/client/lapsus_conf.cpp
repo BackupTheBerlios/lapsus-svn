@@ -58,6 +58,7 @@ LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 	
 	addAllListEntries(LapsusFeature::PlacePanel);
 	addAllListEntries(LapsusFeature::PlaceMenu);
+	addSaveListEntries();
 	
 	setOSDValues();
 	
@@ -185,6 +186,41 @@ void LapsusConf::addAllListEntries(LapsusFeature::Place where)
 	
 	addListEntries(list, &listAll, &listPresent, &listDBus, where);
 	addListEntries(list, &listDBus, &listPresent, 0, where);
+}
+
+void LapsusConf::addSaveListEntries()
+{
+	QStringList listDBus = LapsusDBus::get()->listFeatures();
+	
+	listSave->setSelectionMode(QListView::Single);
+	listSave->setSorting(-1);
+	listSave->addColumn(i18n("ID"));
+	listSave->addColumn(i18n("Name"));
+	listSave->setAllColumnsShowFocus(true);
+	
+	for (QStringList::Iterator it = listDBus.begin(); it != listDBus.end(); ++it)
+	{
+		QString id = (*it).lower();
+		
+		if (id.startsWith(LAPSUS_FEAT_SAVE_PREFIX ".")
+			|| id.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
+		{
+			continue;
+		}
+		
+		QString sId = QString(LAPSUS_FEAT_SAVE_PREFIX ".%1").arg(id);
+		QCheckListItem* item = new QCheckListItem(listSave, "", QCheckListItem::CheckBox);
+		
+		QString val = LapsusDBus::get()->getFeatureValue(sId);
+		
+		if (val == LAPSUS_FEAT_ON)
+		{
+			item->setOn(true);
+		}
+		
+		item->setText(0, id);
+		item->setText(1, LapsusDBus::get()->getFeatureName(id));
+	}
 }
 
 void LapsusConf::panelSelectionChanged()
@@ -428,6 +464,36 @@ void LapsusConf::confOKClicked()
 	_cfg->writeEntry(LAPSUS_CONF_MENU_LIST_SELECTED, selected);
 	
 	_cfg->sync();
+	
+	QStringList listDBus = LapsusDBus::get()->listFeatures();
+	
+	for (QStringList::Iterator it = listDBus.begin(); it != listDBus.end(); ++it)
+	{
+		QString id = (*it).lower();
+		
+		if (id.startsWith(LAPSUS_FEAT_SAVE_PREFIX "."))
+		{
+			LapsusDBus::get()->setFeature(id, LAPSUS_FEAT_OFF);
+		}
+	}
+	
+	for( QListViewItem* item = listSave->firstChild();
+		item; item = item->itemBelow())
+	{
+		QCheckListItem* cItem = (QCheckListItem*) item;
+		
+		if (cItem && cItem->isOn())
+		{
+			QString id = cItem->text(0);
+			
+			if (id.length() > 0)
+			{
+				QString sId = QString(LAPSUS_FEAT_SAVE_PREFIX ".%1").arg(id);
+				LapsusDBus::get()->setFeature(sId, LAPSUS_FEAT_ON);
+			}
+		}
+	}
+	
 	
 	emit finished(true);
 }

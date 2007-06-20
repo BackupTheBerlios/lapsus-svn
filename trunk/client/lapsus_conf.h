@@ -76,6 +76,7 @@ class LapsusConf: public LapsusConfBase
 			QStringList *listFrom, QStringList *listPresent,
 			QStringList *listDBus, LapsusFeature::Place where);
 		void addAllListEntries(LapsusFeature::Place where);
+		void addSaveListEntries();
 		void fillAuto(KListView* itemList, LapsusFeature::Place where);
 		void setOSDValues();
 };

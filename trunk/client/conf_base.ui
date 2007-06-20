@@ -34,6 +34,14 @@
                     <property name="name">
                         <cstring>unnamed</cstring>
                     </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>textLabel1_3_2</cstring>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p align="center"&gt;Select features present in applet's panel area.&lt;/p&gt;</string>
+                        </property>
+                    </widget>
                     <widget class="QLayoutWidget">
                         <property name="name">
                             <cstring>layout16</cstring>
@@ -157,20 +165,6 @@
                                     </size>
                                 </property>
                             </spacer>
-                            <widget class="KPushButton">
-                                <property name="name">
-                                    <cstring>btPanelConfig</cstring>
-                                </property>
-                                <property name="enabled">
-                                    <bool>false</bool>
-                                </property>
-                                <property name="text">
-                                    <string>Con&amp;figure Feature</string>
-                                </property>
-                                <property name="accel">
-                                    <string>Alt+F</string>
-                                </property>
-                            </widget>
                         </hbox>
                     </widget>
                 </vbox>
@@ -186,9 +180,17 @@
                     <property name="name">
                         <cstring>unnamed</cstring>
                     </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>textLabel1_3</cstring>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p align="center"&gt;Select features present in applet's context menu.&lt;/p&gt;</string>
+                        </property>
+                    </widget>
                     <widget class="QLayoutWidget">
                         <property name="name">
-                            <cstring>layout16_2</cstring>
+                            <cstring>layout16</cstring>
                         </property>
                         <hbox>
                             <property name="name">
@@ -309,21 +311,33 @@
                                     </size>
                                 </property>
                             </spacer>
-                            <widget class="KPushButton">
-                                <property name="name">
-                                    <cstring>btMenuConfig</cstring>
-                                </property>
-                                <property name="enabled">
-                                    <bool>false</bool>
-                                </property>
-                                <property name="text">
-                                    <string>Con&amp;figure Feature</string>
-                                </property>
-                                <property name="accel">
-                                    <string>Alt+F</string>
-                                </property>
-                            </widget>
                         </hbox>
+                    </widget>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>TabPage</cstring>
+                </property>
+                <attribute name="title">
+                    <string>Autosaved Features</string>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>textLabel1_3_3</cstring>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p align="center"&gt;Select features that should be saved when lapsus daemon quits and restored when it starts.&lt;/p&gt;</string>
+                        </property>
+                    </widget>
+                    <widget class="KListView">
+                        <property name="name">
+                            <cstring>listSave</cstring>
+                        </property>
                     </widget>
                 </vbox>
             </widget>
@@ -1002,10 +1016,9 @@
 <includehints>
     <includehint>klistview.h</includehint>
     <includehint>kpushbutton.h</includehint>
-    <includehint>kpushbutton.h</includehint>
     <includehint>klistview.h</includehint>
     <includehint>kpushbutton.h</includehint>
-    <includehint>kpushbutton.h</includehint>
+    <includehint>klistview.h</includehint>
     <includehint>knuminput.h</includehint>
     <includehint>knuminput.h</includehint>
     <includehint>kcolorbutton.h</includehint>
