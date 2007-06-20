@@ -41,6 +41,11 @@ LapsusConf::LapsusConf(QWidget *parent, KConfig *cfg):
 {
 	connect( tabsConf, SIGNAL( currentChanged(QWidget *) ), this, SLOT( tabChanged(QWidget *) ) );
 	
+	// Not needed yet.
+	tabsConf->removePage(HotKeyPage);
+	tabsConf->removePage(InitPage);
+	tabsConf->removePage(DaemonPage);
+	
 	_osd.setText(i18n("Drag OSD to desired position"));
 	_osd.setDraggingEnabled(true);
 	
