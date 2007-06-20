@@ -45,7 +45,7 @@
 
 // Following values have to be lower-case!
 #define LAPSUS_FEAT_CONFIG_PREFIX	"config"
-#define LAPSUS_FEAT_INIT_PREFIX		"init"
+#define LAPSUS_FEAT_SAVE_PREFIX		"save"
 
 #define LAPSUS_FEAT_LED_ID_PREFIX		"led_"
 #define LAPSUS_FEAT_DISPLAY_ID_PREFIX		"display_"

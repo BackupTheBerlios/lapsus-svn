@@ -27,15 +27,16 @@
 #include "lapsus_module.h"
 #include "modules_list.h"
 
-class LapsusInit : public LapsusModule
+class LapsusSave : public LapsusModule
 {
 	Q_OBJECT
 
 	public:
-		LapsusInit(QSettings *settings, LapsusModulesList *modList);
-		virtual ~LapsusInit();
+		LapsusSave(QSettings *settings, LapsusModulesList *modList);
+		virtual ~LapsusSave();
 		
-		void setInitValues();
+		void setSavedValues();
+		void saveValues();
 		
 		bool hardwareDetected();
 		QStringList featureList();
@@ -48,10 +49,9 @@ class LapsusInit : public LapsusModule
 	private:
 		QSettings *_settings;
 		LapsusModulesList *_modList;
-		QMap<QString, QString> _initVals;
+		QStringList _savedFeatures;
 		
-		void readEntries();
-		void saveEntries();
+		void readConfig();
 };
 
 #endif

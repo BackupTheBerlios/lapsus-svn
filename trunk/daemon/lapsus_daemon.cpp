@@ -26,7 +26,7 @@
 
 LapsusDaemon::LapsusDaemon(uint acpiFd):
 	_acpiFd(acpiFd), _dbus(0), _acpiParser(0),
-	_init(0), _isValid(false)
+	_save(0), _isValid(false)
 {
 	_modList = new LapsusModulesList();
 	
@@ -38,6 +38,11 @@ LapsusDaemon::LapsusDaemon(uint acpiFd):
 
 LapsusDaemon::~LapsusDaemon()
 {
+	if (_save)
+	{
+		_save->saveValues();
+	}
+	
 	if (_modList) delete _modList;
 	_modList = 0;
 	
@@ -143,9 +148,9 @@ bool LapsusDaemon::detectHardware()
 
 	if (hardwareMods < 1) return false;
 	
-	_init = new LapsusInit(_settings, _modList);
+	_save = new LapsusSave(_settings, _modList);
 	
-	_modList->addModule(_init);
+	_modList->addModule(_save);
 	
 	return true;
 }
@@ -181,9 +186,9 @@ void LapsusDaemon::doInit()
 	
 	_isValid = true;
 	
-	if (_init)
+	if (_save)
 	{
-		_init->setInitValues();
+		_save->setSavedValues();
 	}
 }
 

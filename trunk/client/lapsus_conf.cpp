@@ -117,7 +117,7 @@ void LapsusConf::addListEntries(KListView* itemList,
 	{
 		QString id = (*it);
 		
-		if (id.startsWith(LAPSUS_FEAT_INIT_PREFIX ".")
+		if (id.startsWith(LAPSUS_FEAT_SAVE_PREFIX ".")
 			|| id.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
 		{
 			continue;

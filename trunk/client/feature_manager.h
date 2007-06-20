@@ -29,18 +29,33 @@
 class LapsusFeatureManager
 {
 	public:
-		static QPtrList<LapsusFeature> autodetectFeatures(KConfig *cfg, LapsusFeature::Place where);
+		/*
+		LapsusFeatureManager(KConfig* cfg);
+		~LapsusFeatureManager();
 		
-		static void writeAutoConfig(KConfig *cfg);
+		QStringList* getDBusIDs();
+		void addFeature(const QString &id, LapsusFeature* feat);
+		LapsusFeature* getFeature(const QString &id);
+		*/
+		static QPtrList<LapsusFeature> autodetectFeatures(KConfig* cfg, LapsusFeature::Place where);
 		
-		static LapsusFeature* newLapsusFeature(KConfig *cfg, const QString &id,
+		static void writeAutoConfig(KConfig* cfg);
+		
+		static LapsusFeature* newLapsusFeature(KConfig* cfg, const QString &id,
 			LapsusFeature::Place where);
 		
 		static LapsusPanelWidget* newPanelWidget(KConfig *cfg, const QString &id,
-			Qt::Orientation orientation, QWidget *parent);
+			Qt::Orientation orientation, QWidget* parent);
 		
-		static bool newActionButton(KConfig *cfg, const QString &id,
-			KActionCollection *parent);
+		static bool newActionButton(KConfig* cfg, const QString &id,
+			KActionCollection* parent);
+	/*
+	private:
+		KConfig *_cfg;
+		QDict<LapsusFeature> _mapFeatures;
+		QPtrList<LapsusFeature> _features;
+		QStringList _dbusIDs;
+	*/
 };
 
 #endif

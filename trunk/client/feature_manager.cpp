@@ -28,6 +28,35 @@
 
 #include "lapsus_conf.h"
 
+/*
+LapsusFeatureManager::LapsusFeatureManager(KConfig* cfg): _cfg(cfg)
+{
+	_dbusIDs = LapsusDBus::get()->getFeatures();
+}
+
+LapsusFeatureManager::~LapsusFeatureManager()
+{
+}
+
+QStringList* LapsusFeatureManager::getDBusIDs()
+{
+	return &_dbusIDs;
+}
+
+void LapsusFeatureManager::addFeature(const QString &id, LapsusFeature* feat)
+{
+	_mapFeatures.replace(id, feat);
+	
+	if (!_features.contains(feat)) _features.append(feat);
+}
+
+LapsusFeature* LapsusFeatureManager::getFeature(const QString &id)
+{
+	return _mapFeatures[id];
+}
+
+*/
+
 QPtrList<LapsusFeature> LapsusFeatureManager::autodetectFeatures(KConfig *cfg, LapsusFeature::Place where)
 {
 	QPtrList<LapsusFeature> list;
@@ -42,7 +71,7 @@ QPtrList<LapsusFeature> LapsusFeatureManager::autodetectFeatures(KConfig *cfg, L
 		QString id = (*it).lower();
 		
 		// We don't 'detect' any 'init.' or 'config.' entries
-		if (id.startsWith(LAPSUS_FEAT_INIT_PREFIX ".")
+		if (id.startsWith(LAPSUS_FEAT_SAVE_PREFIX ".")
 			|| id.startsWith(LAPSUS_FEAT_CONFIG_PREFIX "."))
 		{
 			continue;

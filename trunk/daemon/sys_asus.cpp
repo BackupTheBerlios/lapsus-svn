@@ -417,11 +417,11 @@ QString SysAsus::featureRead(const QString &id)
 {
 	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
 	{
-		return readPathString(ASUS_GET_BACKLIGHT_PATH);
+		return readPathString(ASUS_GET_BACKLIGHT_PATH).stripWhiteSpace();
 	}
 	else if (id == LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID)
 	{
-		return readPathString(ASUS_LS_LEVEL_PATH);
+		return readPathString(ASUS_LS_LEVEL_PATH).stripWhiteSpace();
 	}
 	else if (hasFeature(id))
 	{
