@@ -21,7 +21,7 @@
 #ifndef LAPSUS_GLOBAL_H
 #define LAPSUS_GLOBAL_H
 
-#define LAPSUS_VERSION			"0.0.5-dev"
+#define LAPSUS_VERSION			"0.0.5"
 
 // Service name which will be used by server to register to D-BUS system bus.
 #define LAPSUS_SERVICE_NAME		"de.berlios.Lapsus"
@@ -67,8 +67,6 @@
 #define LAPSUS_FEAT_DISPLAY_CRT		"crt"
 #define LAPSUS_FEAT_DISPLAY_TV		"tv"
 #define LAPSUS_FEAT_DISPLAY_DVI		"dvi"
-
-#define LAPSUS_FEAT_PARAM_NOTIF		"notifs"
 
 #define DBG_DUMP printf("%s:%u\n", __FILE__, __LINE__)
 #define DBG_DUMP_X(fmt, x) printf("%s:%u: %s=" fmt "\n", __FILE__, __LINE__, #x, x)

@@ -1,3 +1,34 @@
+0.0.5
+=====
+ Daemon:
+ * Added brightness up Asus hotkey support.
+ * Added LightSensor support.
+ * Changed feature ID system to be multilevel (asus.feature, alsa.feature etc.)
+ * Hardware backends are in separate modules now - for example AlsaMixer is
+    separate module, with its own DBus interface - instead of used as a part
+    of Asus backend, or any other backend that needs Alsa support. Similar
+    is with synaptics backend.
+ * Added Unix signal handling - now lapsusd can quit gracefully when it
+    receives SIGTERM or SIGINT in no-daemon mode - so it can close DBus,
+    and save its configuration.
+ * Added lapsusd state - in /var/lib/lapsusd/lapsusdrc file it can keep
+    various options.
+ * Added Autosave module, for saving feature values when lapsusd quits
+    and restoing them when it starts.
+ * Added config module. Any backend might have its own configuration values
+    kept in state file - not used by the GUI yet.
+ * Various minor fixes and improvements.
+
+ Applet:
+ * Added mute/unmute switching with middle mouse button on volume slider.
+ * Added 'About' dialog.
+ * Added 'Bugs' dialog.
+ * Added 'Configuration' dialog.
+ * Added management of menu and panel entries.
+ * Added OSD customization.
+ * Added Autosave configuration.
+ * Various fixes and improvements.
+
 0.0.4
 =====
  Daemon:
