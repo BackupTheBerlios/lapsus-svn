@@ -1,0 +1,19 @@
+#MIN_CONFIG(3.2.0)
+
+AM_INIT_AUTOMAKE(lapsus, 0.0.2)
+AC_C_BIGENDIAN
+AC_CHECK_KDEMAXPATHLEN
+
+PKG_CHECK_MODULES(DBUS, dbus-1 >= 0.90, have_dbus=true, have_dbus=false)
+if test "x$have_dbus" = "xfalse" ; then
+    AC_MSG_ERROR([D-BUS >= 0.90 was not found!  D-BUS is required to build kdbus.])
+fi
+AC_SUBST(DBUS_CFLAGS)
+AC_SUBST(DBUS_LIBS)
+
+PKG_CHECK_MODULES(ALSA, alsa >= 0.9, have_alsa=true, have_alsa=false)
+if test "x$have_alsa" = "xtrue" ; then
+    AC_DEFINE(HAVE_ALSA, 1, [Define if you have ALSA>=0.9])
+    AC_SUBST(ALSA_CFLAGS)
+    AC_SUBST(ALSA_LIBS)
+fi
