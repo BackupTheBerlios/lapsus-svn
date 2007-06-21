@@ -20,7 +20,7 @@ The first command is only for sources pulled from SVN.
 
 This will create some files in KDEDIR dir (whatever your KDEDIR is -
 it might be /usr/kde/3.5/, or /opt/kde, or something else).
-The daemon will be placed in KDEDIR/sbin/lapsusd.
+The daemon will be placed in /usr/sbin/lapsusd.
 It should be run as a root after acpid has been started - you can add
 it to rc.local, or any other scripts run during the boot.
 
