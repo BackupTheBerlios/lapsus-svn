@@ -35,6 +35,8 @@
 #include "lapsus.h"
 #include "sys_ibm.h"
 
+#define IBM_DEBUG_DUMP			0
+
 // How often do we want to poll NVRAM for changes?
 // For example 200 = every 200ms
 #define NVRAM_POLL_INTERVAL_MS		200
@@ -66,7 +68,7 @@ SysIBM::SysIBM():
 	_hasLEDs(false), _hasBacklight(false), _hasDisplay(false),
 	_hasBluetooth(false), _hasLight(false), _hasVolume(false),
 	_hasNVRAM(false), _fdNVRAM(-1), _thinkpadNew(0), _thinkpadOld(0),
-	_timerNVRAMId(0)
+	_timerNVRAMId(0), _lastVolume(15), _lastMute(false), _dbusTriggered(false)
 {
 	detect();
 
@@ -77,7 +79,7 @@ SysIBM::SysIBM():
 
 		if (_fdNVRAM >= 0)
 		{
-			printf("Opened NVRAM device\n\n");
+			if (IBM_DEBUG_DUMP) printf("Opened NVRAM device\n\n");
 
 			_thinkpadNew = (t_thinkpad_state *) malloc(sizeof(t_thinkpad_state));
 
@@ -93,11 +95,11 @@ SysIBM::SysIBM():
 
 				_timerNVRAMId = startTimer(NVRAM_POLL_INTERVAL_MS);
 
-				printf("NVRAM polling started\n\n");
+				if (IBM_DEBUG_DUMP) printf("NVRAM polling started\n\n");
 			}
 			else
 			{
-				printf("Failed to read NVRAM\n\n");
+				if (IBM_DEBUG_DUMP) printf("Failed to read NVRAM\n\n");
 
 				free(_thinkpadNew);
 				_thinkpadNew = 0;
@@ -105,7 +107,7 @@ SysIBM::SysIBM():
 		}
 		else
 		{
-			printf("Could not open NVRAM device...\n\n");
+			if (IBM_DEBUG_DUMP) printf("Could not open NVRAM device...\n\n");
 		}
 	}
 }
@@ -140,9 +142,10 @@ QString SysIBM::fieldValue(const QString &fieldName, const QString &path)
 			&& line[len] == ':'
 			&& line.startsWith(fieldName))
 		{
-			printf("%s: Value for field '%s': '%s'\n",
+			if (IBM_DEBUG_DUMP) printf("%s: Value for field '%s': '%s'\n",
 				path.ascii(), fieldName.ascii(),
 				line.mid(len+2).stripWhiteSpace().ascii());
+			
 			return line.mid(len+2).stripWhiteSpace();
 		}
 	}
@@ -248,8 +251,35 @@ void SysIBM::detect()
 
 bool SysIBM::hardwareDetected()
 {
-	return (_hasLEDs || _hasBacklight || _hasDisplay
-		|| _hasBluetooth || _hasLight || _hasVolume);
+	if (_hasLEDs || _hasBacklight || _hasDisplay
+		|| _hasBluetooth || _hasLight || _hasVolume)
+	{
+		if (IBM_DEBUG_DUMP)
+		{
+			printf("Detected IBM hardware\nDetected features:\n\n");
+	
+			QStringList lines = this->featureList();
+	
+			for ( QStringList::ConstIterator it = lines.begin(); it != lines.end(); ++it )
+			{
+				QString line = (*it);
+	
+				printf("Feature ID: %s\n", line.ascii());
+				printf("Feature Name: %s\n", this->featureName(line).ascii());
+	
+				QStringList args = this->featureArgs(line);
+	
+				for ( QStringList::ConstIterator iter = args.begin(); iter != args.end(); ++iter )
+					printf("Feature Arg: %s\n", (*iter).ascii());
+	
+				printf("Feature Value: %s\n\n", this->featureRead(line).ascii());
+			}
+		}
+		
+		return true;
+	}
+	
+	return false;
 }
 
 QStringList SysIBM::featureList()
@@ -311,6 +341,8 @@ QStringList SysIBM::featureArgs(const QString &id)
 	{
 		// TODO - add (un)mute command
 		ret.append("0:15");
+		ret.append(LAPSUS_FEAT_MUTE);
+		ret.append(LAPSUS_FEAT_UNMUTE);
 	}
 	else if (id == LAPSUS_FEAT_BLUETOOTH_ID
 		|| id == IBM_LIGHT_ID
@@ -334,7 +366,7 @@ QStringList SysIBM::featureArgs(const QString &id)
 
 QString SysIBM::featureRead(const QString &id)
 {
-	printf("Feature Read: '%s'\n\n", id.ascii());
+	if (IBM_DEBUG_DUMP) printf("Feature Read: '%s'\n\n", id.ascii());
 
 	if (id == LAPSUS_FEAT_BACKLIGHT_ID)
 		return fieldValue("level", IBM_BACKLIGHT_PATH);
@@ -347,9 +379,27 @@ QString SysIBM::featureRead(const QString &id)
 		return LAPSUS_FEAT_OFF;
 	}
 
-	// TODO - add (un)mute command
 	if (id == LAPSUS_FEAT_VOLUME_ID)
-		return fieldValue("level", IBM_VOLUME_PATH);
+	{
+		QString volMute = fieldValue("mute", IBM_VOLUME_PATH);
+		
+		bool ok;
+		QString vol = fieldValue("level", IBM_VOLUME_PATH);
+		uint uI = vol.toUInt(&ok);
+		
+		if (ok) _lastVolume = uI;
+		
+		if (volMute == "on")
+		{
+			_lastMute = true;
+			
+			return QString("%1," LAPSUS_FEAT_MUTE).arg(vol);
+		}
+		
+		_lastMute = false;
+		
+		return vol;
+	}
 
 	if (id == LAPSUS_FEAT_BLUETOOTH_ID)
 	{
@@ -394,7 +444,7 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 {
 	QString oVal = featureRead(id);
 
-	printf("Feature Write: '%s'\nOld value was: '%s'\nNew value is: '%s'\n\n",
+	if (IBM_DEBUG_DUMP) printf("Feature Write: '%s'\nOld value was: '%s'\nNew value is: '%s'\n\n",
 		id.ascii(), oVal.ascii(), nVal.ascii());
 
 	if (oVal.length() < 1) return false;
@@ -413,7 +463,11 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 		if (oVal != lvl
 			&& dbgWritePathString(IBM_BACKLIGHT_PATH, QString("level %1").arg(lvl)))
 		{
-			dbusSignalFeatureUpdate(id, lvl);
+			if (!_hasNVRAM)
+			{
+				dbusSignalFeatureUpdate(id, lvl);
+			}
+			
 			return true;
 		}
 
@@ -422,19 +476,86 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 
 	if (id == LAPSUS_FEAT_VOLUME_ID)
 	{
-		bool ok;
-		int n = nVal.toInt(&ok);
-
-		if (!ok) return false;
-
-		if (n < 0 || n > 15) return false;
-
-		QString lvl = QString::number(n);
-
-		if (oVal != lvl
-			&& dbgWritePathString(IBM_VOLUME_PATH, QString("level %1").arg(lvl)))
+		QStringList list = QStringList::split(",", nVal);
+		bool setMute = false;
+		bool setUnMute = false;
+		uint setVal = _lastVolume;
+		
+		for (QStringList::ConstIterator it = list.begin(); it != list.end(); ++it)
 		{
-			dbusSignalFeatureUpdate(id, lvl);
+			QString val = *it;
+			
+			if (val == LAPSUS_FEAT_MUTE)
+			{
+				setMute = true;
+				setUnMute = false;
+			}
+			else if (val == LAPSUS_FEAT_UNMUTE)
+			{
+				setMute = false;
+				setUnMute = true;
+			}
+			else
+			{
+				bool res = false;
+		
+				uint iVal = val.toUInt(&res);
+		
+				if (res) setVal = iVal;
+			}
+		}
+		
+		if (setVal > 15) setVal = _lastVolume;
+		
+		QString vol = fieldValue("mute", IBM_VOLUME_PATH);
+		bool isMuted = false;
+		
+		if (vol == "on") isMuted = true;
+		
+		bool ret = false;
+		
+		if (setVal > _lastVolume && isMuted)
+		{
+			setMute = false;
+			setUnMute = true;
+		}
+		
+		if (setMute)
+		{
+			ret |= dbgWritePathString(IBM_VOLUME_PATH, QString("mute"));
+			if (ret) isMuted = true;
+		}
+		else if (setUnMute)
+		{
+			ret |= dbgWritePathString(IBM_VOLUME_PATH, QString("up"));
+			if (ret) isMuted = false;
+		}
+		
+		vol = QString::number(setVal);
+		
+		if (setVal != _lastVolume)
+		{
+			ret |= dbgWritePathString(IBM_VOLUME_PATH,
+				QString("level %1").arg(vol));
+		}
+		
+		if (ret)
+		{
+			if (!_hasNVRAM)
+			{
+				if (isMuted)
+				{
+					vol = QString("%1," LAPSUS_FEAT_MUTE).
+						arg(vol);
+				}
+				else if (setUnMute && setVal == _lastVolume)
+				{
+					vol = LAPSUS_FEAT_UNMUTE;
+				}
+			
+			 	dbusSignalFeatureUpdate(id, vol);
+			}
+			
 			return true;
 		}
 		
@@ -453,7 +574,12 @@ bool SysIBM::featureWrite(const QString &id, const QString &nVal)
 
 		if (dbgWritePathString(IBM_LIGHT_PATH, val?IBM_ON:IBM_OFF))
 		{
-			dbusSignalFeatureUpdate(id, val?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
+			if (!_hasNVRAM)
+			{
+				dbusSignalFeatureUpdate(id,
+					val?LAPSUS_FEAT_ON:LAPSUS_FEAT_OFF);
+			}
+			
 			return true;
 		}
 		
@@ -555,16 +681,18 @@ QString SysIBM::dbgReadPathString(const QString &path)
 {
 	QString ret = readPathString(path);
 
-	printf("READ '%s':\n%s(END)\n\n", path.ascii(), ret.ascii());
+	if (IBM_DEBUG_DUMP) printf("READ '%s':\n%s(END)\n\n", path.ascii(), ret.ascii());
 
 	return ret;
 }
 
 bool SysIBM::dbgWritePathString(const QString &path, const QString &val)
 {
+	_dbusTriggered = true;
+	
 	bool ret = writePathString(path, val);
 
-	printf("WRITE [%d] '%s' <- '%s'\n\n", ret, path.ascii(), val.ascii());
+	if (IBM_DEBUG_DUMP) printf("WRITE [%d] '%s' <- '%s'\n\n", ret, path.ascii(), val.ascii());
 
 	return ret;
 }
@@ -575,7 +703,7 @@ bool SysIBM::checkNVRAMPair(unsigned char vOld, unsigned char vNew, const char *
 {
 	if (vOld != vNew)
 	{
-		printf("NVRAM EVENT: %s = 0x%02x (%u)\n\n", desc, vNew, vNew);
+		if (IBM_DEBUG_DUMP) printf("NVRAM EVENT: %s = 0x%02x (%u)\n\n", desc, vNew, vNew);
 
 		_dbus->sendACPIEvent("ibm", "nvram_event", desc, 1, vNew);
 		return true;
@@ -610,47 +738,106 @@ void SysIBM::timerEvent( QTimerEvent * e)
 		if (!memcmp(_thinkpadOld, _thinkpadNew, sizeof(t_thinkpad_state)))
 			return;
 
-		// Something has changed. Lets check what:
-		CHECK_NVRAM_ARG(thinkpad_toggle);
-		CHECK_NVRAM_ARG(zoom_toggle);
-		CHECK_NVRAM_ARG(display_toggle);
-		CHECK_NVRAM_ARG(home_toggle);
-		CHECK_NVRAM_ARG(search_toggle);
-		CHECK_NVRAM_ARG(mail_toggle);
-		CHECK_NVRAM_ARG(wireless_toggle);
-		CHECK_NVRAM_ARG(thinklight_toggle);
-		CHECK_NVRAM_ARG(hibernate_toggle);
-		CHECK_NVRAM_ARG(display_state);
-		CHECK_NVRAM_ARG(expand_toggle);
-		CHECK_NVRAM_ARG(brightness_level);
-		CHECK_NVRAM_ARG(brightness_toggle);
-		CHECK_NVRAM_ARG(volume_level);
-		CHECK_NVRAM_ARG(volume_toggle);
-		CHECK_NVRAM_ARG(mute_toggle);
-		CHECK_NVRAM_ARG(powermgt_ac);
-		CHECK_NVRAM_ARG(powermgt_battery);
-
 		if (!_dbus) return;
 
+		QString muteChange;
+		
+		if (_thinkpadOld->mute_toggle != _thinkpadNew->mute_toggle)
+		{
+			if (_thinkpadNew->mute_toggle)
+			{
+				_lastMute = true;
+				muteChange = LAPSUS_FEAT_MUTE;
+			}
+			else
+			{
+				_lastMute = false;
+				muteChange = LAPSUS_FEAT_UNMUTE;
+			}
+		}
+		
 		if (_thinkpadOld->volume_level != _thinkpadNew->volume_level)
 		{
-			signalNVRAMChange(LAPSUS_FEAT_VOLUME_ID,
+			_lastVolume = _thinkpadNew->volume_level;
+			
+			if (!_lastMute)
+			{
+				signalNVRAMNumChange(LAPSUS_FEAT_VOLUME_ID,
 					_thinkpadNew->volume_level);
+			}
+			else
+			{
+				signalNVRAMStrChange(LAPSUS_FEAT_VOLUME_ID,
+					QString("%1," LAPSUS_FEAT_MUTE).
+						arg(QString::number(_thinkpadNew->volume_level)));
+			}
+		}
+		else if (muteChange.length() > 0)
+		{
+			signalNVRAMStrChange(LAPSUS_FEAT_VOLUME_ID, muteChange);
 		}
 
 		if (_thinkpadOld->brightness_level != _thinkpadNew->brightness_level)
 		{
-			signalNVRAMChange(LAPSUS_FEAT_BACKLIGHT_ID,
+			signalNVRAMNumChange(LAPSUS_FEAT_BACKLIGHT_ID,
 					_thinkpadNew->brightness_level);
 		}
+		
+		if (_thinkpadOld->thinklight_toggle != _thinkpadNew->thinklight_toggle)
+		{
+			if (_thinkpadNew->thinklight_toggle)
+			{
+				signalNVRAMStrChange(IBM_LIGHT_ID,
+					LAPSUS_FEAT_ON);
+			}
+			else
+			{
+				signalNVRAMStrChange(IBM_LIGHT_ID,
+					LAPSUS_FEAT_OFF);
+			}
+		}
+		
+		// Something has changed. Lets generate ACPI events,
+		// but only if it wasn't triggered by dbus write:
+		if (!_dbusTriggered)
+		{
+			CHECK_NVRAM_ARG(thinkpad_toggle);
+			CHECK_NVRAM_ARG(zoom_toggle);
+			CHECK_NVRAM_ARG(display_toggle);
+			CHECK_NVRAM_ARG(home_toggle);
+			CHECK_NVRAM_ARG(search_toggle);
+			CHECK_NVRAM_ARG(mail_toggle);
+			CHECK_NVRAM_ARG(wireless_toggle);
+			CHECK_NVRAM_ARG(thinklight_toggle);
+			CHECK_NVRAM_ARG(hibernate_toggle);
+			CHECK_NVRAM_ARG(display_state);
+			CHECK_NVRAM_ARG(expand_toggle);
+			CHECK_NVRAM_ARG(brightness_level);
+			CHECK_NVRAM_ARG(brightness_toggle);
+			CHECK_NVRAM_ARG(volume_level);
+			CHECK_NVRAM_ARG(volume_toggle);
+			CHECK_NVRAM_ARG(mute_toggle);
+			CHECK_NVRAM_ARG(powermgt_ac);
+			CHECK_NVRAM_ARG(powermgt_battery);
+		}
 	}
+	
+	_dbusTriggered = false;
 }
-void SysIBM::signalNVRAMChange(const QString &id, unsigned char nVal)
+
+void SysIBM::signalNVRAMStrChange(const QString &id, const QString &nVal)
+{
+	dbusSignalFeatureUpdate(id, nVal);
+	
+	if (!_dbusTriggered)
+		dbusSignalFeatureNotif(id, nVal);
+}
+
+void SysIBM::signalNVRAMNumChange(const QString &id, unsigned char nVal)
 {
 	QString val = QString::number(nVal);
 
-	dbusSignalFeatureUpdate(id, val);
-	dbusSignalFeatureNotif(id, val);
+	signalNVRAMStrChange(id, val);
 }
 
 bool SysIBM::nvramReadBuf(unsigned char *buf, off_t pos, size_t len)

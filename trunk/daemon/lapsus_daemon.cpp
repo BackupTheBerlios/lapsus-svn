@@ -118,28 +118,8 @@ bool LapsusDaemon::detectHardware()
 
 	if (tmp->hardwareDetected())
 	{
-		++hardwareMods;
-		
-		printf("Detected IBM hardware\nDetected features:\n\n");
-
-		QStringList lines = tmp->featureList();
-
-		for ( QStringList::ConstIterator it = lines.begin(); it != lines.end(); ++it )
-		{
-			QString line = (*it);
-
-			printf("Feature ID: %s\n", line.ascii());
-			printf("Feature Name: %s\n", tmp->featureName(line).ascii());
-
-			QStringList args = tmp->featureArgs(line);
-
-			for ( QStringList::ConstIterator iter = args.begin(); iter != args.end(); ++iter )
-				printf("Feature Arg: %s\n", (*iter).ascii());
-
-			printf("Feature Value: %s\n\n", tmp->featureRead(line).ascii());
-		}
-
 		_modList->addModule(tmp);
+		++hardwareMods;
 	}
 	else
 	{

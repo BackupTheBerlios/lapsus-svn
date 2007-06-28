@@ -93,6 +93,9 @@ class SysIBM : public SysBackend
 		t_thinkpad_state *_thinkpadNew;
 		t_thinkpad_state *_thinkpadOld;
 		int _timerNVRAMId;
+		uint _lastVolume;
+		bool _lastMute;
+		bool _dbusTriggered;
 
 		void detect();
 
@@ -100,7 +103,8 @@ class SysIBM : public SysBackend
 		bool nvramReadBuf(unsigned char *buf, off_t pos, size_t len);
 		bool nvramRead(t_thinkpad_state *tState);
 		bool checkNVRAMPair(unsigned char vOld, unsigned char VNew, const char *desc);
-		void signalNVRAMChange(const QString &id, unsigned char nVal);
+		void signalNVRAMNumChange(const QString &id, unsigned char nVal);
+		void signalNVRAMStrChange(const QString &id, const QString &nVal);
 };
 
 #endif
