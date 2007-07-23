@@ -368,16 +368,25 @@ int LapsusAlsaMixer::getVolume()
 
 bool LapsusAlsaMixer::setVolume(int val)
 {
+	bool wasSet = false;
+
 	for (int i = 0; i < ID_LAST; ++i)
 	{
-		if (sids[i] && sids[i]->hasVolume && sids[i]->setVolume(val))
+		// We try to set the volume only if nothing has been set yet, or
+		// current channel is HeadPhones - we set both the first available channel,
+		// like Master or Front or PCM, AND HP channel.
+		// HP channel should have the greates ID = ID_LAST - 1.
+		if ((!wasSet || i == ID_HP)
+			&& sids[i] && sids[i]->hasVolume && sids[i]->setVolume(val))
 		{
 			// Signal should be emited by getVolume in alsaEvent
-			return true;
+			wasSet = true;
 		}
 	}
 
-	return false;
+	if (wasSet && val > _curVolume) setMuted(false);
+
+	return wasSet;
 }
 
 bool LapsusAlsaMixer::mixerIsMuted()
@@ -403,30 +412,53 @@ bool LapsusAlsaMixer::mixerIsMuted()
 
 bool LapsusAlsaMixer::setMuted(bool mState)
 {
-	for (int i = 0; i < ID_LAST; ++i)
+	bool wasSet = false;
+	
+	for (int i = 0; i < ID_HP; ++i)
 	{
 		if (sids[i] && sids[i]->hasMute && sids[i]->setMute(mState))
 		{
 			// Signal should be emited by getMuted in alsaEvent
-			return true;
+			wasSet = true;
 		}
 	}
+
+	bool wasHPSet = false;
+
+	if (sids[ID_HP] && sids[ID_HP]->hasMute && sids[ID_HP]->setMute(mState))
+	{
+		// Signal should be emited by getMuted in alsaEvent
+		wasHPSet = true;
+	}
+
+	if (wasSet && wasHPSet) return true;
 
 	// We haven't found anyt sids with mute capabilities,
 	// so let's try to use emulated mute switch which depends on
 	// volume control capabilities
-	for (int i = 0; i < ID_LAST; ++i)
+	if (!wasSet)
 	{
-		if (sids[i] && sids[i]->hasVolume && sids[i]->setEmulMute(mState))
+		for (int i = 0; i < ID_HP; ++i)
 		{
-			_curMute = mState;
-
-			// Signal should be emited by getVolume in alsaEvent
-			return true;
+			if (!wasSet && sids[i] && sids[i]->hasVolume && sids[i]->setEmulMute(mState))
+			{
+				_curMute = mState;
+	
+				// Signal should be emited by getVolume in alsaEvent
+				return true;
+			}
 		}
 	}
 
-	return false;
+	if (!wasHPSet && sids[ID_HP] && sids[ID_HP]->hasVolume && sids[ID_HP]->setEmulMute(mState))
+	{
+		_curMute = mState;
+
+		// Signal should be emited by getVolume in alsaEvent
+		wasHPSet = true;
+	}
+
+	return wasSet || wasHPSet;
 }
 
 bool LapsusAlsaMixer::toggleMuted()
