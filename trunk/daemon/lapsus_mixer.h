@@ -33,9 +33,6 @@ class LapsusMixer : public LapsusModule
 		LapsusMixer(const char *prefix);
 		virtual ~LapsusMixer();
 
-		virtual uint mixerGetNormVolume();
-		virtual bool mixerSetNormVolume(uint val, bool hardwareTrig = false);
-		
 		virtual bool mixerIsMuted() = 0;
 		virtual bool mixerSetMuted(bool mState, bool hardwareTrig = false);
 		virtual bool mixerToggleMuted(bool hardwareTrig = false);
@@ -50,25 +47,17 @@ class LapsusMixer : public LapsusModule
 		virtual bool featureWrite(const QString &id, const QString &nVal);
 	
 	protected:
+		virtual uint mixerGetVolume();
+		virtual bool mixerSetVolume(uint val, bool hardwareTrig = false);
+		
 		virtual bool toggleMuted() = 0;
 		virtual bool setMuted(bool mState) = 0;
 		
 		virtual int getVolume() = 0;
 		virtual bool setVolume(int vol) = 0;
-		virtual int getMaxVolume() = 0;
-		virtual int getMinVolume() = 0;
 		
 		virtual void volumeChanged(int val);
 		virtual void muteChanged(bool muted);
-	
-	private:
-		int _minVol;
-		int _maxVol;
-		bool _doSetup;
-		
-		void setupLimits();
-		uint toNorm(int vol);
-		int fromNorm(uint vol);
 };
 
 #ifdef HAVE_ALSA

@@ -22,7 +22,7 @@
 #include "lapsus.h"
 
 LapsusMixer::LapsusMixer(const char *prefix):
-	LapsusModule(prefix), _doSetup(true)
+	LapsusModule(prefix)
 {
 }
 
@@ -30,39 +30,14 @@ LapsusMixer::~LapsusMixer()
 {
 }
 
-void LapsusMixer::setupLimits()
+uint LapsusMixer::mixerGetVolume()
 {
-	_minVol = getMinVolume();
-	_maxVol = getMaxVolume();
-	_doSetup = false;
+	return getVolume();
 }
 
-uint LapsusMixer::toNorm(int vol)
+bool LapsusMixer::mixerSetVolume(uint val, bool hardwareTrig)
 {
-	if (_doSetup) setupLimits();
-	
-	int ret = ((vol - _minVol)*100)/(_maxVol - _minVol);
-
-	if (ret < 0) return 0;
-	
-	return ret;
-}
-
-int LapsusMixer::fromNorm(uint vol)
-{
-	if (_doSetup) setupLimits();
-	
-	return (vol*(_maxVol - _minVol))/100;
-}
-
-uint LapsusMixer::mixerGetNormVolume()
-{
-	return toNorm(getVolume());
-}
-
-bool LapsusMixer::mixerSetNormVolume(uint val, bool hardwareTrig)
-{
-	bool ret = setVolume(fromNorm(val));
+	bool ret = setVolume(val);
 
 	if (hardwareTrig && ret && _dbus)
 	{
@@ -129,13 +104,13 @@ bool LapsusMixer::mixerToggleMuted(bool hardwareTrig)
 
 bool LapsusMixer::mixerVolumeUp(bool hardwareTrig)
 {
-	uint vol = mixerGetNormVolume() + 10;
+	uint vol = mixerGetVolume() + 10;
 
 	if (vol > 100) vol = 100;
 
 	if (mixerIsMuted()) mixerToggleMuted();
 
-	bool ret = mixerSetNormVolume(vol);
+	bool ret = mixerSetVolume(vol);
 
 	if (hardwareTrig && _dbus)
 	{
@@ -151,11 +126,11 @@ bool LapsusMixer::mixerVolumeUp(bool hardwareTrig)
 
 bool LapsusMixer::mixerVolumeDown(bool hardwareTrig)
 {
-	int vol = mixerGetNormVolume() - 10;
+	int vol = mixerGetVolume() - 10;
 
 	if (vol < 0) vol = 0;
 
-	bool ret = mixerSetNormVolume(vol);
+	bool ret = mixerSetVolume(vol);
 
 	if (hardwareTrig && _dbus)
 	{
@@ -178,7 +153,7 @@ void LapsusMixer::volumeChanged(int val)
 	{
 		QStringList args;
 		
-		args.append(QString::number(toNorm(val)));
+		args.append(QString::number(val));
 		
 		if (mixerIsMuted())
 			args.append(LAPSUS_FEAT_MUTE);
@@ -200,11 +175,11 @@ QString LapsusMixer::featureRead(const QString &id)
 		if (mixerIsMuted())
 		{
 			return QString("%1,%2")
-				.arg(QString::number(mixerGetNormVolume()))
+				.arg(QString::number(mixerGetVolume()))
 				.arg(LAPSUS_FEAT_MUTE);
 		}
 		
-		return QString::number(mixerGetNormVolume());
+		return QString::number(mixerGetVolume());
 	}
 	
 	return "";
@@ -234,9 +209,9 @@ bool LapsusMixer::featureWrite(const QString &id, const QString &nVal)
 			{
 				bool res = false;
 		
-				int iVal = val.toUInt(&res);
+				uint iVal = val.toUInt(&res);
 		
-				if (res) ret |= mixerSetNormVolume(iVal);
+				if (res) ret |= mixerSetVolume(iVal);
 			}
 		}
 	}

@@ -31,25 +31,25 @@
 class SIDInfo
 {
 	public:
-		long min;
-		long max;
-		long globalMax;
 		bool hasMute;
 		bool hasVolume;
 
 		SIDInfo(snd_mixer_t* handle, snd_mixer_selem_id_t* sid = 0);
 		~SIDInfo();
 
-		void setGlobalMax(long gm);
-		long getVolume();
-		bool setVolume(long val);
+		uint getVolume();
+		bool setVolume(uint val);
 		bool getMute();
 		bool setMute(bool mute);
 		bool setEmulMute(bool mute);
 
 	private:
+		long _min;
+		long _max;
 		bool _isEmulMuted;
-		long _lastVol;
+		uint _lastVol;
+		long _lastReal;
+		uint _lastNorm;
 		snd_mixer_t* _handle;
 		snd_mixer_selem_id_t* _sid;
 
@@ -84,8 +84,6 @@ class LapsusAlsaMixer : public LapsusMixer
 		
 		int getVolume();
 		bool setVolume(int vol);
-		int getMaxVolume();
-		int getMinVolume();
 		
 		bool hasVolume();
 		bool hasMute();
@@ -94,7 +92,7 @@ class LapsusAlsaMixer : public LapsusMixer
 		void alsaEvent();
 
 	private:
-		enum sidType {ID_M=0, ID_F, ID_HP, ID_LAST};
+		enum sidType {ID_M=0, ID_F, ID_PCM, ID_HP, ID_LAST};
 		SIDInfo* sids[ID_LAST];
 		snd_mixer_t *_handle;
 		bool _isValid;

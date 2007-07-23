@@ -21,8 +21,10 @@
 #include "alsa_mixer.h"
 
 SIDInfo::SIDInfo(snd_mixer_t* handle, snd_mixer_selem_id_t* sid) :
-	min(0), max(0), globalMax(0), hasMute(false), hasVolume(false),
-	_isEmulMuted(false), _lastVol(0), _handle(handle), _sid(sid)
+	hasMute(false), hasVolume(false),
+	_min(0), _max(0), _isEmulMuted(false), _lastVol(0),
+	_lastReal(0), _lastNorm(0),
+	_handle(handle), _sid(sid)
 {
 	if (!_sid) return;
 
@@ -34,13 +36,13 @@ SIDInfo::SIDInfo(snd_mixer_t* handle, snd_mixer_selem_id_t* sid) :
 
 	if (snd_mixer_selem_has_playback_volume(elem))
 	{
-		snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+		snd_mixer_selem_get_playback_volume_range(elem, &_min, &_max);
 
-		if (max > min) hasVolume = true;
-		else min = max = 0;
+		if (_max > _min) hasVolume = true;
+		else _min = _max = 0;
 	}
 
-	_lastVol = min;
+	_lastVol = 0;
 
 	if (snd_mixer_selem_has_playback_switch(elem))
 	{
@@ -53,18 +55,13 @@ SIDInfo::~SIDInfo()
 	if (_sid) free(_sid);
 }
 
-void SIDInfo::setGlobalMax(long gm)
-{
-	globalMax = gm;
-}
-
 long SIDInfo::getRealVolume()
 {
-	if (!hasVolume || !_sid) return min;
+	if (!hasVolume || !_sid) return _min;
 
 	snd_mixer_elem_t* elem = snd_mixer_find_selem(_handle, _sid);
 
-	if (!elem) return min;
+	if (!elem) return _min;
 
 	long vleft, vright;
 
@@ -78,13 +75,16 @@ long SIDInfo::getRealVolume()
 	return (vleft + vright)/2;
 }
 
-long SIDInfo::getVolume()
+uint SIDInfo::getVolume()
 {
-	if (!hasVolume || !_sid || globalMax < 1) return 0;
+	if (!hasVolume || !_sid) return 0;
 
-	long r = getRealVolume() - min;
+	long r = getRealVolume();
+	uint val = (uint) (r - _min)*100/(_max - _min);
 
-	return (r*globalMax/(max-min));
+	if (r == _lastReal) return _lastNorm;
+
+	return val;
 }
 
 bool SIDInfo::setRealVolume(long val)
@@ -100,13 +100,18 @@ bool SIDInfo::setRealVolume(long val)
 	return true;
 }
 
-bool SIDInfo::setVolume(long val)
+bool SIDInfo::setVolume(uint val)
 {
-	if (!hasVolume || !_sid || globalMax < 1) return false;
+	if (!hasVolume || !_sid) return false;
 
 	if (val > 0) _isEmulMuted = false;
 
-	return setRealVolume(val*(max-min)/globalMax);
+	long rVol = val*(_max - _min)/100;
+
+	_lastReal = rVol;
+	_lastNorm = val;
+
+	return setRealVolume(rVol);
 }
 
 bool SIDInfo::getMute()
@@ -151,21 +156,21 @@ bool SIDInfo::setEmulMute(bool mute)
 	if (mute)
 	{
 		_isEmulMuted = true;
-		_lastVol = getRealVolume();
-		return setRealVolume(min);
+		_lastVol = getVolume();
+		return setVolume(0);
 	}
 	else
 	{
 		_isEmulMuted = false;
-		bool ret = setRealVolume(_lastVol);
-		_lastVol = min;
+		bool ret = setVolume(_lastVol);
+		_lastVol = 0;
 		return ret;
 	}
 }
 
 LapsusAlsaMixer::LapsusAlsaMixer(): LapsusMixer("alsa"),
 	_handle(0), _count(0), _fds(0), _sns(0),
-	_curVolume(0), _curMute(false), _globalMax(0)
+	_curVolume(0), _curMute(false)
 {
 	for (int i = 0; i < ID_LAST; ++i)
 		sids[i] = 0;
@@ -252,6 +257,12 @@ bool LapsusAlsaMixer::init()
 				sids[ID_M] = new SIDInfo(_handle, tmp_sid);
 				tmp_sid = 0;
 			}
+			else if (!strcasecmp(name, "PCM"))
+			{
+				if (sids[ID_PCM]) delete sids[ID_PCM];
+				sids[ID_PCM] = new SIDInfo(_handle, tmp_sid);
+				tmp_sid = 0;
+			}
 		}
 	}
 
@@ -261,34 +272,13 @@ bool LapsusAlsaMixer::init()
 
 	for (int i = 0; i < ID_LAST; ++i)
 	{
-		if (sids[i])
+		if (sids[i] && (sids[i]->hasMute || sids[i]->hasVolume))
 		{
-			if (sids[i]->hasMute)
-			{
-				foundAny = true;
-			}
-
-			if (sids[i]->hasVolume)
-			{
-				foundAny = true;
-
-				long range = sids[i]->max - sids[i]->min;
-
-				if (range > _globalMax)
-					_globalMax = range;
-			}
+			foundAny = true;
 		}
 	}
 
-	if (_globalMax > INT_MAX)
-		_globalMax = INT_MAX;
-
 	if (!foundAny) return false;
-
-	for (int i = 0; i < ID_LAST; ++i)
-	{
-		if (sids[i]) sids[i]->setGlobalMax(_globalMax);
-	}
 
 	if ((_count = snd_mixer_poll_descriptors_count(_handle)) < 0)
 		return false;
@@ -374,16 +364,6 @@ int LapsusAlsaMixer::getVolume()
 	}
 
 	return 0;
-}
-
-int LapsusAlsaMixer::getMinVolume()
-{
-	return 0;
-}
-
-int LapsusAlsaMixer::getMaxVolume()
-{
-	return _globalMax;
 }
 
 bool LapsusAlsaMixer::setVolume(int val)
