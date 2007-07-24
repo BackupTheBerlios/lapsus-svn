@@ -44,18 +44,6 @@ LapsusVolSlider::LapsusVolSlider(KConfig *cfg, const QString &dbusID,
 			_dbusValid = false;
 			return;
 		}
-		
-		args = QStringList::split(",", getFeatureValue());
-		
-		for (QStringList::ConstIterator it = args.begin(); it != args.end(); ++it)
-		{
-			if (*it == LAPSUS_FEAT_MUTE) _isMuted = true;
-			else if (*it == LAPSUS_FEAT_UNMUTE) _isMuted = false;
-			
-			bool ok = false;
-			int tmp = (*it).toInt(&ok);
-			if (ok) _val = tmp;
-		}
 	}
 }
 
@@ -86,17 +74,14 @@ void LapsusVolSlider::dbusSliderUpdate(const QString &val, bool isNotif)
 		}
 	}
 	
-	if (setGray != _isMuted)
+	if (isNotif)
 	{
-		if (isNotif)
-		{
-			emit sliderMuteNotif(_isMuted);
-		}
-		else
-		{
-			_isMuted = setGray;
-			emit sliderMuteUpdate(_isMuted);
-		}
+		emit sliderMuteNotif(_isMuted);
+	}
+	else
+	{
+		_isMuted = setGray;
+		emit sliderMuteUpdate(_isMuted);
 	}
 	
 	if (otherArgs.size() > 0)

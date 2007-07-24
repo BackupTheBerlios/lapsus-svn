@@ -37,6 +37,8 @@ LapsusPanelVolSlider::LapsusPanelVolSlider(Qt::Orientation orientation, QWidget 
 
 	connect(sliderFeat, SIGNAL(sliderMuteUpdate(bool)),
 			_slider, SLOT(setGray(bool)));
+	
+	sliderFeat->updateFeatureValue();
 }
 
 LapsusPanelVolSlider::~LapsusPanelVolSlider()

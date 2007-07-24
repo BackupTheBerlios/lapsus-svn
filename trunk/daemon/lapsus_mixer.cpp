@@ -164,8 +164,11 @@ void LapsusMixer::volumeChanged(int val)
 
 void LapsusMixer::muteChanged(bool muted)
 {
-	dbusSignalFeatureUpdate(LAPSUS_FEAT_VOLUME_ID,
-			muted?LAPSUS_FEAT_MUTE:LAPSUS_FEAT_UNMUTE);
+	// When mute status is changed both current volume and new mute status
+	// is send as an update, so features all get their full value info.
+	// TODO: Probably the same should be done for notifications, once
+	// OSD code is more mature in the client.
+	volumeChanged(getVolume());
 }
 
 QString LapsusMixer::featureRead(const QString &id)

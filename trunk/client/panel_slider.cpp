@@ -95,6 +95,8 @@ LapsusPanelSlider::LapsusPanelSlider(Qt::Orientation orientation, QWidget *paren
 	connect ( LapsusDBus::get(), SIGNAL(dbusStateUpdate(bool)),
 			this, SLOT(dbusStateUpdate(bool)) );
 
+	sliderFeat->updateFeatureValue();
+	
 	_layout->add(_slider);
 	_layout->activate();
 

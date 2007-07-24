@@ -34,10 +34,6 @@ LapsusSlider::LapsusSlider(KConfig *cfg, const QString &dbusID,
 			_dbusValid = false;
 			return;
 		}
-		
-		bool ok = false;
-		int tmp = getFeatureValue().toInt(&ok);
-		if (ok) _val = tmp;
 	}
 }
 
