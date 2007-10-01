@@ -85,8 +85,8 @@ int LapsusIcons::loadNewAutoIcon(const QString &val, int size)
 	}
 	else if (_featureType == LAPSUS_FEAT_TOUCHPAD_ID)
 	{
-		if (val == LAPSUS_FEAT_ON) img = "red";
-		else if (val == LAPSUS_FEAT_OFF) img = "gray";
+		if (val == LAPSUS_FEAT_ON) img = "touchpad";
+		else if (val == LAPSUS_FEAT_OFF) img = "touchpad_gray";
 	}
 	else
 	{
