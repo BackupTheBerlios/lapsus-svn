@@ -38,7 +38,7 @@
 #include <linux/platform_device.h>
 #include <linux/ctype.h>
 
-#define ASUS_OLED_VERSION		"0.01"
+#define ASUS_OLED_VERSION		"0.02"
 #define ASUS_OLED_NAME			"asus-oled"
 
 #define ASUS_OLED_ERROR			"Asus OLED Display Error: "
