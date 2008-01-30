@@ -14,7 +14,12 @@ PWD := $(shell pwd)
 
 default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
-	echo "To compile tool for easy device control and image conversion, enter tool/ subdirectory and run: qmake && make"
+	#
+	#
+	# To compile Qt3 utility for easy device control and image conversion,
+	# enter qt/ subdirectory and run: qmake && make
+	#
+	#
 
 install:
 	install -d $(MDIR)

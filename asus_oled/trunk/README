@@ -5,14 +5,14 @@
     https://launchpad.net/asusoled/. I just wanted to have a simple
     kernel driver for controlling this device, but I didn't know how
     to do that. Now I know ;) Also, that program can not be used
-    with usbhid loaded, which means no USB mouse/keyboard when
+    with usbhid loaded, which means no USB mouse/keyboard while
     controlling OLED display :(
 
     It has been tested on Asus G1 and didn't cause any problems,
     but I don't guarantee that it won't do anything wrong :)
 
-    It can have errors, and probably has some. It is usable
-    in my case, and I hope others will find it usefull too!
+    It can (and probably does) have errors. It is usable
+    in my case, and I hope others will find it useful too!
 
 *******
 
@@ -21,7 +21,8 @@ Building the module
    To build the module you need kernel 2.6 include files and some C compiler.
 
    Just run:
-   make && make install (as a root)
+   make
+   make install (as a root)
 
    It will build (hopefully) the module and install it in
    /lib/modules/'uname -r'/extra/asus_oled.ko.
@@ -42,7 +43,7 @@ Building the module
    Bus 002 Device 005: ID 0b05:1726 ASUSTek Computer, Inc.
 
    If you don't see any lines with '0b05:1726' it means that you have different
-   type of hardware that is not detected (it might or might not work, but the driver
+   type of hardware that is not detected (it may or may not work, but the driver
    knows only '0b05:1726' device).
 
 *******
@@ -64,23 +65,30 @@ Configuration
 Usage
 
    This module can be controlled with two special files:
-   /sys/devices/.../asus_oled_enabled
-   /sys/devices/.../asus_oled_picture
+   /sys/class/asus_oled/oled_N/enabled
+   /sys/class/asus_oled/oled_N/picture
 
-   (you can find them by running: 'find /sys -name asus_oled_\*' )
+   (N is the device number, the first, and probably the only, has number 1,
+    so it is /sys/class/asus_oled/oled_1/enabled
+    and /sys/class/asus_oled/oled_1/picture)
 
-   Both files are write-only.
-   You can write 0 or 1 to asus_oled_enabled file, which will switch
-   on and off the display.
+   'enabled' files is for reading and writing, 'picture' is writeable only.
 
-   To asus_oled_picture file, you write pictures to be displayed by the OLED device.
+   You can write 0 or 1 to 'enabled' file, which will switch
+   on and off the display. Reading from this file will tell you the last
+   status set, either 0 or 1. By default it is 1, so if the device was set to 'off',
+   and the computer was rebooted without power-off, this file will contain wrong
+   value - because the device is off, but hasn't been disabled this time and is
+   assumed to be on...
+
+   To 'picture' file you write pictures to be displayed by the OLED device.
    The format of the file:
    <M:WxH>
    00001110010111000
    00010101010101010
    ....
 
-   First line is configuration parameter. Meaning of fields in <M:WxH>:
+   First line is a configuration parameter. Meaning of fields in <M:WxH>:
    M - picture mode. It can be either 's' for static pictures,
        'r' for rolling pictures, and 'f' for flashing pictures.
    W - width of the picture. May be between 1 and 1792
@@ -126,22 +134,25 @@ Usage
    So if you need empty line, it is sufficient to write line with only one '0' in it.
    The same works with '1' (or ' ' and '#').
 
-   If there are too manyh data in the file, they will be ignored. If you are not sure
+   If there are too many data in the file, they will be ignored. If you are not sure
    how many characters you are missing, you can add few lines with one zero in each of them.
 
-
-   In the future I plan to write a program to convert graphic files to the format accepted
-   by the driver, and some additional utils for displaying useful data, but for now there
-   is nothing else, except for the example .txt files in this directory.
-   There can be used as follows:
-   cat foo.txt > /sys/devices/..../asus_oled_picture
+   There are some example pictures in .txt format, that can be used as follows:
+   cat foo.txt > /sys/class/asus_oled/oled_1/picture
 
    If the display is switched off you also need to run:
-   echo 1 > /sys/devices/.../asus_oled_enabled
+   echo 1 > /sys/class/asus_oled/oled_1/enabled
    To switch it off, just use:
-   echo 0 > /sys/devices/.../asus_oled_enabled
+   echo 0 > /sys/class/asus_oled/oled_1/enabled
 
 
+*******
+
+Application
+
+   In 'qt' subdirectory, there is also small Qt 3.3 application (although it doesn't need X
+   running), that provides easy way to control OLED device and to convert graphical files to the
+   format accepted by the driver - all image formats supported by Qt 3.3 can be used.
 
 
 *******
@@ -150,5 +161,5 @@ Usage
 
 
 
-   Jakub Schmidtke (sjakub@gmail.com)
+   Jakub Schmidtke (sjakub@users.berlios.de)
 
