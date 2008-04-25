@@ -1,2 +1,3 @@
 #POFILES = AUTO
-POFILES = pl.po
+POFILES = pl.po de.po
+

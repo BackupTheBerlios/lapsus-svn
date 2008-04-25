@@ -84,10 +84,13 @@ void SysAsus::detect()
 					I18N_NOOP("Phone LED");
 					I18N_NOOP("Gaming LED");
 #endif
+					QString lName = fName.mid(5);
+					
+					while (lName.startsWith(":")) lName = lName.mid(1);
 
 					QString id = QString(LAPSUS_FEAT_LED_ID_PREFIX "%1").
-							arg(fName.mid(5).lower());
-					QString name = QString("%1 LED").arg(fName.mid(5));
+							arg(lName.lower());
+					QString name = QString("%1 LED").arg(lName);
 
 					name[0] = name[0].upper();
 
