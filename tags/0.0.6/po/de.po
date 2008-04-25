@@ -1,0 +1,386 @@
+# translation of de.po to deutsch
+# translation of pl.po to
+# This file is put in the public domain.
+#
+# Jakub Schmidtke <sjakub@users.berlios.de>, 2007.
+# Jakub Schmidtke <sjakub@gmail.com>, 2007.
+# Johannes Engel <j-engel@gmx.de>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: de\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-06-21 01:29+0200\n"
+"PO-Revision-Date: 2007-12-31 13:58+0100\n"
+"Last-Translator: Johannes Engel <j-engel@gmx.de>\n"
+"Language-Team: deutsch <de@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms:  nplurals=2; plural=(n != 1);\n"
+
+#: _translatorinfo.cpp:1
+msgid ""
+"_: NAME OF TRANSLATORS\n"
+"Your names"
+msgstr "Johannes Engel"
+
+#: _translatorinfo.cpp:3
+msgid ""
+"_: EMAIL OF TRANSLATORS\n"
+"Your emails"
+msgstr "j-engel@gmx.de"
+
+#. i18n: file ./client/conf_base.ui line 16
+#: rc.cpp:3
+#, no-c-format
+msgid "Lapsus Configuration"
+msgstr "Lapsus-Konfiguration"
+
+#. i18n: file ./client/conf_base.ui line 31
+#: rc.cpp:6
+#, no-c-format
+msgid "Panel Features"
+msgstr "Schalter im Kontrollfeld"
+
+#. i18n: file ./client/conf_base.ui line 42
+#: rc.cpp:9
+#, no-c-format
+msgid "<p align=\"center\">Select features present in applet's panel area.</p>"
+msgstr "<p align=\"center\">Wählen Sie die Schalter, die im Feld sichtbar sein sollen.</p>"
+
+#. i18n: file ./client/conf_base.ui line 91
+#. i18n: file ./client/conf_base.ui line 105
+#. i18n: file ./client/conf_base.ui line 237
+#. i18n: file ./client/conf_base.ui line 251
+#: rc.cpp:12 rc.cpp:15 rc.cpp:30 rc.cpp:33
+#, no-c-format
+msgid "..."
+msgstr "..."
+
+#. i18n: file ./client/conf_base.ui line 145
+#. i18n: file ./client/conf_base.ui line 291
+#: rc.cpp:18 rc.cpp:36
+#, no-c-format
+msgid "&Auto"
+msgstr "&Automatik"
+
+#. i18n: file ./client/conf_base.ui line 148
+#. i18n: file ./client/conf_base.ui line 294
+#. i18n: file ./client/conf_base.ui line 966
+#: rc.cpp:21 rc.cpp:39 rc.cpp:143
+#, no-c-format
+msgid "Alt+A"
+msgstr "Alt+A"
+
+#. i18n: file ./client/conf_base.ui line 177
+#: rc.cpp:24
+#, no-c-format
+msgid "Menu Features"
+msgstr "Schalter im Menu"
+
+#. i18n: file ./client/conf_base.ui line 188
+#: rc.cpp:27
+#, no-c-format
+msgid "<p align=\"center\">Select features present in applet's context menu.</p>"
+msgstr "<p align=\"center\">Wählen Sie die Schalter, die im Kontext-Menu erscheinen sollen.</p>"
+
+#. i18n: file ./client/conf_base.ui line 323
+#: rc.cpp:42
+#, no-c-format
+msgid "Autosaved Features"
+msgstr "Schalter, deren Position gespeichert wird"
+
+#. i18n: file ./client/conf_base.ui line 334
+#: rc.cpp:45
+#, no-c-format
+msgid ""
+"<p align=\"center\">Select features that should be saved when lapsus daemon "
+"quits and restored when it starts.</p>"
+msgstr "<p align=\"center\">Wählen Sie die Schalter, deren Position gespeichert wird beim Beenden.</p>"
+
+#. i18n: file ./client/conf_base.ui line 349
+#: rc.cpp:48
+#, no-c-format
+msgid "OSD Settings"
+msgstr "OSD Einstellungen"
+
+#. i18n: file ./client/conf_base.ui line 408
+#: rc.cpp:51
+#, no-c-format
+msgid "OSD time:"
+msgstr "Anzeigedauer:"
+
+#. i18n: file ./client/conf_base.ui line 497
+#: rc.cpp:54
+#, no-c-format
+msgid "Colors"
+msgstr "Farben"
+
+#. i18n: file ./client/conf_base.ui line 508
+#: rc.cpp:57
+#, no-c-format
+msgid "Custom Colors"
+msgstr "Eigene Farben"
+
+#. i18n: file ./client/conf_base.ui line 524
+#: rc.cpp:60
+#, no-c-format
+msgid "Foreground:"
+msgstr "Vordergrund:"
+
+#. i18n: file ./client/conf_base.ui line 553
+#: rc.cpp:64
+#, no-c-format
+msgid "Background:"
+msgstr "Hintergrund:"
+
+#. i18n: file ./client/conf_base.ui line 637
+#: rc.cpp:68
+#, no-c-format
+msgid "&Reset"
+msgstr "&Zurücksetzen"
+
+#. i18n: file ./client/conf_base.ui line 640
+#. i18n: file ./client/conf_base.ui line 766
+#. i18n: file ./client/conf_base.ui line 847
+#: rc.cpp:71 rc.cpp:95 rc.cpp:113
+#, no-c-format
+msgid "Alt+R"
+msgstr "Alt+R"
+
+#. i18n: file ./client/conf_base.ui line 686
+#: rc.cpp:74
+#, no-c-format
+msgid "HotKey Bindings"
+msgstr "Schnellzugriffstasten"
+
+#. i18n: file ./client/conf_base.ui line 697
+#: rc.cpp:77
+#, no-c-format
+msgid "<p align=\"center\">Configured key bindings</p>"
+msgstr "<p align=\"center\">Zugriffstasten</p>"
+
+#. i18n: file ./client/conf_base.ui line 718
+#: rc.cpp:80
+#, no-c-format
+msgid "&New"
+msgstr "&Neu"
+
+#. i18n: file ./client/conf_base.ui line 721
+#: rc.cpp:83
+#, no-c-format
+msgid "Alt+N"
+msgstr "Alt+N"
+
+#. i18n: file ./client/conf_base.ui line 735
+#. i18n: file ./client/conf_base.ui line 816
+#. i18n: file ./client/conf_base.ui line 897
+#: rc.cpp:89 rc.cpp:107 rc.cpp:125
+#, no-c-format
+msgid "Alt+E"
+msgstr "Alt+E"
+
+#. i18n: file ./client/conf_base.ui line 778
+#: rc.cpp:98
+#, no-c-format
+msgid "Daemon Init"
+msgstr "Daemon-Start"
+
+#. i18n: file ./client/conf_base.ui line 789
+#: rc.cpp:101
+#, no-c-format
+msgid "<p align=\"center\">Feature values set on daemon start</p>"
+msgstr "<p align=\"center\">Werte beim Start des Daemons</p>"
+
+#. i18n: file ./client/conf_base.ui line 859
+#: rc.cpp:116
+#, no-c-format
+msgid "Daemon Settings"
+msgstr "Daemon-Einstellungen"
+
+#. i18n: file ./client/conf_base.ui line 870
+#: rc.cpp:119
+#, no-c-format
+msgid "<p align=\"center\">Daemon configuration options</p>"
+msgstr "<p align=\"center\">Daemon-Konfiguration</p>"
+
+#. i18n: file ./client/conf_base.ui line 925
+#: rc.cpp:128
+#, no-c-format
+msgid "&Default"
+msgstr "&Standard"
+
+#. i18n: file ./client/conf_base.ui line 928
+#: rc.cpp:131
+#, no-c-format
+msgid "Alt+D"
+msgstr "Alt+D"
+
+#. i18n: file ./client/conf_base.ui line 952
+#: rc.cpp:137
+#, no-c-format
+msgid "Alt+O"
+msgstr "Alt+O"
+
+#. i18n: file ./client/conf_base.ui line 977
+#: rc.cpp:149
+#, no-c-format
+msgid "Alt+C"
+msgstr "Alt+C"
+
+#: daemon/sys_asus.cpp:81
+msgid "Mail LED"
+msgstr "Post-Leuchte"
+
+#: daemon/sys_asus.cpp:82
+msgid "Touchpad LED"
+msgstr "Touchpad-Leuchte"
+
+#: daemon/sys_asus.cpp:83
+msgid "Recording LED"
+msgstr "Aufnahme-Leuchte"
+
+#: daemon/sys_asus.cpp:84
+msgid "Phone LED"
+msgstr "Telefon-Leuchte"
+
+#: daemon/sys_asus.cpp:85
+msgid "Gaming LED"
+msgstr "Spiele-Leuchte"
+
+#: daemon/sys_asus.cpp:132
+msgid "Light Sensor"
+msgstr "Umgebungslicht-Sensor"
+
+#: daemon/sys_asus.cpp:146
+#, fuzzy
+msgid "Controls if HotKey controlled LightSensor level list is circular"
+msgstr "Regelt, ob der per Sondertaste gesteuerte Lichtsensor nur in eine Richtung läuft."
+
+#: daemon/sys_asus.cpp:185
+#, fuzzy
+msgid "Controls if HotKey controlled brightness level list is circular"
+msgstr "Regelt, ob die per Sondertasten eingestellte Helligkeit nur in eine Richtung läuft."
+
+#: daemon/sys_ibm.cpp:220
+msgid "Power LED"
+msgstr "Spannungs-Leuchte"
+
+#: daemon/sys_ibm.cpp:222
+msgid "Orange Battery LED"
+msgstr "Orangene Batterie-Leuchte"
+
+#: daemon/sys_ibm.cpp:224
+msgid "Green Battery LED"
+msgstr "Grüne Batterie-Leuchte"
+
+#: daemon/sys_ibm.cpp:226
+msgid "UltraBase LED"
+msgstr "UltraBase-Leuchte"
+
+#: daemon/sys_ibm.cpp:228
+msgid "UltraBay LED"
+msgstr "UltraBay-Leuchte"
+
+#: daemon/sys_ibm.cpp:230
+msgid "5th LED"
+msgstr "Fünfte Leuchte"
+
+#: daemon/sys_ibm.cpp:232
+msgid "6th LED"
+msgstr "Sechste Leuchte"
+
+#: daemon/sys_ibm.cpp:234
+msgid "Standby LED"
+msgstr "Stromspar-Leuchte"
+
+#: daemon/sys_ibm.cpp:297
+msgid "ThinkLight"
+msgstr "ThinkLight"
+
+#: daemon/lapsus_module.cpp:50
+msgid "Bluetooth adapter"
+msgstr "Bluetooth-Modul"
+
+#: daemon/lapsus_module.cpp:51
+msgid "Wireless radio"
+msgstr "Drahtloses Netzwerk"
+
+#: daemon/lapsus_module.cpp:52
+msgid "LCD Backlight"
+msgstr "Hintergrundbeleuchtung"
+
+#: daemon/lapsus_module.cpp:53 daemon/lapsus_module.cpp:55
+msgid "Volume"
+msgstr "Lautstärke"
+
+#: daemon/lapsus_module.cpp:54
+msgid "Touchpad"
+msgstr "Touchpad"
+
+#: daemon/sys_backend.cpp:80
+msgid "LCD Display"
+msgstr "Laptopbildschirm"
+
+#: daemon/sys_backend.cpp:81
+msgid "CRT Display"
+msgstr "Röhrenmonitor"
+
+#: daemon/sys_backend.cpp:82
+msgid "TV Display"
+msgstr "Fernseher"
+
+#: daemon/sys_backend.cpp:83
+msgid "DVI Display"
+msgstr "DVI-Bildschirm"
+
+#: client/lapsus_conf.cpp:49
+msgid "Drag OSD to desired position"
+msgstr "Ziehen Sie die Anzeige an die gewünschte Position"
+
+#: client/lapsus_conf.cpp:182 client/lapsus_conf.cpp:197
+msgid "ID"
+msgstr "Kennung"
+
+#: client/lapsus_conf.cpp:183 client/lapsus_conf.cpp:198
+msgid "Name"
+msgstr "Name"
+
+#: client/lapsus_conf.cpp:184
+msgid "Value"
+msgstr "Wert"
+
+#: client/panel_main.cpp:162
+msgid "Switches"
+msgstr "Schalter"
+
+#: client/applet.cpp:47
+msgid "Lapsus Panel Applet"
+msgstr "Lapsus Kontrollfeld"
+
+#: client/applet.cpp:49
+msgid ""
+"Lapsus provides easy access to additional\n"
+"features of ASUS and IBM/Lenovo laptops."
+msgstr ""
+"Lapsus bietet einfachen Zugang zu\n"
+"besonderen Einstellungen für Laptops\n"
+"von Asus und IBM/Lenovo."
+
+#: client/applet.cpp:65
+msgid "_: NAME OF TRANSLATORS\\nYour names"
+msgstr "Johannes Engel"
+
+#: client/applet.cpp:66
+msgid "_: EMAIL OF TRANSLATORS\\nYour emails"
+msgstr "j-engel@gmx.de"
+
+#: client/applet.cpp:70
+msgid "Light Sensor support"
+msgstr "Unterstützung für den Licht-Sensor"
+
+#: client/conf_dialog.cpp:31
+msgid "Lapsus configuration"
+msgstr "Einstellungen für Lapsus"
+

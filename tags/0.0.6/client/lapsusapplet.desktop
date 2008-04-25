@@ -1,0 +1,7 @@
+[Desktop Entry]
+Encoding=UTF-8
+Comment=Lapsus panel applet
+Name=Lapsus Applet
+X-KDE-Library=lapsus_panelapplet
+X-KDE-UniqueApplet = false
+Icon=laptop

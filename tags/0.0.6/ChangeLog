@@ -1,0 +1,113 @@
+0.0.6
+=====
+* Asus backend:
+ - Lapsusd should now properly recognise new LED's names (new version
+    of the asus-laptop driver creates 'asus::ledname' instead of
+    'asus:ledname'. Lapsusd should now properly work in both cases.
+* IBM backend:
+ - supports volume mute switch
+ - ACPI events and notifications are not generated if the NVRAM change was
+    because of dbus feature write
+ - features will be updated when NVRAM state is modified, unless there is
+    no NVRAM device opened
+* Alsa mixer:
+ - Now mixer has always 0-100 volume range
+ - Volume level reported is the same as it was set, even if due to rounding
+    errors it not really is - user gets nice, round values when using hotkeys
+ - Now both headphone and the best channel found is set
+    to given volume/mute status
+* Applet modifications:
+ - Mute/volume status is now properly updated after widgets are recreated
+    when the configuration settings are accepted
+ - Added touchpad icon made by Rémy Dupont - Thanks!
+ - Added German translation (thanks to Johannes Engel).
+* Other changes:
+ - added missing 'stdlib.h' include in sys_ibm - new version of gcc
+    needs that for malloc, free, etc.
+ - updated KDE's admin and Makefile.cvs to newer versions
+ - updated dbus-qt4-qt3backport to the current svn version
+
+0.0.5
+=====
+ Daemon:
+ * Added brightness up Asus hotkey support.
+ * Added LightSensor support.
+ * Changed feature ID system to be multilevel (asus.feature, alsa.feature etc.)
+ * Hardware backends are in separate modules now - for example AlsaMixer is
+    separate module, with its own DBus interface - instead of used as a part
+    of Asus backend, or any other backend that needs Alsa support. Similar
+    is with synaptics backend.
+ * Added Unix signal handling - now lapsusd can quit gracefully when it
+    receives SIGTERM or SIGINT in no-daemon mode - so it can close DBus,
+    and save its configuration.
+ * Added lapsusd state - in /var/lib/lapsusd/lapsusdrc file it can keep
+    various options.
+ * Added Autosave module, for saving feature values when lapsusd quits
+    and restoing them when it starts.
+ * Added config module. Any backend might have its own configuration values
+    kept in state file - not used by the GUI yet.
+ * Various minor fixes and improvements.
+
+ Applet:
+ * Added mute/unmute switching with middle mouse button on volume slider.
+ * Added 'About' dialog.
+ * Added 'Bugs' dialog.
+ * Added 'Configuration' dialog.
+ * Added management of menu and panel entries.
+ * Added OSD customization.
+ * Added Autosave configuration.
+ * Various fixes and improvements.
+
+0.0.4
+=====
+ Daemon:
+ * Added generic backend, if no known hardware is detected it is used
+    and provides basic support - for now for synaptics touchpads and alsa
+    mixer.
+ * Added support for Alsa Mixer - used by Asus and Generic backends.
+ * Added experimental IBM backend with basic features supported
+ * Added support for Synaptics synclient to control touchpad state on/off.
+    Generic and Asus backend use it. IBM backend doesn't have support
+    for touchpad yet, but probably will use NVRAM method.
+ * Added NVRAM support to IBM backend - basen on ThinkPad Buttons project
+ * IBM backend uses volume control and backlight control buttons support
+    provided by NVRAM.
+ * Added support for volume control, backlight control and touchpad control
+    buttons to Asus backend.
+ * Added notification signals - sent together with feature-change signals,
+    but used to indicate change which occured because of external events,
+    like NVRAM, or hotkeys.
+
+ Applet:
+ * Changed the method for creating icons' text - no image for each letter
+    needed. Any letters are added to icons using drawText.
+ * Improved icon management code in action/panel button classes. Any arguments
+    can have icons (not only on/off/blink), if only recognised by lapsus_icons
+    class.
+ * Added OSD - based on K3b job-progress OSD.
+ * Added touchpad support.
+
+0.0.3
+=====
+ * Heavily rewritten to support hardware using backends  (possibly various,
+   so far only Asus backend is present) and per method arguments.
+ * Reduced the number of methods and changed the interface to support any
+   feature values, so both LEDs, switches, backlight, etc. can be used using
+   one method. Each feature can have a list of legal values instead of
+   simple true/false. Will be needed for IBMs with on/off/blinking LEDs ;)
+ * KDE Panel Applet now has feature detection, uses FlowLayout and creates
+   backlight slider, panel icons, as well as context menu switches with LEDs.
+ * Some more artwork. "Art". I am not an artist ;)
+ * New code for icon loading and scaling
+
+
+0.0.2
+=====
+ * Daemon rewritten for Qt3 with dbus-qt4-qt3backport
+ * KDE Panel Applet with backlight/switches controls.
+
+
+0.0.1
+=====
+ * Initial release - "test" release which used Qt4.
+
