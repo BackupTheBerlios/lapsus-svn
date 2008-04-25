@@ -1,3 +1,32 @@
+0.0.6
+=====
+* Asus backend:
+ - Lapsusd should now properly recognise new LED's names (new version
+    of the asus-laptop driver creates 'asus::ledname' instead of
+    'asus:ledname'. Lapsusd should now properly work in both cases.
+* IBM backend:
+ - supports volume mute switch
+ - ACPI events and notifications are not generated if the NVRAM change was
+    because of dbus feature write
+ - features will be updated when NVRAM state is modified, unless there is
+    no NVRAM device opened
+* Alsa mixer:
+ - Now mixer has always 0-100 volume range
+ - Volume level reported is the same as it was set, even if due to rounding
+    errors it not really is - user gets nice, round values when using hotkeys
+ - Now both headphone and the best channel found is set
+    to given volume/mute status
+* Applet modifications:
+ - Mute/volume status is now properly updated after widgets are recreated
+    when the configuration settings are accepted
+ - Added touchpad icon made by Rémy Dupont - Thanks!
+ - Added German translation (thanks to Johannes Engel).
+* Other changes:
+ - added missing 'stdlib.h' include in sys_ibm - new version of gcc
+    needs that for malloc, free, etc.
+ - updated KDE's admin and Makefile.cvs to newer versions
+ - updated dbus-qt4-qt3backport to the current svn version
+
 0.0.5
 =====
  Daemon:

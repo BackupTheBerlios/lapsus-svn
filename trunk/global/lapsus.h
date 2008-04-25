@@ -21,7 +21,7 @@
 #ifndef LAPSUS_GLOBAL_H
 #define LAPSUS_GLOBAL_H
 
-#define LAPSUS_VERSION			"0.0.5"
+#define LAPSUS_VERSION			"0.0.6"
 
 // Service name which will be used by server to register to D-BUS system bus.
 #define LAPSUS_SERVICE_NAME		"de.berlios.Lapsus"
