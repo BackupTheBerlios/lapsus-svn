@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Jakub Schmidtke                                 *
+ *   Copyright (C) 2007, 2008 by Jakub Schmidtke                           *
  *   sjakub@users.berlios.de                                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -48,7 +48,7 @@ LapsusApplet::LapsusApplet( const QString& configFile, Type t, QWidget *parent, 
                          LAPSUS_VERSION,
                          I18N_NOOP("Lapsus provides easy access to additional\nfeatures of ASUS and IBM/Lenovo laptops."),
                          KAboutData::License_GPL,
-                         "© 2007 Jakub Schmidtke",
+                         "© 2007, 2008 Jakub Schmidtke",
                          0, "http://lapsus.berlios.de", "lapsus-general@lists.berlios.de" )
 {
 	LapsusDBus::create();

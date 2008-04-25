@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Jakub Schmidtke                                 *
+ *   Copyright (C) 2007, 2008 by Jakub Schmidtke                           *
  *   sjakub@users.berlios.de                                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -284,7 +284,7 @@ int main( int argc, char *argv[] )
 			printf("\nIt has only one optional parameter:\n");
 			printf(" --no-daemon which makes it run in non-daemon mode.\n");
 			printf("\nVisit http://lapsus.berlios.de for details.\n\n\n");
-			printf("Copyright (c) 2007 Jakub Schmidtke\n\n");
+			printf("Copyright (c) 2007, 2008 Jakub Schmidtke\n\n");
 			printf("This program is distributed under the terms of the GPL v2.\n");
 			printf("Visit http://www.gnu.org/licenses/gpl.html for details.\n\n");
 

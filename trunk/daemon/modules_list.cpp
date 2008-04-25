@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Jakub Schmidtke                                 *
+ *   Copyright (C) 2007, 2008 by Jakub Schmidtke                           *
  *   sjakub@users.berlios.de                                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
