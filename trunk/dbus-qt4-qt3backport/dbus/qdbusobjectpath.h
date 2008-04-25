@@ -21,6 +21,9 @@
  *
  */
 
+#ifndef QDBUSOBJECTPATH_H
+#define QDBUSOBJECTPATH_H
+
 #include <qcstring.h>
 
 /**
@@ -111,3 +114,5 @@ public:
      */
     static int validate(const QCString& path);
 };
+
+#endif

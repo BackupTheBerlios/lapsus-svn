@@ -456,9 +456,10 @@ static QDBusData qFetchParameter(DBusMessageIter *it)
     case DBUS_TYPE_DOUBLE:
         return QDBusData::fromDouble(qIterGet<double>(it));
     case DBUS_TYPE_STRING:
-    case DBUS_TYPE_OBJECT_PATH:
     case DBUS_TYPE_SIGNATURE:
         return QDBusData::fromString(QString::fromUtf8(qIterGet<char *>(it)));
+    case DBUS_TYPE_OBJECT_PATH:
+        return QDBusData::fromObjectPath(QDBusObjectPath(qIterGet<char *>(it)));
     case DBUS_TYPE_ARRAY: {
         int arrayType = dbus_message_iter_get_element_type(it);
 

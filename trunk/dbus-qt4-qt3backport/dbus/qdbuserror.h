@@ -119,7 +119,7 @@ public:
          * Returned by QDBusConnection's addConnection if the specified address
          * isn't a valid D-Bus bus address.
          *
-         * @see QDBusConnection:::addConnection(const QString&,const QString&);
+         * @see QDBusConnection::addConnection(const QString&,const QString&);
          */
         BadAddress,
 

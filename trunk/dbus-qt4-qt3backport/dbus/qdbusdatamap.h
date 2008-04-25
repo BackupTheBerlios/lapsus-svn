@@ -173,7 +173,7 @@ public:
             }
             else if (hasContainerValueType())
             {
-                if (it.data()->buildSignature() != containerSignature)
+                if (it.data().buildDBusSignature() != containerSignature)
                 {
                     m_valueType = QDBusData::Invalid;
                     m_containerValueType = QDBusData();

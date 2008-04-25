@@ -52,6 +52,7 @@ template<typename T> class QDBusDataMap;
  *
  * @see QDBusDataList
  * @see QDBusDataMap
+ * @see QDBusDataConverter
  */
 class QDBUS_EXPORT QDBusData
 {
@@ -222,6 +223,7 @@ public:
          * @note Empty structs, i.e. an empty member list, are not allowed
          *
          * @see fromStruct(), toStruct()
+         * @see QDBusDataConverter
          */
         Struct,
 
