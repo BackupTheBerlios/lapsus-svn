@@ -116,7 +116,7 @@ struct asus_oled_dev {
 	size_t			buf_size;
 	char			*buf;
 	uint8_t			enabled;
-	struct class_device	*class_dev;
+	struct device		*dev;
 };
 
 static void enable_oled(struct asus_oled_dev *odev, uint8_t enabl)
@@ -166,9 +166,9 @@ static ssize_t set_enabled(struct device *dev, struct device_attribute *attr, co
 	return count;
 }
 
-static ssize_t class_set_enabled(struct class_device *class_device, const char *buf, size_t count)
+static ssize_t class_set_enabled(struct device *device, struct device_attribute *attr, const char *buf, size_t count)
 {
-	struct asus_oled_dev *odev = (struct asus_oled_dev *) class_get_devdata(class_device);
+	struct asus_oled_dev *odev = (struct asus_oled_dev *) dev_get_drvdata(device);
 
 	int temp = simple_strtoul(buf, NULL, 10);
 
@@ -185,9 +185,9 @@ static ssize_t get_enabled(struct device *dev, struct device_attribute *attr, ch
 	return sprintf(buf, "%d\n", odev->enabled);
 }
 
-static ssize_t class_get_enabled(struct class_device *class_device, char *buf)
+static ssize_t class_get_enabled(struct device *device, struct device_attribute *attr, char *buf)
 {
-	struct asus_oled_dev *odev = (struct asus_oled_dev *) class_get_devdata(class_device);
+	struct asus_oled_dev *odev = (struct asus_oled_dev *) dev_get_drvdata(device);
 
 	return sprintf(buf, "%d\n", odev->enabled);
 }
@@ -426,9 +426,9 @@ static ssize_t set_picture(struct device *dev, struct device_attribute *attr, co
 	return odev_set_picture(usb_get_intfdata(intf), buf, count);
 }
 
-static ssize_t class_set_picture(struct class_device *class_device, const char *buf, size_t count)
+static ssize_t class_set_picture(struct device *device, struct device_attribute *attr, const char *buf, size_t count)
 {
-	return odev_set_picture((struct asus_oled_dev *) class_get_devdata(class_device), buf, count);
+	return odev_set_picture((struct asus_oled_dev *) dev_get_drvdata(device), buf, count);
 }
 
 #define ASUS_OLED_DEVICE_ATTR(_file)		dev_attr_asus_oled_##_file
@@ -436,8 +436,8 @@ static ssize_t class_set_picture(struct class_device *class_device, const char *
 static DEVICE_ATTR(asus_oled_enabled, S_IWUGO | S_IRUGO, get_enabled, set_enabled);
 static DEVICE_ATTR(asus_oled_picture, S_IWUGO , NULL, set_picture);
 
-static CLASS_DEVICE_ATTR (enabled, S_IWUGO | S_IRUGO, class_get_enabled, class_set_enabled);
-static CLASS_DEVICE_ATTR (picture, S_IWUGO, NULL, class_set_picture);
+static DEVICE_ATTR(enabled, S_IWUGO | S_IRUGO, class_get_enabled, class_set_enabled);
+static DEVICE_ATTR(picture, S_IWUGO, NULL, class_set_picture);
 
 static int asus_oled_probe(struct usb_interface *interface, const struct usb_device_id *id)
 {
@@ -463,7 +463,7 @@ static int asus_oled_probe(struct usb_interface *interface, const struct usb_dev
 	odev->last_val = 0;
 	odev->buf = NULL;
 	odev->enabled = 1;
-	odev->class_dev = 0;
+	odev->dev = 0;
 
 	usb_set_intfdata (interface, odev);
 
@@ -475,21 +475,21 @@ static int asus_oled_probe(struct usb_interface *interface, const struct usb_dev
 		goto err_files;
 	}
 
-	odev->class_dev = class_device_create(oled_class, NULL, MKDEV(0,0),
-				&interface->dev, "oled_%d", ++oled_num);
+	odev->dev = device_create_drvdata(oled_class, &interface->dev, MKDEV(0,0),
+				NULL,"oled_%d", ++oled_num);
 
-	if (IS_ERR(odev->class_dev)) {
-		retval = PTR_ERR(odev->class_dev);
+	if (IS_ERR(odev->dev)) {
+		retval = PTR_ERR(odev->dev);
 		goto err_files;
 	}
 
-	class_set_devdata(odev->class_dev, odev);
+	dev_set_drvdata(odev->dev, odev);
 
-	if ( (retval = class_device_create_file(odev->class_dev, &class_device_attr_enabled))) {
+	if ( (retval = device_create_file(odev->dev, &dev_attr_enabled))) {
 		goto err_class_enabled;
 	}
 
-	if ( (retval = class_device_create_file(odev->class_dev, &class_device_attr_picture))) {
+	if ( (retval = device_create_file(odev->dev, &dev_attr_picture))) {
 		goto err_class_picture;
 	}
 
@@ -501,11 +501,11 @@ static int asus_oled_probe(struct usb_interface *interface, const struct usb_dev
 	return 0;
 
 err_class_picture:
-	class_device_remove_file(odev->class_dev, &class_device_attr_picture);
+	device_remove_file(odev->dev, &dev_attr_picture);
 
 err_class_enabled:
-	class_device_remove_file(odev->class_dev, &class_device_attr_enabled);
-	class_device_unregister(odev->class_dev);
+	device_remove_file(odev->dev, &dev_attr_enabled);
+	device_unregister(odev->dev);
 
 err_files:
 	device_remove_file(&interface->dev, &ASUS_OLED_DEVICE_ATTR(enabled));
@@ -525,9 +525,9 @@ static void asus_oled_disconnect(struct usb_interface *interface)
 	odev = usb_get_intfdata (interface);
 	usb_set_intfdata (interface, NULL);
 
-	class_device_remove_file(odev->class_dev, &class_device_attr_picture);
-	class_device_remove_file(odev->class_dev, &class_device_attr_enabled);
-	class_device_unregister(odev->class_dev);
+	device_remove_file(odev->dev, &dev_attr_picture);
+	device_remove_file(odev->dev, &dev_attr_enabled);
+	device_unregister(odev->dev);
 
 	device_remove_file(&interface->dev, & ASUS_OLED_DEVICE_ATTR(picture));
 	device_remove_file(&interface->dev, & ASUS_OLED_DEVICE_ATTR(enabled));
