@@ -38,7 +38,7 @@
 #include <linux/platform_device.h>
 #include <linux/ctype.h>
 
-#define ASUS_OLED_VERSION		"0.03"
+#define ASUS_OLED_VERSION		"0.04-dev"
 #define ASUS_OLED_NAME			"asus-oled"
 #define ASUS_OLED_UNDERSCORE_NAME	"asus_oled"
 
@@ -49,7 +49,6 @@
 #define ASUS_OLED_FLASH			'f'
 
 #define ASUS_OLED_MAX_WIDTH		1792
-#define ASUS_OLED_DISP_WIDTH		128
 #define ASUS_OLED_DISP_HEIGHT		32
 #define ASUS_OLED_PACKET_BUF_SIZE	256
 
@@ -61,12 +60,36 @@ static struct class *oled_class = 0;
 static int oled_num = 0;
 
 static uint start_off = 0;
+
 module_param(start_off, uint, 0644);
+
 MODULE_PARM_DESC(start_off, "Set to 1 to switch off OLED display after it is attached");
+
+typedef enum {
+	PACK_MODE_G1,
+	PACK_MODE_G50,
+	PACK_MODE_LAST
+} oled_pack_mode_t;
+
+struct oled_dev_desc_str {
+	uint16_t		idVendor;
+	uint16_t		idProduct;
+	uint16_t		devWidth; // width of display
+	oled_pack_mode_t	packMode; // formula to be used while packing the picture
+	const char		*devDesc;
+};
 
 /* table of devices that work with this driver */
 static struct usb_device_id id_table [] = {
-	{ USB_DEVICE(0x0b05, 0x1726) },
+	{ USB_DEVICE(0x0b05, 0x1726) }, // Asus G1/G2 (and variants)
+	{ USB_DEVICE(0x0b05, 0x175b) }, // Asus G50V (and possibly others - G70? G71?)
+	{ },
+};
+
+/* parameters of specific devices */
+static struct oled_dev_desc_str oled_dev_desc_table [] = {
+	{ 0x0b05, 0x1726, 128, PACK_MODE_G1, "G1/G2" },
+	{ 0x0b05, 0x175b, 256, PACK_MODE_G50, "G50" },
 	{ },
 };
 
@@ -107,6 +130,8 @@ struct asus_oled_packet {
 struct asus_oled_dev {
 	struct usb_device *	udev;
 	uint8_t			pic_mode;
+	uint16_t		dev_width;
+	oled_pack_mode_t	pack_mode;
 	size_t			height;
 	size_t			width;
 	size_t			x_shift;
@@ -264,8 +289,24 @@ static int append_values(struct asus_oled_dev *odev, uint8_t val, size_t count)
 
 			x += odev->x_shift;
 			y += odev->y_shift;
-
-			i = (x/128)*640 + 127 - x + (y/8)*128;
+			
+			switch(odev->pack_mode)
+			{
+				case PACK_MODE_G1:
+					// i = (x/128)*640 + 127 - x + (y/8)*128;
+					// This one for 128 is the same, but might be better for different widths?
+					i = (x/odev->dev_width)*640 + odev->dev_width - 1 - x + (y/8)*odev->dev_width;
+				break;
+				
+				case PACK_MODE_G50:
+					i =  (odev->dev_width - 1 - x)/8 + y*odev->dev_width/8;
+				break;
+				
+				default:
+					i = 0;
+					printk(ASUS_OLED_ERROR "Unknown OLED Pack Mode: %d!\n", odev->pack_mode);
+				break;
+			}
 
 			if (i >= odev->buf_size) {
 				printk(ASUS_OLED_ERROR "Buffer overflow! Report a bug in the driver: offs: %d >= %d i: %d (x: %d y: %d)\n",
@@ -337,8 +378,8 @@ static ssize_t odev_set_picture(struct asus_oled_dev *odev, const char *buf, siz
 
 		offs = i+1;
 
-		if (w % ASUS_OLED_DISP_WIDTH != 0)
-			w_mem = (w/ASUS_OLED_DISP_WIDTH + 1)*ASUS_OLED_DISP_WIDTH;
+		if (w % (odev->dev_width) != 0)
+			w_mem = (w/(odev->dev_width) + 1)*(odev->dev_width);
 		else
 			w_mem = w;
 
@@ -376,8 +417,8 @@ static ssize_t odev_set_picture(struct asus_oled_dev *odev, const char *buf, siz
 				odev->y_shift = (ASUS_OLED_DISP_HEIGHT - h)/2;
 		}
 
-		if (w < ASUS_OLED_DISP_WIDTH)
-			odev->x_shift = (ASUS_OLED_DISP_WIDTH - w)/2;
+		if (w < (odev->dev_width))
+			odev->x_shift = ((odev->dev_width) - w)/2;
 	}
 
 	max_offs = odev->width * odev->height;
@@ -444,7 +485,34 @@ static int asus_oled_probe(struct usb_interface *interface, const struct usb_dev
 	struct usb_device *udev = interface_to_usbdev(interface);
 	struct asus_oled_dev *odev = NULL;
 	int retval = -ENOMEM;
+	uint16_t dev_width = 0;
+	oled_pack_mode_t pack_mode = PACK_MODE_LAST;
+	const struct oled_dev_desc_str * dev_desc = oled_dev_desc_table;
+	const char *desc = 0;
 
+	if (id == 0) {
+		// Even possible? Just to make sure...
+		dev_err(&interface->dev, "No usb_device_id provided!\n");
+		return -ENODEV;
+	}
+	
+	for (; dev_desc->idVendor; dev_desc++)
+	{
+		if (dev_desc->idVendor == id->idVendor
+			&& dev_desc->idProduct == id->idProduct)
+		{
+			dev_width = dev_desc->devWidth;
+			desc = dev_desc->devDesc;
+			pack_mode = dev_desc->packMode;
+			break;
+		}
+	}
+
+	if ( !desc || dev_width < 1 || pack_mode == PACK_MODE_LAST) {
+		dev_err(&interface->dev, "Missing or incomplete device description!\n");
+		return -ENODEV;
+	}
+	
 	odev = kzalloc(sizeof(struct asus_oled_dev), GFP_KERNEL);
 
 	if (odev == NULL) {
@@ -454,6 +522,8 @@ static int asus_oled_probe(struct usb_interface *interface, const struct usb_dev
 
 	odev->udev = usb_get_dev(udev);
 	odev->pic_mode = ASUS_OLED_STATIC;
+	odev->dev_width = dev_width;
+	odev->pack_mode = pack_mode;
 	odev->height = 0;
 	odev->width = 0;
 	odev->x_shift = 0;
@@ -493,7 +563,7 @@ static int asus_oled_probe(struct usb_interface *interface, const struct usb_dev
 		goto err_class_picture;
 	}
 
-	dev_info(&interface->dev, "Attached Asus OLED device\n");
+	dev_info(&interface->dev, "Attached Asus OLED device: %s [width %u, pack_mode %d]\n", desc, odev->dev_width, odev->pack_mode);
 
 	if (start_off)
 		enable_oled(odev, 0);
