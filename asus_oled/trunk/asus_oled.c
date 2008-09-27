@@ -252,6 +252,36 @@ static void send_packets(struct usb_device *udev, struct asus_oled_packet *packe
 	}
 }
 
+static void send_packet(struct usb_device *udev, struct asus_oled_packet *packet, size_t offset, size_t len, char *buf, uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4, uint8_t b5, uint8_t b6){
+	int retval;
+	int act_len;
+
+	SETUP_PACKET_HEADER(packet, b1, b2, b3, b4, b5, b6, 0x00);
+	memcpy(packet->bitmap, buf + offset, len);
+
+	retval = usb_bulk_msg(udev,
+			usb_sndctrlpipe(udev, 2),
+			packet,
+			sizeof(struct asus_oled_packet),
+			&act_len,
+			-1);
+
+	if (retval)
+		dev_dbg(&udev->dev, "retval = %d\n", retval);
+}
+
+
+static void send_packets_g50(struct usb_device *udev, struct asus_oled_packet *packet, char *buf)
+{
+	send_packet(udev, packet,     0, 0x100, buf, 0x10, 0x00, 0x02, 0x01, 0x00, 0x01);
+	send_packet(udev, packet, 0x100, 0x080, buf, 0x10, 0x00, 0x02, 0x02, 0x80, 0x00);
+
+	send_packet(udev, packet, 0x180, 0x100, buf, 0x11, 0x00, 0x03, 0x01, 0x00, 0x01);	
+	send_packet(udev, packet, 0x280, 0x100, buf, 0x11, 0x00, 0x03, 0x02, 0x00, 0x01);
+	send_packet(udev, packet, 0x380, 0x080, buf, 0x11, 0x00, 0x03, 0x03, 0x80, 0x00);
+}
+
+
 static void send_data(struct asus_oled_dev *odev)
 {
 	size_t packet_num = odev->buf_size / ASUS_OLED_PACKET_BUF_SIZE;
@@ -264,17 +294,23 @@ static void send_data(struct asus_oled_dev *odev)
 		return;
 	}
 
-	// When sending roll-mode data the display updated only first packet.
-	// I have no idea why, but when static picture is send just before
-	// rolling picture - everything works fine.
-	if (odev->pic_mode == ASUS_OLED_ROLL)
-		send_packets(odev->udev, packet, odev->buf, ASUS_OLED_STATIC, 2);
+	if (odev->pack_mode==PACK_MODE_G1){
+		// When sending roll-mode data the display updated only first packet.
+		// I have no idea why, but when static picture is send just before
+		// rolling picture - everything works fine.
+		if (odev->pic_mode == ASUS_OLED_ROLL)
+			send_packets(odev->udev, packet, odev->buf, ASUS_OLED_STATIC, 2);
 
-	// Only ROLL mode can use more than 2 packets.
-	if (odev->pic_mode != ASUS_OLED_ROLL && packet_num > 2)
-		packet_num = 2;
+		// Only ROLL mode can use more than 2 packets.
+		if (odev->pic_mode != ASUS_OLED_ROLL && packet_num > 2)
+			packet_num = 2;
 
-	send_packets(odev->udev, packet, odev->buf, odev->pic_mode, packet_num);
+		send_packets(odev->udev, packet, odev->buf, odev->pic_mode, packet_num);
+	}
+	else
+	if (odev->pack_mode==PACK_MODE_G50){
+		send_packets_g50(odev->udev, packet, odev->buf);
+	}
 
 	kfree(packet);
 }
@@ -313,7 +349,21 @@ static int append_values(struct asus_oled_dev *odev, uint8_t val, size_t count)
 					(int) odev->buf_offs, (int) odev->buf_size, (int) i, (int) x, (int) y);
 				return -EIO;
 			}
-			else odev->buf[i] &= ~(1<<(y%8));
+			
+			switch (odev->pack_mode)
+			{
+				case PACK_MODE_G1:
+					odev->buf[i] &= ~(1<<(y%8));
+				break;
+				
+				case PACK_MODE_G50:
+					odev->buf[i] &= ~(1<<(x%8));
+				break;
+				
+				default:
+					// cannot get here; stops gcc complaining
+				;
+			}
 		}
 
 		odev->last_val = val;
@@ -328,6 +378,34 @@ static ssize_t odev_set_picture(struct asus_oled_dev *odev, const char *buf, siz
 	size_t offs = 0, max_offs;
 
 	if (count < 1) return 0;
+
+	if (tolower(buf[0]) == 'b'){
+	    // binary mode, set the entire memory
+	    
+	    size_t i;
+	    
+	    odev->buf_size = (odev->dev_width * ASUS_OLED_DISP_HEIGHT) / 8;
+
+	    if (odev->buf) kfree(odev->buf);
+	    odev->buf = kmalloc(odev->buf_size, GFP_KERNEL);
+
+	    memset(odev->buf, 0xff, odev->buf_size);
+	    
+	    for (i=1; i < count && i<32*32; i++){
+		odev->buf[i-1] = buf[i];
+		odev->buf_offs = i-1;
+	    }
+	
+	    odev->width=odev->dev_width / 8;
+	    odev->height=ASUS_OLED_DISP_HEIGHT;
+	    odev->x_shift=0;
+	    odev->y_shift=0;
+	    odev->last_val=0;
+	    
+	    send_data(odev);
+
+	    return count;
+	}
 
 	if (buf[0] == '<') {
 		size_t i;
