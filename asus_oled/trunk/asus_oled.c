@@ -391,7 +391,7 @@ static ssize_t odev_set_picture(struct asus_oled_dev *odev, const char *buf, siz
 
 	    memset(odev->buf, 0xff, odev->buf_size);
 	    
-	    for (i=1; i < count && i<32*32; i++){
+	    for (i=1; i < count && i<=32*32; i++){
 		odev->buf[i-1] = buf[i];
 		odev->buf_offs = i-1;
 	    }
