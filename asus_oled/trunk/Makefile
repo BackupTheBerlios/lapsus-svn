@@ -27,6 +27,6 @@ install:
 	depmod -a
 
 clean:
-	rm -rf *~ *.mod.c *.o *.ko .tmp_versions Module.symvers .$(obj-m:.o=)*
+	rm -rf *~ *.mod.c *.o *.ko .tmp_versions Module.symvers .$(obj-m:.o=)* modules.order
 
 endif
