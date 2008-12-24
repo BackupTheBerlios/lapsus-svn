@@ -49,38 +49,6 @@ using namespace std;
 #define COL_WHITE		1
 #define COL_BLACK_CORR		2
 
-/* What action should be performed? */
-uint8_t what_action = ACTION_HELP;
-
-/* Should there also be enable/disable action? */
-uint8_t action_enable = ACTION_HELP;
-
-/* Type of the output to be generated ( zeros and ones for BIN and # and spaces for ASCII) */
-uint8_t output_type = OUTPUT_TYPE_BIN;
-
-/* Optional device number */
-uint32_t devnum = 1;
-
-/* Optional width/height specified */
-uint32_t width = 0;
-uint32_t height = 0;
-
-/* Special operations on data */
-/* Invert values */
-uint8_t do_invert = 0;
-
-/* Do 'BlackBackground' operation */
-uint8_t do_bb_l = 0;
-uint8_t do_bb_r = 0;
-uint8_t do_bb_t = 0;
-uint8_t do_bb_b = 0;
-
-/* Input file */
-char *input_file = 0;
-
-/* File where the output should be written instead of writing to /sys/... file */
-char *output_file = 0;
-
 /* Data buf used for our image map */
 uint8_t data[DATA_SIZE];
 
@@ -234,6 +202,41 @@ int set_oled_enabled(uint8_t devnum, bool do_enabl)
 
 int main( int argc, char *argv[] )
 {
+	/* What action should be performed? */
+	uint8_t what_action = ACTION_HELP;
+
+	/* Should there also be enable/disable action? */
+	uint8_t action_enable = ACTION_HELP;
+
+	/* Type of the output to be generated ( zeros and ones for BIN and # and spaces for ASCII) */
+	uint8_t output_type = OUTPUT_TYPE_BIN;
+
+	/* Optional device number */
+	uint32_t devnum = 1;
+
+	/* Optional width/height specified */
+	uint32_t width = 0;
+	uint32_t height = 0;
+
+	/* Special operations on data */
+	/* Invert values */
+	uint8_t do_invert = 0;
+
+	/* Do 'BlackBackground' operation */
+	uint8_t do_bb_l = 0;
+	uint8_t do_bb_r = 0;
+	uint8_t do_bb_t = 0;
+	uint8_t do_bb_b = 0;
+
+	/* Input file */
+	char *input_file = 0;
+
+	/* File where the output should be written instead of writing to /sys/... file */
+	char *output_file = 0;
+
+	/* Should the devnum be automatically found (first existing)? */
+	bool autoDevnum = true;
+	
 	for (int i = 1; i < argc; ++i)
 	{
 		if (!strcmp("-?", argv[i]) || !strcmp("--help", argv[i]))
@@ -344,6 +347,8 @@ int main( int argc, char *argv[] )
 			i++;
 			if (!get_int(argc, argv, i, &devnum))
 				return EXIT_FAILURE;
+			
+			autoDevnum = false;
 		}
 		else if (!strcmp("-h", argv[i]))
 		{
@@ -366,6 +371,20 @@ int main( int argc, char *argv[] )
 		return EXIT_FAILURE;
 	}
 
+	if (autoDevnum)
+	{
+		for (uint32_t i = 1; i < 33; ++i)
+		{
+			if (QFile( QString("/sys/class/asus_oled/oled_%1/enabled").arg(i)).exists())
+			{
+				devnum = i;
+				break;
+			}
+		}
+	}
+	
+	cout << "Using OLED device number: " << (int) devnum << "\n";
+	
 	if (what_action != ACTION_ENABLE && what_action != ACTION_DISABLE)
 	{
 		if (height > 0)
