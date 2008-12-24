@@ -412,6 +412,21 @@ bool SysAsus::handleACPIEvent(const QString &group, const QString &action,
 		return true;
 	}
 
+
+	if (id == 0x80) //RFKILL OFF
+	{
+		dbusSignalFeatureNotif(LAPSUS_FEAT_RFKILL_ID,
+					LAPSUS_FEAT_OFF);
+		return true;
+	}
+
+	if (id == 0x81) //RFKILL ON
+	{
+		dbusSignalFeatureNotif(LAPSUS_FEAT_RFKILL_ID,
+					LAPSUS_FEAT_ON);
+		return true;
+	}
+
 	// Unknown hotkey. Just send is as a normal ACPI event.
 	return false;
 }

@@ -53,7 +53,8 @@ QString LapsusModule::featureName(const QString &id)
 	if (id == LAPSUS_FEAT_VOLUME_ID) return I18N_NOOP("Volume");
 	if (id == LAPSUS_FEAT_TOUCHPAD_ID) return I18N_NOOP("Touchpad");
 	if (id == LAPSUS_FEAT_VOLUME_ID) return I18N_NOOP("Volume");
-	
+	if (id == LAPSUS_FEAT_RFKILL_ID) return I18N_NOOP("RFKill");
+
 	return "";
 }
 

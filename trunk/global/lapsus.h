@@ -56,6 +56,7 @@
 #define LAPSUS_FEAT_TOUCHPAD_ID			"touchpad"
 #define LAPSUS_FEAT_LIGHT_SENSOR_ID		"light_sensor"
 #define LAPSUS_FEAT_LIGHT_SENSOR_LEVEL_ID	"light_sensor_level"
+#define LAPSUS_FEAT_RFKILL_ID			"rfkill"
 
 #define LAPSUS_FEAT_ON			"on"
 #define LAPSUS_FEAT_OFF			"off"
