@@ -37,6 +37,7 @@
 #include <linux/usb.h>
 #include <linux/platform_device.h>
 #include <linux/ctype.h>
+#include <linux/version.h>
 
 #define ASUS_OLED_VERSION		"0.04-dev"
 #define ASUS_OLED_NAME			"asus-oled"
@@ -629,7 +630,7 @@ static int asus_oled_probe(struct usb_interface *interface, const struct usb_dev
 #else
 	odev->dev = device_create(oled_class, &interface->dev, MKDEV(0,0),
 				NULL,"oled_%d", ++oled_num);
-#fi
+#endif
 
 	if (IS_ERR(odev->dev)) {
 		retval = PTR_ERR(odev->dev);
