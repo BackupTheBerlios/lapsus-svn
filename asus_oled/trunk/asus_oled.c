@@ -39,7 +39,7 @@
 #include <linux/ctype.h>
 #include <linux/version.h> 
 
-#define ASUS_OLED_VERSION		"0.04-dev"
+#define ASUS_OLED_VERSION		"0.04"
 #define ASUS_OLED_NAME			"asus-oled"
 #define ASUS_OLED_UNDERSCORE_NAME	"asus_oled"
 
